@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('nip');
-            $table->string('subject');
+            $table->string('subject'); // Subject will replace by pivot table
             $table->timestamps();
 
             // Relationship
