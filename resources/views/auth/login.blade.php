@@ -8,7 +8,6 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="icon" type="image/png" href="{{ asset('image/smk taruna bakti.png') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-
   <style>
     body {
       background: url('{{ asset('image/foto-smk-tb.jpeg') }}') no-repeat center center fixed;
@@ -96,19 +95,38 @@
 
       <h5 class=" mb-4 login-title">Log In</h5>
 
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <ul class="mb-0">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
       <!-- Form -->
-      <form>
+      <form method="POST" action="{{ route('login') }}">
+        @csrf
         <div class="mb-3 input-group">
           <span class="input-group-text bg-white border-end-0">
-            <i class="bi bi-person"></i>
+            <i class="bi bi-envelope"></i>
           </span>
-          <input type="text" class="form-control border-start-0" placeholder="Username" required oninvalid="this.setCustomValidity('Tolong isi terlebih dahulu')" oninput="this.setCustomValidity('')">
+          <input type="email" name="email" class="form-control border-start-0" placeholder="Email"  oninput="this.setCustomValidity('')" required value="{{ old('email') }}">
         </div>
         <div class="mb-3 input-group">
           <span class="input-group-text bg-white border-end-0">
             <i class="bi bi-lock"></i>
           </span>
-          <input type="password" class="form-control border-start-0" placeholder="Password" required id="passwordInput" oninvalid="this.setCustomValidity('Tolong isi terlebih dahulu')" oninput="this.setCustomValidity('')">
+          <input type="password" name="password" class="form-control border-start-0" placeholder="Password" required id="passwordInput" oninvalid="this.setCustomValidity('Tolong isi terlebih dahulu')" oninput="this.setCustomValidity('')">
         </div>
 
         <div class="d-flex justify-content-between align-items-center mb-3">
