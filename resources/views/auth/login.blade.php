@@ -87,6 +87,19 @@
 <body>
   <div style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;pointer-events:none;background:rgba(0,0,0,0.45);"></div>
   <div class="d-flex vh-100 justify-content-center align-items-center" style="position:relative;z-index:1;">
+    @if(session('success'))
+        <div class="alert alert-success auto-dismiss position-fixed bottom-0 end-0 m-3" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="alert alert-danger auto-dismiss position-fixed bottom-0 end-0 m-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {{ $errors->first() }}
+        </div>
+    @endif
     <div class="login-card text-center">
       <!-- Logo sekolah -->
       <div style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem auto;padding:10px;">
@@ -94,24 +107,6 @@
       </div>
 
       <h5 class=" mb-4 login-title">Log In</h5>
-
-            @if(session('success'))
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
-
-            @if($errors->any())
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <ul class="mb-0">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
 
       <!-- Form -->
       <form method="POST" action="{{ route('login') }}">
@@ -126,17 +121,10 @@
           <span class="input-group-text bg-white border-end-0">
             <i class="bi bi-lock"></i>
           </span>
-          <input type="password" name="password" class="form-control border-start-0" placeholder="Password" required id="passwordInput" oninvalid="this.setCustomValidity('Tolong isi terlebih dahulu')" oninput="this.setCustomValidity('')">
+          <input type="password" name="password" class="form-control border-start-0" placeholder="Password" required id="passwordInput" oninput="this.setCustomValidity('')">
         </div>
 
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="remember">
-            <label class="form-check-label" for="remember">Remember Me</label>
-          </div>
-        </div>
-
-        <button type="submit" class="btn btn-login w-100 py-2">Get Started</button>
+        <button type="submit" class="mt-4 btn btn-login w-100 py-2">Get Started</button>
         <!-- Tambahkan ikon media sosial -->
         <div class="mt-4 d-flex justify-content-center gap-3">
           <a href="https://www.instagram.com/smktarunabakti.kts/" target="_blank" class="text-decoration-none">
@@ -158,10 +146,18 @@
 
   <!-- Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <script>
+    // Cari semua alert yang punya class "auto-dismiss"
+    document.addEventListener("DOMContentLoaded", function () {
+        setTimeout(function () {
+            document.querySelectorAll('.auto-dismiss').forEach(function (el) {
+                el.classList.remove('show'); // animasi fade
+                setTimeout(() => el.remove(), 500); // hapus dari DOM setelah fade out
+            });
+        }, 5000); // 5 detik
+    });
+</script>
 
 </body>
 </html>
-</html>
-</body>
-</html>
-</html>
+

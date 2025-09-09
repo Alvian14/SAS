@@ -16,16 +16,22 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            $user = Auth::user();
-            if ($user->role === 'admin') {
-                return redirect()->route('dashboard.index');
-            } else {
-                return redirect()->route('user.index');
-            }
+            return redirect()->route('dashboard.index');
         }
 
         return back()->withErrors([
-            'email' => 'Email or password is incorrect.',
+            'email' => 'Email atau password salah.',
         ])->withInput();
     }
+
+    public function logout(Request $request)
+    {
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login.form');
+    }
+
 }
