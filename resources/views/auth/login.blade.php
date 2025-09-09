@@ -6,7 +6,7 @@
   <title>Log In - SAS SMK Taruna Bakti Kertosono</title>
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="icon" type="image/png" href="{{ asset('image/smk taruna bakti.png') }}">
+  <link rel="icon" type="image/png" href="{{ asset('image/smk-taruna-bakti.png') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <style>
     body {
@@ -103,13 +103,13 @@
     <div class="login-card text-center">
       <!-- Logo sekolah -->
       <div style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem auto;padding:10px;">
-        <img src="{{ asset('image/smk taruna bakti.png') }}" alt="Logo SMK Taruna Bakti" style="width:105px;height:105px;object-fit:contain;">
+        <img src="{{ asset('image/smk-taruna-bakti.png') }}" alt="Logo SMK Taruna Bakti" style="width:105px;height:105px;object-fit:contain;">
       </div>
 
       <h5 class=" mb-4 login-title">Log In</h5>
 
       <!-- Form -->
-      <form method="POST" action="{{ route('login') }}">
+      <form method="POST" action="{{ route('login.post') }}">
         @csrf
         <div class="mb-3 input-group">
           <span class="input-group-text bg-white border-end-0">
