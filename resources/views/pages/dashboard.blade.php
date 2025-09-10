@@ -12,8 +12,6 @@
     <meta property="og:type" content="website">
 
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="{{ asset('assets/favicon-CvUZKS4z.svg') }}">
-    <link rel="icon" type="image/png" href="{{ asset('assets/favicon-B_cwPWBd.png') }}">
     <link rel="icon" type="image/png" href="{{ asset('image/smk-taruna-bakti.png') }}">
 
     <!-- Preconnect to external domains -->
@@ -395,7 +393,7 @@
                                         </div>
                                     </div>
                                     <div class="flex-grow-1 ms-3">
-                                        <h6 class="mb-0 text-muted">Revenue</h6>
+                                        <h6 class="mb-0 text-muted">Siswa Kelas 10</h6>
                                         <h3 class="mb-0">$54,320</h3>
                                     </div>
                                 </div>
@@ -413,7 +411,7 @@
                                         </div>
                                     </div>
                                     <div class="flex-grow-1 ms-3">
-                                        <h6 class="mb-0 text-muted">Orders</h6>
+                                        <h6 class="mb-0 text-muted">Siswa Kelas 11</h6>
                                         <h3 class="mb-0">1,852</h3>
                                     </div>
                                 </div>
@@ -431,7 +429,7 @@
                                         </div>
                                     </div>
                                     <div class="flex-grow-1 ms-3">
-                                        <h6 class="mb-0 text-muted">Avg. Response</h6>
+                                        <h6 class="mb-0 text-muted">Siswa Kelas 12</h6>
                                         <h3 class="mb-0">2.3s</h3>
                                     </div>
                                 </div>
@@ -441,63 +439,7 @@
                 </div>
 
                 <!-- Chart Section -->
-                <div class="row g-4 mb-4">
-                    <div class="col-lg-8">
-                        <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="card-title mb-0">Revenue Overview</h5>
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <button type="button" class="btn btn-outline-primary active" data-chart-period="7d">7D</button>
-                                    <button type="button" class="btn btn-outline-primary" data-chart-period="30d">30D</button>
-                                    <button type="button" class="btn btn-outline-primary" data-chart-period="90d">90D</button>
-                                    <button type="button" class="btn btn-outline-primary" data-chart-period="1y">1Y</button>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="revenueChart" height="250"></canvas>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="col-lg-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">Recent Activity</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="activity-feed">
-                                    <div class="activity-item">
-                                        <div class="activity-icon bg-primary bg-opacity-10 text-primary">
-                                            <i class="bi bi-person-plus"></i>
-                                        </div>
-                                        <div class="activity-content">
-                                            <p class="mb-1">New user registered</p>
-                                            <small class="text-muted">2 minutes ago</small>
-                                        </div>
-                                    </div>
-                                    <div class="activity-item">
-                                        <div class="activity-icon bg-success bg-opacity-10 text-success">
-                                            <i class="bi bi-bag-check"></i>
-                                        </div>
-                                        <div class="activity-content">
-                                            <p class="mb-1">Order #1234 completed</p>
-                                            <small class="text-muted">5 minutes ago</small>
-                                        </div>
-                                    </div>
-                                    <div class="activity-item">
-                                        <div class="activity-icon bg-warning bg-opacity-10 text-warning">
-                                            <i class="bi bi-exclamation-triangle"></i>
-                                        </div>
-                                        <div class="activity-content">
-                                            <p class="mb-1">Server maintenance scheduled</p>
-                                            <small class="text-muted">1 hour ago</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Additional Charts Row -->
                 <div class="row g-4 mb-4">
