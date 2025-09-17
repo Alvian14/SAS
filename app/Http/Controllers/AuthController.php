@@ -38,13 +38,22 @@ class AuthController extends Controller
                 'nisn' => 'required|string|max:50|unique:students,nisn',
                 'id_class' => 'required|integer',
                 'entry_year' => 'required|integer',
+                'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             ]);
+
+            // Proses upload gambar jika ada
+            $imageName = null;
+            if ($request->hasFile('profile_picture')) {
+                $image = $request->file('profile_picture');
+                $imageName = $image->hashName();
+                $image->move(public_path('storage/student/'), $imageName);
+            }
 
             $user = User::create([
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'role' => 'student',
-                'profile_picture' => $request->profile_picture ?? null,
+                'profile_picture' => $imageName,
             ]);
 
             $user->student()->create([
@@ -53,7 +62,7 @@ class AuthController extends Controller
                 'nisn' => $request->nisn,
                 'id_class' => $request->id_class,
                 'entry_year' => $request->entry_year,
-                'picture' => $request->picture ?? null,
+                'picture' => $imageName,
             ]);
 
             return redirect()->route('login')->with('success', 'Registrasi siswa berhasil. Silakan login.');
@@ -73,13 +82,22 @@ class AuthController extends Controller
                 'password' => 'required|string|min:6',
                 'nip' => 'required|string|max:50|unique:teachers,nip',
                 'subject' => 'required|string|max:100',
+                'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             ]);
+
+            // Proses upload gambar jika ada
+            $imageName = null;
+            if ($request->hasFile('profile_picture')) {
+                $image = $request->file('profile_picture');
+                $imageName = $image->hashName();
+                $image->move(public_path('storage/teacher/'), $imageName);
+            }
 
             $user = User::create([
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'role' => 'teacher',
-                'profile_picture' => $request->profile_picture ?? null,
+                'profile_picture' => $imageName,
             ]);
 
             $user->teacher()->create([

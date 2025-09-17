@@ -338,8 +338,8 @@
                           <img src="assets/images/profile/profile-image.png" alt="image">
                         </div>
                         <div class="content">
-                          <h4 class="text-sm">Adam Joe</h4>
-                          <a class="text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white text-xs" href="#">Email@gmail.com</a>
+                          <h4 class="text-sm">Admin</h4>
+                          <a class="text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white text-xs" >Email@gmail.com</a>
                         </div>
                       </div>
                     </li>
@@ -348,14 +348,6 @@
                       <a href="#0">
                         <i class="lni lni-user"></i> View Profile
                       </a>
-                    </li>
-                    <li>
-                      <a href="#0">
-                        <i class="lni lni-alarm"></i> Notifications
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#0"> <i class="lni lni-inbox"></i> Messages </a>
                     </li>
                     <li>
                       <a href="#0"> <i class="lni lni-cog"></i> Settings </a>
@@ -381,9 +373,9 @@
       <!-- ========== header end ========== -->
 
       <!-- ========== section start ========== -->
-      <div class="content">
-        @yield('admin_content')
-    </div>
+        <div class="content">
+            @yield('admin_content')
+        </div>
       <!-- ========== section end ========== -->
 
       <!-- ========== footer start =========== -->

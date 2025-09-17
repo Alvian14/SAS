@@ -144,19 +144,6 @@
   </div>
   <!-- End Row -->
   <div class="row">
-    <div class="col-lg-5">
-      <div class="card-style mb-30">
-        <div class="title d-flex justify-content-between align-items-center">
-          <div class="left">
-            <h6 class="text-medium mb-30">Sells by State</h6>
-          </div>
-        </div>
-        <!-- End Title -->
-        <div id="map" style="width: 100%; height: 400px; overflow: hidden;"></div>
-        <p>Last updated: 7 days ago</p>
-      </div>
-    </div>
-    <!-- End Col -->
     <div class="col-lg-7">
       <div class="card-style mb-30">
         <div class="title d-flex flex-wrap justify-content-between align-items-center">
@@ -723,4 +710,4 @@
   <!-- End Row -->
 </div>
 @endsection
-    
+
