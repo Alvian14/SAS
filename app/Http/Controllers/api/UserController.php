@@ -120,4 +120,12 @@ class UserController extends Controller
         }
     }
 
+    public function feedback(Request $request)
+    {
+        return response()->json([
+            'message' => 'Halo student, ini feedback testing!',
+            'user'    => $request->user()->only(['id', 'name', 'email', 'role']),
+        ]);
+    }
+
 }
