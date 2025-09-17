@@ -82,6 +82,7 @@
       filter: brightness(1.2);
       opacity: 0.8;
     }
+
   </style>
 </head>
 <body>
@@ -124,7 +125,7 @@
           <input type="password" name="password" class="form-control border-start-0" placeholder="Password" required id="passwordInput" oninput="this.setCustomValidity('')">
         </div>
 
-        <button type="submit" class="mt-4 btn btn-login w-100 py-2">Get Started</button>
+        <button  type="submit" class="mt-4 btn btn-login w-100 py-2">Get Started</button>
         <!-- Tambahkan ikon media sosial -->
         <div class="mt-4 d-flex justify-content-center gap-3">
           <a href="https://www.instagram.com/smktarunabakti.kts/" target="_blank" class="text-decoration-none">
@@ -156,6 +157,7 @@
             });
         }, 5000); // 5 detik
     });
+
 </script>
 
 </body>
