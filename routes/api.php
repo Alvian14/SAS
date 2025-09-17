@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\api\ClassController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\api\UserController;
@@ -10,9 +11,10 @@ Route::get('/ping', function () {
 
 Route::post('/login', [UserController::class, 'login']);
 Route::post('/register', [UserController::class, 'register']);
+Route::get('/classes', [ClassController::class, 'index']);
 
 // route login pakai Sanctum
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
     
     // get user
     Route::get('/user', function (Request $request) {
@@ -20,5 +22,6 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // attendance record, permission, report, etc...
+    Route::get('/testfeedback', [UserController::class, 'feedback']);
 
 });
