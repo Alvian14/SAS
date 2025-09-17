@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -25,6 +28,77 @@ class AuthController extends Controller
         ])->withInput();
     }
 
+    public function registerStudent(Request $request)
+    {
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users',
+                'password' => 'required|string|min:6',
+                'nisn' => 'required|string|max:50|unique:students,nisn',
+                'id_class' => 'required|integer',
+                'entry_year' => 'required|integer',
+            ]);
+
+            $user = User::create([
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role' => 'student',
+                'profile_picture' => $request->profile_picture ?? null,
+            ]);
+
+            $user->student()->create([
+                'id_user' => $user->id,
+                'name' => $request->name,
+                'nisn' => $request->nisn,
+                'id_class' => $request->id_class,
+                'entry_year' => $request->entry_year,
+                'picture' => $request->picture ?? null,
+            ]);
+
+            return redirect()->route('login')->with('success', 'Registrasi siswa berhasil. Silakan login.');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Registrasi siswa gagal. Silakan coba lagi.')->withInput();
+        }
+    }
+
+    public function registerTeacher(Request $request)
+    {
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users',
+                'password' => 'required|string|min:6',
+                'nip' => 'required|string|max:50|unique:teachers,nip',
+                'subject' => 'required|string|max:100',
+            ]);
+
+            $user = User::create([
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role' => 'teacher',
+                'profile_picture' => $request->profile_picture ?? null,
+            ]);
+
+            $user->teacher()->create([
+                'id_user' => $user->id,
+                'name' => $request->name,
+                'nip' => $request->nip,
+                'subject' => $request->subject,
+            ]);
+
+            return redirect()->route('login')->with('success', 'Registrasi guru berhasil. Silakan login.');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Registrasi guru gagal. Silakan coba lagi.')->withInput();
+        }
+    }
+
+
+
     public function logout(Request $request)
     {
         Auth::logout();
@@ -36,3 +110,6 @@ class AuthController extends Controller
     }
 
 }
+
+
+

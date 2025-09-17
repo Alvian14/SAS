@@ -14,6 +14,8 @@ Route::get('/', function () {
 
 
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+Route::post('/register/student', [AuthController::class, 'registerStudent'])->name('register.student.post');
+Route::post('/register/teacher', [AuthController::class, 'registerTeacher'])->name('register.teacher.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 
@@ -21,4 +23,3 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/pages/dashboard/dashboard', [DashboardController::class, 'index'])
     ->middleware('auth')
     ->name('dashboard.index');
-

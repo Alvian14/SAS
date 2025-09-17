@@ -13,7 +13,7 @@ Route::post('/register', [UserController::class, 'register']);
 
 // route login pakai Sanctum
 Route::middleware('auth:sanctum')->group(function () {
-    
+
     // get user
     Route::get('/user', function (Request $request) {
         return $request->user()->load('teacher', 'student');
