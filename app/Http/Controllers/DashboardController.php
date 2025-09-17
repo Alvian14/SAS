@@ -8,6 +8,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-     return view('pages.dashboard.dashboard');
+        $serverTime = now()->format('H:i:s');
+        return view('pages.dashboard.dashboard', compact('serverTime'));
     }
 }

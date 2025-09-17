@@ -4,14 +4,28 @@
 <div class="container-fluid">
   <!-- ========== title-wrapper start ========== -->
   <div class="title-wrapper pt-30">
-    <div class="row align-items-center">
+    <div class="row align-items-start">
       <div class="col-md-6">
         <div class="title">
           <h2>Dashboard</h2>
         </div>
       </div>
+        <div class="col-md-6">
+            <div class="breadcrumb-wrapper">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                      <li class="breadcrumb-item">
+                        <a href="{{ route('dashboard.index') }}">Dashboard</a>
+                      </li>
+                      <li class="breadcrumb-item active" aria-current="page">
+                        Dashboard
+                      </li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+              <!-- end col -->
     </div>
-    <!-- end row -->
   </div>
   <!-- ========== title-wrapper end ========== -->
   <div class="row">
@@ -75,7 +89,6 @@
         <div class="title d-flex flex-wrap justify-content-between">
           <div class="left">
             <h6 class="text-medium mb-10">Yearly Stats</h6>
-            <h3 class="text-bold">$245,479</h3>
           </div>
           <div class="right">
             <div class="select-style-1">
