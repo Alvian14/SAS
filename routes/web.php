@@ -23,3 +23,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/pages/dashboard/dashboard', [DashboardController::class, 'index'])
     ->middleware('auth')
     ->name('dashboard.index');
+    
+Route::get('/pages/akun/indentitas_siswa', function () {
+    return view('pages.akun.indentitas_siswa');
+})->middleware('auth')->name('akun.indentitas_siswa');
+
