@@ -156,12 +156,13 @@
                             <th>
                                 <input type="checkbox" id="select-all" />
                             </th>
+                            <th>Foto</th>
                             <th>Nama</th>
-                            <th>Jabatan</th>
-                            <th>Kantor</th>
-                            <th>Usia</th>
-                            <th>Tanggal Mulai</th>
-                            <th>Gaji</th>
+                            <th>Email</th>
+                            <th>NISN</th>
+                            <th>Kelas</th>
+                            <th>Tahun Masuk</th>
+                            <th>Password</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -169,45 +170,57 @@
                             <td>
                                 <input type="checkbox" class="row-checkbox" />
                             </td>
-                            <td>Tiger Nixon</td>
+                            <td>
+                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
+                            </td>
                             <td>System Architect</td>
                             <td>Edinburgh</td>
                             <td>61</td>
                             <td>2011-04-25</td>
                             <td>$320,800</td>
+                            <td>alkjdflkasldfj</td>
                         </tr>
                         <tr>
                             <td>
                                 <input type="checkbox" class="row-checkbox" />
                             </td>
-                            <td>Garrett Winters</td>
+                            <td>
+                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
+                            </td>
                             <td>Accountant</td>
                             <td>Tokyo</td>
                             <td>63</td>
                             <td>2011-07-25</td>
                             <td>$170,750</td>
+                            <td>alksjdflajsldfj</td>
                         </tr>
                         <tr>
                             <td>
                                 <input type="checkbox" class="row-checkbox" />
                             </td>
-                            <td>Ashton Cox</td>
+                            <td>
+                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
+                            </td>
                             <td>Junior Technical Author</td>
                             <td>San Francisco</td>
                             <td>66</td>
                             <td>2009-01-12</td>
                             <td>$86,000</td>
+                            <td>aslkjdflajfl</td>
                         </tr>
                         <tr>
                             <td>
                                 <input type="checkbox" class="row-checkbox" />
                             </td>
-                            <td>Ashton Cox</td>
+                            <td>
+                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
+                            </td>
                             <td>Junior Technical Author</td>
                             <td>San Francisco</td>
                             <td>66</td>
                             <td>2009-01-12</td>
                             <td>$86,000</td>
+                            <td>akljdflajlfdj</td>
                         </tr>
                     </tbody>
                 </table>

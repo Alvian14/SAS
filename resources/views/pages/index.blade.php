@@ -82,7 +82,7 @@
             </a>
             <ul id="ddmenu_2" class="collapse dropdown-nav">
               <li>
-                <a href="">Identitas Guru</a>
+                <a href="{{ route('akun.indentitas_guru') }}">Identitas Guru</a>
               </li>
               <li>
                 <a href="{{ route('akun.indentitas_siswa') }}">Identitas Siswa </a>
