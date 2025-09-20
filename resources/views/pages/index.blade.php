@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="{{ asset('assets/css/materialdesignicons.min.css') }}" type="text/css">
     <link rel="stylesheet" href="{{ asset('assets/css/fullcalendar.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/main.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
 
     {{-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"> --}}
     <!-- Bootstrap 5 JS Bundle (dengan Popper) -->
@@ -80,10 +82,10 @@
             </a>
             <ul id="ddmenu_2" class="collapse dropdown-nav">
               <li>
-                <a href="settings.html">Identitas Guru</a>
+                <a href="{{ route('akun.indentitas_guru') }}">Identitas Guru</a>
               </li>
               <li>
-                <a href="blank-page.html">Identitas Siswa </a>
+                <a href="{{ route('akun.indentitas_siswa') }}">Identitas Siswa </a>
               </li>
             </ul>
           </li>
@@ -205,7 +207,7 @@
                 <span id="clock" class="me-3 fw-bold" style="margin-top: 11px;">
                   {{ isset($serverTime) ? $serverTime : '' }}
                 </span>
-                <div class="profile-box ml-15">
+                <div class="profile-box ml-15 dropdown">
                   <button class="dropdown-toggle bg-transparent border-0" type="button" id="profile"
                     data-bs-toggle="dropdown" aria-expanded="false">
                     <div class="profile-info">
@@ -221,7 +223,7 @@
                       </div>
                     </div>
                   </button>
-                  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profile">
+                  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profile" style="z-index: 1055;">
                     <li>
                       <div class="author-info flex items-center !p-1">
                         <div class="image">
@@ -235,19 +237,18 @@
                     </li>
                     <li class="divider"></li>
                     <li>
-                      <a href="#0">
+                      <a href="#0" class="dropdown-item">
                         <i class="lni lni-user"></i> View Profile
                       </a>
                     </li>
                     <li>
-                      <a href="#0"> <i class="lni lni-cog"></i> Settings </a>
+                      <a href="#0" class="dropdown-item"> <i class="lni lni-cog"></i> Settings </a>
                     </li>
                     <li class="divider"></li>
                     <li>
                         <a class="dropdown-item" href="#" id="logout-btn">
                             <i class="bi bi-box-arrow-right me-2"></i>Logout
                         </a>
-
                         <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
                             @csrf
                         </form>
@@ -300,7 +301,6 @@
     <script src="{{ asset('assets/js/main.js') }}"></script>
     <script src="{{ asset('assets/js/sweet.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <script>
         function updateClock() {
             const now = new Date();
@@ -854,7 +854,14 @@
         // =========== chart four end
 
       // Jam digital otomatis WIB (Asia/Jakarta) - pastikan browser tidak cache response
+      document.addEventListener('DOMContentLoaded', function () {
+        var dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+        dropdowns.forEach(function (dropdownToggleEl) {
+          new bootstrap.Dropdown(dropdownToggleEl);
+        });
+      });
     </script>
     {{-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script> --}}
   </body>
+</html>
 </html>
