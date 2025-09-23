@@ -31,3 +31,7 @@ Route::get('/pages/akun/indentitas_siswa', function () {
 Route::get('/pages/akun/indentitas_guru', function () {
     return view('pages.akun.indentitas_guru');
 })->middleware('auth')->name('akun.indentitas_guru');
+
+Route::get('/pages/kelas/kelas', function () {
+    return view('pages.kelas.kelas');
+})->middleware('auth')->name('kelas.kelas');
