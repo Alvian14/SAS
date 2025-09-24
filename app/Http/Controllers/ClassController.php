@@ -20,7 +20,7 @@ class ClassController extends Controller
             'name'  => 'required|string|max:255',
             'major' => 'required|string|max:255',
             'grade' => 'required|integer',
-            'code'  => 'required|string|max:50|unique:clases,code',
+            'code'  => 'required|string|max:50',
         ]);
 
         Classes::create([
