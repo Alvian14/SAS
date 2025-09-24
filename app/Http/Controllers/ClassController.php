@@ -7,6 +7,11 @@ use Illuminate\Http\Request;
 
 class ClassController extends Controller
 {
+    public function index()
+    {
+        $classes = Classes::all();
+        return view('pages.kelas.kelas', compact('classes'));
+    }
 
     // Proses tambah kelas
     public function store(Request $request)
@@ -25,6 +30,6 @@ class ClassController extends Controller
             'code'  => $request->code,
         ]);
 
-        return redirect()->route('kelas')->with('success', 'Kelas berhasil ditambahkan.');
+        return redirect()->route('kelas.kelas')->with('success', 'Kelas berhasil ditambahkan.');
     }
 }
