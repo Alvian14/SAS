@@ -32,4 +32,12 @@ class ClassController extends Controller
 
         return redirect()->route('kelas.kelas')->with('success', 'Kelas berhasil ditambahkan.');
     }
+
+    public function destroy($id)
+    {
+        $kelas = Classes::findOrFail($id);
+        $kelas->delete();
+
+        return redirect()->route('kelas.kelas')->with('success', 'Kelas berhasil dihapus.');
+    }
 }
