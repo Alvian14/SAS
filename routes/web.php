@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ClassController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +33,11 @@ Route::get('/pages/akun/indentitas_guru', function () {
     return view('pages.akun.indentitas_guru');
 })->middleware('auth')->name('akun.indentitas_guru');
 
-Route::get('/pages/kelas/kelas', function () {
-    return view('pages.kelas.kelas');
-})->middleware('auth')->name('kelas.kelas');
+Route::get('/pages/kelas/kelas', [ClassController::class, 'index'])
+    ->middleware('auth')
+    ->name('kelas.kelas');
+
+// Route untuk tambah kelas
+Route::post('/pages/kelas/kelas', [ClassController::class, 'store'])
+    ->middleware('auth')
+    ->name('kelas.store');
