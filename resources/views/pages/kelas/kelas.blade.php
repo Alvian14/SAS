@@ -438,9 +438,8 @@
                     </div>
                     <div class="card-content">
                         <div>
-                            <div class="class-number">{{ $kelas->name }}</div> <!-- Ganti dari $kelas->grade ke $kelas->name -->
-                            <!-- Hapus/komentari baris class-name jika tidak ingin duplikat -->
-                            <!-- <div class="class-name">{{ $kelas->name }}</div> -->
+                            <div class="class-number">{{ $kelas->name }}</div>
+                            {{ $kelas->name }}
                         </div>
                         <div class="major-name">{{ $kelas->major }}</div>
                     </div>
