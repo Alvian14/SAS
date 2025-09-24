@@ -20,7 +20,7 @@ class ClassController extends Controller
             'name'  => 'required|string|max:255',
             'major' => 'required|string|max:255',
             'grade' => 'required|integer',
-            'code'  => 'required|string|max:50|unique:clases,code',
+            'code'  => 'required|string|max:50',
         ]);
 
         Classes::create([
@@ -31,5 +31,13 @@ class ClassController extends Controller
         ]);
 
         return redirect()->route('kelas.kelas')->with('success', 'Kelas berhasil ditambahkan.');
+    }
+
+    public function destroy($id)
+    {
+        $kelas = Classes::findOrFail($id);
+        $kelas->delete();
+
+        return redirect()->route('kelas.kelas')->with('success', 'Kelas berhasil dihapus.');
     }
 }

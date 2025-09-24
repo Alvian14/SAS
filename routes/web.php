@@ -15,16 +15,16 @@ Route::get('/', function () {
 
 
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-Route::post('/register/student', [AuthController::class, 'registerStudent'])->name('register.student.post');
-Route::post('/register/teacher', [AuthController::class, 'registerTeacher'])->name('register.teacher.post');
+// Route::post('/register/student', [AuthController::class, 'registerStudent'])->name('register.student.post');
+// Route::post('/register/teacher', [AuthController::class, 'registerTeacher'])->name('register.teacher.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-
-// middleware
+// middleware auth
 Route::get('/pages/dashboard/dashboard', [DashboardController::class, 'index'])
     ->middleware('auth')
     ->name('dashboard.index');
 
+######################### AKUN #########################
 Route::get('/pages/akun/indentitas_siswa', function () {
     return view('pages.akun.indentitas_siswa');
 })->middleware('auth')->name('akun.indentitas_siswa');
@@ -32,7 +32,10 @@ Route::get('/pages/akun/indentitas_siswa', function () {
 Route::get('/pages/akun/indentitas_guru', function () {
     return view('pages.akun.indentitas_guru');
 })->middleware('auth')->name('akun.indentitas_guru');
+######################### AKUN #########################
 
+
+######################## KELAS #########################
 Route::get('/pages/kelas/kelas', [ClassController::class, 'index'])
     ->middleware('auth')
     ->name('kelas.kelas');
@@ -41,3 +44,18 @@ Route::get('/pages/kelas/kelas', [ClassController::class, 'index'])
 Route::post('/pages/kelas/kelas', [ClassController::class, 'store'])
     ->middleware('auth')
     ->name('kelas.store');
+
+// Route untuk hapus kelas
+Route::delete('/pages/kelas/kelas/{id}', [ClassController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('kelas.destroy');
+
+// Route untuk absensi kelas
+// Route::get('/pages/kelas/kelas_absensi/{id}', function ($id) {
+//     return view('pages.kelas.kelas_absensi', compact('id'));
+// })->middleware('auth')->name('kelas.absensi');
+
+Route::get('/pages/kelas/kelas_absensi', function () {
+    return view('pages.kelas.kelas_absensi');
+})->middleware('auth')->name('kelas.absensi');
+######################## KELAS #########################

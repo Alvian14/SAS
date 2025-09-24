@@ -56,6 +56,19 @@
             color: white;
         }
 
+        .class-card.grade-10 {
+            background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+            color: white;
+        }
+        .class-card.grade-11 {
+            background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+            color: white;
+        }
+        .class-card.grade-12 {
+            background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%);
+            color: white;
+        }
+
         .class-card::before {
             content: '';
             position: absolute;
@@ -245,7 +258,7 @@
         <div class="modal-dialog">
             <div class="modal-content shadow-lg border-0 rounded-4">
                 <div class="modal-header bg-primary text-white border-0 rounded-top-4">
-                    <h5 class="modal-title fw-bold" id="modalTambahKelasLabel">
+                    <h5 class="modal-title fw-bold text-whi" id="modalTambahKelasLabel">
                         <i class="fas fa-plus me-2"></i>Tambah Kelas
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -283,7 +296,6 @@
         </div>
     </div>
 
-
     @php
         $kelas10 = $classes->where('grade', 10);
         $kelas11 = $classes->where('grade', 11);
@@ -301,8 +313,24 @@
             </div>
             @foreach($kelas10 as $kelas)
             <div class="col-lg-4 col-md-6 mb-4">
-                <div class="class-card {{ strtolower($kelas->code) }} floating">
-                    <div class="status-badge active">Aktif</div>
+                <div class="class-card grade-10 floating position-relative">
+                    <a href="{{ route('kelas.absensi') }}" class="stretched-link" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></a>
+                    <div class="dropdown position-absolute" style="top: 1rem; right: 1rem; z-index: 10;">
+                        <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:transparent;border:none;padding:0;">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <form method="POST" action="{{ route('kelas.destroy', $kelas->id) }}" onsubmit="return confirm('Yakin ingin menghapus kelas ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="fas fa-trash me-2"></i>Hapus Kelas
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
                     <div class="decorative-elements">
                         <div class="circle-1"></div>
                         <div class="circle-2"></div>
@@ -310,21 +338,9 @@
                     </div>
                     <div class="card-content">
                         <div>
-                            <div class="class-icon">
-                                @if(strtolower($kelas->code) == 'tkj')
-                                    <i class="fas fa-network-wired"></i>
-                                @elseif(strtolower($kelas->code) == 'tav')
-                                    <i class="fas fa-video"></i>
-                                @elseif(strtolower($kelas->code) == 'mm')
-                                    <i class="fas fa-palette"></i>
-                                @elseif(strtolower($kelas->code) == 'ak')
-                                    <i class="fas fa-calculator"></i>
-                                @else
-                                    <i class="fas fa-school"></i>
-                                @endif
-                            </div>
-                            <div class="class-number">{{ $kelas->grade }}</div>
-                            <div class="class-name">{{ $kelas->name }}</div>
+                            <div class="class-number">{{ $kelas->name }}</div> <!-- Ganti dari $kelas->grade ke $kelas->name -->
+                            <!-- Hapus/komentari baris class-name jika tidak ingin duplikat -->
+                            <!-- <div class="class-name">{{ $kelas->name }}</div> -->
                         </div>
                         <div class="major-name">{{ $kelas->major }}</div>
                     </div>
@@ -345,8 +361,26 @@
             </div>
             @foreach($kelas11 as $kelas)
             <div class="col-lg-4 col-md-6 mb-4">
-                <div class="class-card {{ strtolower($kelas->code) }} floating">
-                    <div class="status-badge active">Aktif</div>
+                <div class="class-card grade-11 floating position-relative">
+                    <!-- Overlay link -->
+                    <a href="{{ route('kelas.absensi', $kelas->id) }}" class="stretched-link" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></a>
+                    <!-- Dropdown titik tiga di kanan atas tanpa background bulat -->
+                    <div class="dropdown position-absolute" style="top: 1rem; right: 1rem; z-index: 10;">
+                        <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:transparent;border:none;padding:0;">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <form method="POST" action="{{ route('kelas.destroy', $kelas->id) }}" onsubmit="return confirm('Yakin ingin menghapus kelas ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="fas fa-trash me-2"></i>Hapus Kelas
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
                     <div class="decorative-elements">
                         <div class="circle-1"></div>
                         <div class="circle-2"></div>
@@ -354,21 +388,9 @@
                     </div>
                     <div class="card-content">
                         <div>
-                            <div class="class-icon">
-                                @if(strtolower($kelas->code) == 'tkj')
-                                    <i class="fas fa-network-wired"></i>
-                                @elseif(strtolower($kelas->code) == 'tav')
-                                    <i class="fas fa-video"></i>
-                                @elseif(strtolower($kelas->code) == 'mm')
-                                    <i class="fas fa-palette"></i>
-                                @elseif(strtolower($kelas->code) == 'ak')
-                                    <i class="fas fa-calculator"></i>
-                                @else
-                                    <i class="fas fa-school"></i>
-                                @endif
-                            </div>
-                            <div class="class-number">{{ $kelas->grade }}</div>
-                            <div class="class-name">{{ $kelas->name }}</div>
+                            <div class="class-number">{{ $kelas->name }}</div> <!-- Ganti dari $kelas->grade ke $kelas->name -->
+                            <!-- Hapus/komentari baris class-name jika tidak ingin duplikat -->
+                            <!-- <div class="class-name">{{ $kelas->name }}</div> -->
                         </div>
                         <div class="major-name">{{ $kelas->major }}</div>
                     </div>
@@ -389,8 +411,26 @@
             </div>
             @foreach($kelas12 as $kelas)
             <div class="col-lg-4 col-md-6 mb-4">
-                <div class="class-card {{ strtolower($kelas->code) }} floating">
-                    <div class="status-badge active">Aktif</div>
+                <div class="class-card grade-12 floating position-relative">
+                    <!-- Overlay link -->
+                    <a href="{{ route('kelas.absensi', $kelas->id) }}" class="stretched-link" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></a>
+                    <!-- Dropdown titik tiga di kanan atas tanpa background bulat -->
+                    <div class="dropdown position-absolute" style="top: 1rem; right: 1rem; z-index: 10;">
+                        <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:transparent;border:none;padding:0;">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <form method="POST" action="{{ route('kelas.destroy', $kelas->id) }}" onsubmit="return confirm('Yakin ingin menghapus kelas ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="fas fa-trash me-2"></i>Hapus Kelas
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
                     <div class="decorative-elements">
                         <div class="circle-1"></div>
                         <div class="circle-2"></div>
@@ -398,21 +438,9 @@
                     </div>
                     <div class="card-content">
                         <div>
-                            <div class="class-icon">
-                                @if(strtolower($kelas->code) == 'tkj')
-                                    <i class="fas fa-network-wired"></i>
-                                @elseif(strtolower($kelas->code) == 'tav')
-                                    <i class="fas fa-video"></i>
-                                @elseif(strtolower($kelas->code) == 'mm')
-                                    <i class="fas fa-palette"></i>
-                                @elseif(strtolower($kelas->code) == 'ak')
-                                    <i class="fas fa-calculator"></i>
-                                @else
-                                    <i class="fas fa-school"></i>
-                                @endif
-                            </div>
-                            <div class="class-number">{{ $kelas->grade }}</div>
-                            <div class="class-name">{{ $kelas->name }}</div>
+                            <div class="class-number">{{ $kelas->name }}</div> <!-- Ganti dari $kelas->grade ke $kelas->name -->
+                            <!-- Hapus/komentari baris class-name jika tidak ingin duplikat -->
+                            <!-- <div class="class-name">{{ $kelas->name }}</div> -->
                         </div>
                         <div class="major-name">{{ $kelas->major }}</div>
                     </div>
@@ -421,7 +449,7 @@
             @endforeach
         </div>
     </div>
-
 </div>
 @endsection
+
 
