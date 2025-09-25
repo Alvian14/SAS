@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/dataTables.bootstrap5.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css">
 <style>
         .table-custom-header {
             background-color: #365CF5 !important; /* Biru tua */
@@ -101,6 +102,11 @@
                 width: 100% !important;
             }
         }
+        /* Tambahkan jarak antara search box dan tabel */
+        div.dataTables_filter {
+            margin-bottom: 1rem !important;
+            margin-top: 0.5rem !important;
+        }
 </style>
 
 <div class="container-fluid">
@@ -109,7 +115,7 @@
         <div class="row align-items-start">
             <div class="col-md-6">
                 <div class="title">
-                    <h2 style="font-weight: 500;">Identitas Siswa</h2> <!-- Kurangi ketebalan judul -->
+                    <h2 style="font-weight: 500;">Absensi Harian</h2> <!-- Kurangi ketebalan judul -->
                 </div>
             </div>
             <div class="col-md-6">
@@ -119,8 +125,11 @@
                             <li class="breadcrumb-item">
                                 <a href="{{ route('dashboard.index') }}">Dashboard</a>
                             </li>
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('kelas.absensi') }}">kelas</a>
+                            </li>
                             <li class="breadcrumb-item active" aria-current="page">
-                                Identitas Siswa
+                                Absensi Harian
                             </li>
                         </ol>
                     </nav>
@@ -133,22 +142,56 @@
     <!-- Card Wrapper -->
     <div class="card shadow-sm">
         <div class="card-header bg-gradient-primary text-white d-flex flex-column flex-md-row justify-content-between align-items-md-center align-items-start">
-            <h5 class="mb-2 mb-md-0">Daftar Identitas Siswa</h5>
+            <h5 class="mb-2 mb-md-0">Absensi Harian</h5>
             <div class="d-flex w-100 w-md-auto justify-content-md-end mt-2 mt-md-0">
                 <div class="d-flex gap-2 flex-column flex-md-row w-100 w-md-auto">
-                    <button class="btn btn-light btn-sm btn-tambah-siswa w-100 w-md-auto d-block d-md-inline-block" style="font-size:14px;padding:7px 14px;" data-bs-toggle="modal" data-bs-target="#modalTambahSiswa">
-                        <i class="fas fa-plus"></i> Tambah Siswa
-                    </button>
+                    <!-- Export Button -->
+                    <div id="export-container"></div>
                     <button class="btn btn-edit-siswa btn-sm w-100 w-md-auto d-block d-md-inline-block" style="font-size:14px;padding:7px 14px;" id="btn-edit-siswa" type="button">
                         <i class="fas fa-edit"></i> Edit
-                    </button>
-                    <button class="btn btn-hapus-siswa btn-sm w-100 w-md-auto d-block d-md-inline-block" style="font-size:14px;padding:7px 14px;" id="btn-hapus-siswa" type="button">
-                        <i class="fas fa-trash"></i> Hapus
                     </button>
                 </div>
             </div>
         </div>
         <div class="card-body">
+            <!-- Filter Tanggal, Bulan, Tahun -->
+            <div class="row mb-3">
+                <div class="col-md-4 mb-2">
+                    <input type="date" id="filter-tanggal" class="form-control" placeholder="Tanggal">
+                </div>
+                <div class="col-md-4 mb-2">
+                    <select id="filter-bulan" class="form-select">
+                        <option value="">-- Pilih Bulan --</option>
+                        @php
+                            $bulanIndo = [
+                                '01' => 'Januari',
+                                '02' => 'Februari',
+                                '03' => 'Maret',
+                                '04' => 'April',
+                                '05' => 'Mei',
+                                '06' => 'Juni',
+                                '07' => 'Juli',
+                                '08' => 'Agustus',
+                                '09' => 'September',
+                                '10' => 'Oktober',
+                                '11' => 'November',
+                                '12' => 'Desember'
+                            ];
+                        @endphp
+                        @foreach($bulanIndo as $num => $nama)
+                            <option value="{{ $num }}">{{ $nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <select id="filter-tahun" class="form-select">
+                        <option value="">-- Pilih Tahun --</option>
+                        @for($y = date('Y')-5; $y <= date('Y')+1; $y++)
+                            <option value="{{ $y }}">{{ $y }}</option>
+                        @endfor
+                    </select>
+                </div>
+            </div>
             <div class="table-responsive">
                 <table id="example" class="table table-hover align-middle">
                     <thead class="table-custom-header">
@@ -158,11 +201,9 @@
                             </th>
                             <th>Foto</th>
                             <th>Nama</th>
-                            <th>Email</th>
-                            <th>NISN</th>
                             <th>Kelas</th>
-                            <th>Tahun Masuk</th>
-                            <th>Password</th>
+                            <th>Status</th>
+                            <th>Waktu</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -175,10 +216,10 @@
                             </td>
                             <td>System Architect</td>
                             <td>Edinburgh</td>
-                            <td>61</td>
-                            <td>2011-04-25</td>
-                            <td>$320,800</td>
-                            <td>alkjdflkasldfj</td>
+                            <td>
+                                <span class="badge bg-success text-white border border-success fw-bold px-3 py-2" style="font-size:0.95em;">Tepat Waktu</span>
+                            </td>
+                            <td class="text-success fw-bold">2011-04-25</td>
                         </tr>
                         <tr>
                             <td>
@@ -189,10 +230,10 @@
                             </td>
                             <td>Accountant</td>
                             <td>Tokyo</td>
-                            <td>63</td>
-                            <td>2011-07-25</td>
-                            <td>$170,750</td>
-                            <td>alksjdflajsldfj</td>
+                            <td>
+                                <span class="badge bg-danger text-white border border-danger fw-bold px-3 py-2" style="font-size:0.95em;">Terlambat</span>
+                            </td>
+                            <td class="text-danger fw-bold">2011-07-25</td>
                         </tr>
                         <tr>
                             <td>
@@ -203,10 +244,10 @@
                             </td>
                             <td>Junior Technical Author</td>
                             <td>San Francisco</td>
-                            <td>66</td>
-                            <td>2009-01-12</td>
-                            <td>$86,000</td>
-                            <td>aslkjdflajfl</td>
+                            <td>
+                                <span class="badge bg-success text-white border border-success fw-bold px-3 py-2" style="font-size:0.95em;">Tepat Waktu</span>
+                            </td>
+                            <td class="text-success fw-bold">2009-01-12</td>
                         </tr>
                         <tr>
                             <td>
@@ -217,10 +258,10 @@
                             </td>
                             <td>Junior Technical Author</td>
                             <td>San Francisco</td>
-                            <td>66</td>
-                            <td>2009-01-12</td>
-                            <td>$86,000</td>
-                            <td>akljdflajlfdj</td>
+                            <td>
+                                <span class="badge bg-success text-white border border-success fw-bold px-3 py-2" style="font-size:0.95em;">Tepat Waktu</span>
+                            </td>
+                            <td class="text-success fw-bold">2009-01-12</td>
                         </tr>
                     </tbody>
                 </table>
@@ -229,111 +270,21 @@
     </div>
     <!-- End Card Wrapper -->
 
-<!-- Modal Tambah Siswa -->
-<div class="modal fade" id="modalTambahSiswa" tabindex="-1" aria-labelledby="modalTambahSiswaLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content shadow-lg border-0 rounded-4">
-            <div class="modal-header bg-primary border-0 rounded-top-4">
-                <h5 class="modal-title fw-bold text-white" id="modalTambahSiswaLabel" style="color: white;">
-                    Tambah Data Siswa
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="formTambahSiswa" method="POST" action="" enctype="multipart/form-data">
-                <div class="modal-body p-4 bg-light">
-                    <!-- Baris 1: Nama Lengkap dan Email -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark">
-                                Nama Lengkap
-                            </label>
-                            <input type="text" name="name" class="form-control border-2" placeholder="Masukkan nama lengkap" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark">
-                                Email
-                            </label>
-                            <input type="email" name="email" class="form-control border-2" placeholder="contoh@email.com" required>
-                        </div>
-                    </div>
-
-                    <!-- Baris 2: Password dan NISN -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark">
-                                Password
-                            </label>
-                            <input type="password" name="password" class="form-control border-2" placeholder="Masukkan password" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark">
-                                NISN
-                            </label>
-                            <input type="number" name="nisn" class="form-control border-2" placeholder="Nomor Induk Siswa" required>
-                        </div>
-                    </div>
-
-                    <!-- Baris 3: Kelas dan Tahun Masuk -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark">
-                                Kelas
-                            </label>
-                            <select name="id_class" class="form-select border-2" required>
-                                <option value="">-- Pilih Kelas --</option>
-                                <option value="1">TKR 1</option>
-                                <option value="2">TKR 2</option>
-                                <option value="3">TBSM 1</option>
-                                <option value="4">TBSM 2</option>
-                                <option value="5">TKJ 1</option>
-                                <option value="6">TKJ 2</option>
-                                <option value="7">TAV 1</option>
-                                <option value="8">TAV 2</option>
-                                <option value="9">PS 1</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark">
-                                Tahun Masuk
-                            </label>
-                            <input type="number" name="entry_year" class="form-control border-2" placeholder="2024" min="2020" max="2030" required>
-                        </div>
-                    </div>
-
-                    <!-- Baris 4: Foto Profil (Full Width) -->
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <label class="form-label fw-semibold text-dark">
-                                Foto Profil
-                                <small class="text-muted">(opsional)</small>
-                            </label>
-                            <input type="file" name="profile_picture" class="form-control border-2" accept="image/*">
-                            <div class="form-text text-muted">
-                                Format: JPG, PNG, GIF. Maksimal 2MB.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer bg-white border-0 p-4 gap-2">
-                    <button type="button" class="btn btn-danger px-4 fw-semibold shadow-sm" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-2"></i>Batal
-                    </button>
-                    <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
-                        <i class="fas fa-save me-2"></i>Simpan Data
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.colVis.min.js"></script>
     <script>
         $(document).ready(function () {
-            $('#example').DataTable({
-                lengthChange: false, // Nonaktifkan "Show entries"
+            var table = $('#example').DataTable({
+                lengthChange: false,
                 language: {
                     search: "Cari:",
                     info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
@@ -344,23 +295,41 @@
                         previous: "Sebelumnya"
                     }
                 },
-                pageLength: 10 // Jumlah data default per halaman
+                pageLength: 10,
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        text: '<i class="fas fa-file-excel me-1"></i> Excel',
+                        className: 'btn btn-success btn-sm'
+                    },
+                    {
+                        extend: 'pdfHtml5',
+                        text: '<i class="fas fa-file-pdf me-1"></i> PDF',
+                        className: 'btn btn-danger btn-sm'
+                    },
+                    {
+                        extend: 'csvHtml5',
+                        text: '<i class="fas fa-file-csv me-1"></i> CSV',
+                        className: 'btn btn-info btn-sm'
+                    },
+
+                    {
+                        extend: 'print',
+                        text: '<i class="fas fa-print me-1"></i> Print',
+                        className: 'btn btn-primary btn-sm'
+                    }
+                ]
             });
+
+            // Pindahkan tombol export ke kiri tombol Edit
+            table.buttons().container().appendTo('#export-container');
 
             // Fungsi untuk memilih semua checkbox
             $('#select-all').on('click', function () {
                 $('.row-checkbox').prop('checked', this.checked);
             });
 
-            // Button hapus
-            $('#btn-hapus-siswa').on('click', function () {
-                const checked = $('.row-checkbox:checked').length;
-                if (checked === 0) {
-                    alert('Pilih data yang ingin dihapus.');
-                } else {
-                    alert('Menghapus ' + checked + ' data terpilih.');
-                }
-            });
 
             // Button edit
             $('#btn-edit-siswa').on('click', function () {
@@ -370,8 +339,29 @@
                 } else if (checked > 1) {
                     alert('Pilih hanya satu data untuk diedit.');
                 } else {
-                    // Lakukan aksi edit di sini (misal: buka modal edit, dsb)
                     alert('Edit data terpilih.');
+                }
+            });
+
+            // Filter Tanggal, Bulan, Tahun
+            $('#filter-tanggal').on('change', function () {
+                let val = $(this).val();
+                table.column(5).search(val).draw(); // kolom ke-6 (index 5) asumsikan kolom tanggal
+            });
+            $('#filter-bulan').on('change', function () {
+                let bulan = $(this).val();
+                if (bulan) {
+                    table.column(5).search('-' + bulan + '-').draw();
+                } else {
+                    table.column(5).search('').draw();
+                }
+            });
+            $('#filter-tahun').on('change', function () {
+                let tahun = $(this).val();
+                if (tahun) {
+                    table.column(5).search('^' + tahun, true, false).draw();
+                } else {
+                    table.column(5).search('').draw();
                 }
             });
         });
