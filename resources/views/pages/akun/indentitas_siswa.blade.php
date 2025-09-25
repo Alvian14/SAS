@@ -166,62 +166,26 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
+                        @foreach($students as $student)
+                        <tr data-id="{{ $student->id }}">
                             <td>
                                 <input type="checkbox" class="row-checkbox" />
                             </td>
                             <td>
-                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
+                                @if($student->user->profile_picture)
+                                    <img src="{{ asset('storage/student/' . $student->user->profile_picture) }}" alt="Foto" width="36" height="36" class="rounded-circle">
+                                @else
+                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($student->name) }}" alt="Foto" width="36" height="36" class="rounded-circle">
+                                @endif
                             </td>
-                            <td>System Architect</td>
-                            <td>Edinburgh</td>
-                            <td>61</td>
-                            <td>2011-04-25</td>
-                            <td>$320,800</td>
-                            <td>alkjdflkasldfj</td>
+                            <td>{{ $student->name }}</td>
+                            <td>{{ $student->user->email }}</td>
+                            <td>{{ $student->nisn }}</td>
+                            <td data-class-id="{{ $student->class->id ?? '' }}">{{ $student->class->name ?? '-' }}</td>
+                            <td>{{ $student->entry_year }}</td>
+                            <td>starbaks</td>
                         </tr>
-                        <tr>
-                            <td>
-                                <input type="checkbox" class="row-checkbox" />
-                            </td>
-                            <td>
-                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
-                            </td>
-                            <td>Accountant</td>
-                            <td>Tokyo</td>
-                            <td>63</td>
-                            <td>2011-07-25</td>
-                            <td>$170,750</td>
-                            <td>alksjdflajsldfj</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <input type="checkbox" class="row-checkbox" />
-                            </td>
-                            <td>
-                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
-                            </td>
-                            <td>Junior Technical Author</td>
-                            <td>San Francisco</td>
-                            <td>66</td>
-                            <td>2009-01-12</td>
-                            <td>$86,000</td>
-                            <td>aslkjdflajfl</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <input type="checkbox" class="row-checkbox" />
-                            </td>
-                            <td>
-                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
-                            </td>
-                            <td>Junior Technical Author</td>
-                            <td>San Francisco</td>
-                            <td>66</td>
-                            <td>2009-01-12</td>
-                            <td>$86,000</td>
-                            <td>akljdflajlfdj</td>
-                        </tr>
+                        @endforeach
                     </tbody>
                 </table>
             </div>
@@ -239,7 +203,8 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="formTambahSiswa" method="POST" action="" enctype="multipart/form-data">
+            <form id="formTambahSiswa" method="POST" action="{{ route('register.student.post') }}" enctype="multipart/form-data">
+                @csrf
                 <div class="modal-body p-4 bg-light">
                     <!-- Baris 1: Nama Lengkap dan Email -->
                     <div class="row mb-3">
@@ -263,7 +228,7 @@
                             <label class="form-label fw-semibold text-dark">
                                 Password
                             </label>
-                            <input type="password" name="password" class="form-control border-2" placeholder="Masukkan password" required>
+                            <input type="text" name="password" class="form-control border-2" value="starbaks" readonly>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold text-dark">
@@ -281,22 +246,16 @@
                             </label>
                             <select name="id_class" class="form-select border-2" required>
                                 <option value="">-- Pilih Kelas --</option>
-                                <option value="1">TKR 1</option>
-                                <option value="2">TKR 2</option>
-                                <option value="3">TBSM 1</option>
-                                <option value="4">TBSM 2</option>
-                                <option value="5">TKJ 1</option>
-                                <option value="6">TKJ 2</option>
-                                <option value="7">TAV 1</option>
-                                <option value="8">TAV 2</option>
-                                <option value="9">PS 1</option>
+                                @foreach($classes as $kelas)
+                                    <option value="{{ $kelas->id }}">{{ $kelas->name }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold text-dark">
                                 Tahun Masuk
                             </label>
-                            <input type="number" name="entry_year" class="form-control border-2" placeholder="2024" min="2020" max="2030" required>
+                            <input type="number" name="entry_year" class="form-control border-2" placeholder="2024" min="2015" max="2030" required>
                         </div>
                     </div>
 
@@ -320,6 +279,93 @@
                     </button>
                     <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
                         <i class="fas fa-save me-2"></i>Simpan Data
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit Siswa -->
+<div class="modal fade" id="modalEditSiswa" tabindex="-1" aria-labelledby="modalEditSiswaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content shadow-lg border-0 rounded-4">
+            <div class="modal-header bg-warning border-0 rounded-top-4">
+                <h5 class="modal-title fw-bold text-dark" id="modalEditSiswaLabel">
+                    Edit Data Siswa
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEditSiswa" method="POST" enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
+                <div class="modal-body p-4 bg-light">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark">
+                                Nama Lengkap
+                            </label>
+                            <input type="text" name="name" id="edit-name" class="form-control border-2" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark">
+                                Email
+                            </label>
+                            <input type="email" name="email" id="edit-email" class="form-control border-2" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark">
+                                Password
+                            </label>
+                            <input type="text" name="password" id="edit-password" class="form-control border-2" value="starbaks" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark">
+                                NISN
+                            </label>
+                            <input type="number" name="nisn" id="edit-nisn" class="form-control border-2" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark">
+                                Kelas
+                            </label>
+                            <select name="id_class" id="edit-id_class" class="form-select border-2" required>
+                                <option value="">-- Pilih Kelas --</option>
+                                @foreach($classes as $kelas)
+                                    <option value="{{ $kelas->id }}">{{ $kelas->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark">
+                                Tahun Masuk
+                            </label>
+                            <input type="number" name="entry_year" id="edit-entry_year" class="form-control border-2" min="2015" max="2030" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold text-dark">
+                                Foto Profil
+                                <small class="text-muted">(opsional)</small>
+                            </label>
+                            <input type="file" name="profile_picture" class="form-control border-2" accept="image/*">
+                            <div class="form-text text-muted">
+                                Format: JPG, PNG, GIF. Maksimal 2MB.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-white border-0 p-4 gap-2">
+                    <button type="button" class="btn btn-danger px-4 fw-semibold shadow-sm" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Batal
+                    </button>
+                    <button type="submit" class="btn btn-warning px-4 fw-semibold shadow-sm text-white">
+                        <i class="fas fa-save me-2"></i>Update Data
                     </button>
                 </div>
             </form>
@@ -352,29 +398,127 @@
                 $('.row-checkbox').prop('checked', this.checked);
             });
 
-            // Button hapus
+            // Button hapus dengan SweetAlert dan form submit (mirip logout di index)
             $('#btn-hapus-siswa').on('click', function () {
-                const checked = $('.row-checkbox:checked').length;
-                if (checked === 0) {
-                    alert('Pilih data yang ingin dihapus.');
-                } else {
-                    alert('Menghapus ' + checked + ' data terpilih.');
+                let checked = [];
+                $('#example tbody input.row-checkbox:checked').each(function () {
+                    checked.push($(this).closest('tr').data('id'));
+                });
+
+                if (checked.length === 0) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'bottom-end',
+                        icon: 'warning',
+                        title: 'Pilih data yang ingin dihapus.',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                    return;
                 }
+
+                Swal.fire({
+                    title: 'Yakin ingin menghapus ' + checked.length + ' siswa?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, hapus!',
+                    cancelButtonText: 'Batal',
+                    confirmButtonColor: '#dc3545',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        checked.forEach(function(id) {
+                            // Buat form dinamis seperti logout di index
+                            let form = document.createElement('form');
+                            form.action = '{{ route("akun.indentitas_siswa.destroy", ":id") }}'.replace(':id', id);
+                            form.method = 'POST';
+                            form.style.display = 'none';
+
+                            let csrf = document.createElement('input');
+                            csrf.type = 'hidden';
+                            csrf.name = '_token';
+                            csrf.value = '{{ csrf_token() }}';
+                            form.appendChild(csrf);
+
+                            let method = document.createElement('input');
+                            method.type = 'hidden';
+                            method.name = '_method';
+                            method.value = 'DELETE';
+                            form.appendChild(method);
+
+                            document.body.appendChild(form);
+                            form.submit();
+                        });
+                    }
+                });
             });
 
             // Button edit
             $('#btn-edit-siswa').on('click', function () {
-                const checked = $('.row-checkbox:checked').length;
-                if (checked === 0) {
+                const checked = $('.row-checkbox:checked');
+                if (checked.length === 0) {
                     alert('Pilih data yang ingin diedit.');
-                } else if (checked > 1) {
+                } else if (checked.length > 1) {
                     alert('Pilih hanya satu data untuk diedit.');
                 } else {
-                    // Lakukan aksi edit di sini (misal: buka modal edit, dsb)
-                    alert('Edit data terpilih.');
+                    // Ambil data dari baris yang dicentang
+                    const tr = checked.closest('tr');
+                    const id = tr.data('id');
+                    const name = tr.find('td').eq(2).text().trim();
+                    const email = tr.find('td').eq(3).text().trim();
+                    const nisn = tr.find('td').eq(4).text().trim();
+                    const kelasId = tr.find('td').eq(5).data('class-id') || '';
+                    const entryYear = tr.find('td').eq(6).text().trim();
+
+                    // Isi form modal edit
+                    $('#edit-name').val(name);
+                    $('#edit-email').val(email);
+                    $('#edit-nisn').val(nisn);
+                    $('#edit-id_class').val(kelasId); // otomatis select kelas sesuai data
+                    $('#edit-entry_year').val(entryYear);
+
+                    // Set action form
+                    $('#formEditSiswa').attr('action', '{{ url("/pages/akun/indentitas_siswa") }}/' + id);
+
+                    // Tampilkan modal
+                    $('#modalEditSiswa').modal('show');
                 }
             });
         });
     </script>
-@endsection
 
+    @if(session('success'))
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                toast: true,
+                position: 'bottom-end',
+                icon: 'success',
+                title: '{{ session('success') }}',
+                showConfirmButton: false,
+                timer: 2500,
+                timerProgressBar: true
+            });
+        });
+    </script>
+    @endif
+
+    @if(session('error'))
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                toast: true,
+                position: 'bottom-end',
+                icon: 'error',
+                title: '{{ session('error') }}',
+                showConfirmButton: false,
+                timer: 2500,
+                timerProgressBar: true
+            });
+        });
+    </script>
+    @endif
+
+@endsection
