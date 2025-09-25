@@ -10,7 +10,7 @@ class ClassController extends Controller
     public function index()
     {
         $classes = Classes::all();
-        return view('pages.kelas.kelas', compact('classes'));
+        return view('pages.kelas.kelas_absensi', compact('classes'));
     }
 
     // Proses tambah kelas

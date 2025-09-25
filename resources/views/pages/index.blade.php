@@ -86,7 +86,7 @@
           </li>
           <span class="divider"><hr /></span>
           <li class="nav-item">
-                <a href="{{ route('kelas.kelas') }}">
+                <a href="{{ route('kelas.absensi') }}">
                     <span class="icon">
                         <!-- Ikon kelas / papan tulis -->
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -199,7 +199,7 @@
             </div>
             <div class="col-lg-7 col-md-7 col-6">
               <div class="header-right">
-                <span id="clock" class="me-3 fw-bold" style="margin-top: 11px;">
+                <span id="clock" class="me-3 fw-bold d-none d-md-inline" style="margin-top: 11px;">
                   {{ isset($serverTime) ? $serverTime : '' }}
                 </span>
                 <div class="profile-box ml-15 dropdown">
