@@ -16,7 +16,6 @@ return new class extends Migration
             $table->enum('status', ['tepat waktu', 'terlambat']);
             $table->string('picture');
             $table->timestamps();
-
             // Relationship
             $table->foreignId('id_student')->constrained('students')->onDelete('cascade');
             $table->foreignId('id_class')->constrained('clases')->onDelete('cascade');

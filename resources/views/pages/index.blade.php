@@ -199,7 +199,7 @@
             </div>
             <div class="col-lg-7 col-md-7 col-6">
               <div class="header-right">
-                <span id="clock" class="me-3 fw-bold" style="margin-top: 11px;">
+                <span id="clock" class="me-3 fw-bold d-none d-md-inline" style="margin-top: 11px;">
                   {{ isset($serverTime) ? $serverTime : '' }}
                 </span>
                 <div class="profile-box ml-15 dropdown">
