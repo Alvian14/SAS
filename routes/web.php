@@ -36,9 +36,9 @@ Route::get('/pages/akun/indentitas_guru', function () {
 
 
 ######################## KELAS #########################
-Route::get('/pages/kelas/kelas', [ClassController::class, 'index'])
+Route::get('/pages/kelas/kelas_absensi', [ClassController::class, 'index'])
     ->middleware('auth')
-    ->name('kelas.kelas');
+    ->name('kelas.absensi');
 
 // Route untuk tambah kelas
 Route::post('/pages/kelas/kelas', [ClassController::class, 'store'])
@@ -51,11 +51,11 @@ Route::delete('/pages/kelas/kelas/{id}', [ClassController::class, 'destroy'])
     ->name('kelas.destroy');
 
 // Route untuk absensi kelas
-// Route::get('/pages/kelas/kelas_absensi/{id}', function ($id) {
-//     return view('pages.kelas.kelas_absensi', compact('id'));
-// })->middleware('auth')->name('kelas.absensi');
+// Route::get('/pages/kelas/absensi_face_recognition/{id}', function ($id) {
+//     return view('pages.kelas.absensi_face_recognition', compact('id'));
+// })->middleware('auth')->name('kelas.absensi_face_recognition');
 
-Route::get('/pages/kelas/kelas_absensi', function () {
-    return view('pages.kelas.kelas_absensi');
-})->middleware('auth')->name('kelas.absensi');
+Route::get('/pages/kelas/absensi_face_recognition', function () {
+    return view('pages.kelas.absensi_face_recognition');
+})->middleware('auth')->name('kelas.absensi_face_recognition');
 ######################## KELAS #########################

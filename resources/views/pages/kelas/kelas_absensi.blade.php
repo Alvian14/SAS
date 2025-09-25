@@ -1,115 +1,229 @@
 @extends('pages.index')
 @section('admin_content')
 
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/dataTables.bootstrap5.min.css">
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <style>
-        .table-custom-header {
-            background-color: #365CF5 !important; /* Biru tua */
-            color: white !important;
+        .container {
+            padding: 2rem 0;
         }
-        .table-custom-footer {
-            background-color: #DCE4F7 !important; /* Biru muda lembut */
+
+        .grade-title {
+            color: rgb(87, 87, 87);
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            text-shadow: none;
         }
-        .table {
-            border: none !important; /* Hilangkan border tabel */
-            font-size: 14px; /* Kurangi ukuran teks tabel */
+
+        .class-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            color: #334155;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            height: 280px;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 20px rgba(54, 92, 245, 0.08);
         }
-        .table th, .table td {
-            border: none !important; /* Hilangkan border untuk sel */
+
+        .class-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(54, 92, 245, 0.15);
+            border-color: #365CF5;
         }
-        .dataTables_paginate .paginate_button {
-            background-color: transparent !important;
-            border: none !important;
-            color: #365CF5 !important;
-        }
-        .dataTables_paginate .paginate_button:hover {
-            background-color: white !important;
-            color: #365CF5 !important; /* Pastikan teks tetap biru */
-            border-radius: 4px !important;
-        }
-        .dataTables_paginate .paginate_button.current {
-            background-color: #365CF5 !important;
-            color: white !important;
-            border-radius: 4px !important;
-        }
-        .btn-tambah-siswa {
-            font-weight: bold;
-            background-color: #365CF5;
+
+        .class-card.tkj {
+            background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
             color: white;
-            padding: 8px 16px;
+        }
+
+        .class-card.tav {
+            background: linear-gradient(135deg, #059669 0%, #34d399 100%);
+            color: white;
+        }
+
+        .class-card.multimedia {
+            background: linear-gradient(135deg, #dc2626 0%, #f87171 100%);
+            color: white;
+        }
+
+        .class-card.akuntansi {
+            background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+            color: white;
+        }
+
+        .class-card.grade-10 {
+            background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+            color: white;
+        }
+        .class-card.grade-11 {
+            background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+            color: white;
+        }
+        .class-card.grade-12 {
+            background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%);
+            color: white;
+        }
+
+        .class-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .class-card::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -30%;
+            width: 60%;
+            height: 60%;
+            background: rgba(255,255,255,0.03);
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .card-content {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .class-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.2);
         }
-        .btn-tambah-siswa:hover {
-            color: white;
-            background-color: #365CF5;
-        }
-        .btn-hapus-siswa {
-            font-weight: bold;
-            background-color: transparent;
-            color: #dc3545;
-            border: 2px solid #dc3545;
-            padding: 8px 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
-        .btn-hapus-siswa:hover {
-            background-color: #dc3545;
+
+        .class-icon i {
+            font-size: 2rem;
             color: white;
         }
-        .btn-edit-siswa {
-            font-weight: bold;
-            background-color: transparent;
-            color: #ffc107;
-            border: 2px solid #ffc107;
-            padding: 8px 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
+
+        .class-number {
+            font-size: 3rem;
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+            text-shadow: none;
         }
-        .btn-edit-siswa:hover {
-            background-color: #ffc107;
-            color: #212529;
+
+        .class-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            opacity: 0.95;
         }
-         @media (min-width: 768px) {
-            .btn-tambah-siswa,
-            .btn-edit-siswa,
-            .btn-hapus-siswa {
-                font-size: 14px !important;
-                padding: 7px 14px !important;
-                width: auto !important;
-                min-width: 100px;
-            }
-            .card-header .d-flex.gap-2.flex-column.flex-md-row.w-100.w-md-auto {
-                width: auto !important;
-            }
+
+        .major-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            background: rgba(255,255,255,0.15);
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            display: inline-block;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
         }
-        @media (max-width: 767.98px) {
-            .btn-tambah-siswa,
-            .btn-edit-siswa,
-            .btn-hapus-siswa {
-                font-size: 15px !important;
-                padding: 10px 18px !important;
-                width: 100% !important;
-            }
+
+        .status-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255,255,255,0.9);
+            color: #365CF5;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 3;
+        }
+
+        .status-badge.active {
+            background: rgba(255,255,255,0.95);
+            color: #365CF5;
+        }
+
+        .decorative-elements {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .circle-1 {
+            position: absolute;
+            top: 10%;
+            right: 10%;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+        }
+
+        .circle-2 {
+            position: absolute;
+            bottom: 20%;
+            left: 10%;
+            width: 15px;
+            height: 15px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+        }
+
+        .square {
+            position: absolute;
+            top: 60%;
+            right: 15%;
+            width: 12px;
+            height: 12px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 3px;
+            transform: rotate(45deg);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .section-divider {
+            margin: 3rem 0;
         }
 </style>
-
 <div class="container-fluid">
     <!-- ========== title-wrapper start ========== -->
     <div class="title-wrapper pt-30">
         <div class="row align-items-start">
             <div class="col-md-6">
                 <div class="title">
-                    <h2 style="font-weight: 500;">Identitas Siswa</h2> <!-- Kurangi ketebalan judul -->
+                    <h2 style="font-weight: 500;">Kelas</h2> <!-- Kurangi ketebalan judul -->
                 </div>
             </div>
             <div class="col-md-6">
@@ -120,7 +234,7 @@
                                 <a href="{{ route('dashboard.index') }}">Dashboard</a>
                             </li>
                             <li class="breadcrumb-item active" aria-current="page">
-                                Identitas Siswa
+                                Kelas
                             </li>
                         </ol>
                     </nav>
@@ -130,251 +244,211 @@
     </div>
     <!-- ========== title-wrapper end ========== -->
 
-    <!-- Card Wrapper -->
-    <div class="card shadow-sm">
-        <div class="card-header bg-gradient-primary text-white d-flex flex-column flex-md-row justify-content-between align-items-md-center align-items-start">
-            <h5 class="mb-2 mb-md-0">Daftar Identitas Siswa</h5>
-            <div class="d-flex w-100 w-md-auto justify-content-md-end mt-2 mt-md-0">
-                <div class="d-flex gap-2 flex-column flex-md-row w-100 w-md-auto">
-                    <button class="btn btn-light btn-sm btn-tambah-siswa w-100 w-md-auto d-block d-md-inline-block" style="font-size:14px;padding:7px 14px;" data-bs-toggle="modal" data-bs-target="#modalTambahSiswa">
-                        <i class="fas fa-plus"></i> Tambah Siswa
-                    </button>
-                    <button class="btn btn-edit-siswa btn-sm w-100 w-md-auto d-block d-md-inline-block" style="font-size:14px;padding:7px 14px;" id="btn-edit-siswa" type="button">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                    <button class="btn btn-hapus-siswa btn-sm w-100 w-md-auto d-block d-md-inline-block" style="font-size:14px;padding:7px 14px;" id="btn-hapus-siswa" type="button">
-                        <i class="fas fa-trash"></i> Hapus
-                    </button>
+    <!-- Button Tambah Kelas -->
+    <div class="mb-3 text-end">
+        <button class="btn btn-primary btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#modalTambahKelas">
+            <i class="fas fa-plus text-white me-2"></i>
+            Tambah Kelas
+        </button>
+    </div>
+    <hr class="my-4"> <!-- Garis horizontal pembatas kelas 10, 11, 12 -->
+
+    <!-- Modal Tambah Kelas -->
+    <div class="modal fade" id="modalTambahKelas" tabindex="-1" aria-labelledby="modalTambahKelasLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content shadow-lg border-0 rounded-4">
+                <div class="modal-header bg-primary text-white border-0 rounded-top-4">
+                    <h5 class="modal-title fw-bold text-whi" id="modalTambahKelasLabel">
+                        <i class="fas fa-plus me-2"></i>Tambah Kelas
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table id="example" class="table table-hover align-middle">
-                    <thead class="table-custom-header">
-                        <tr>
-                            <th>
-                                <input type="checkbox" id="select-all" />
-                            </th>
-                            <th>Foto</th>
-                            <th>Nama</th>
-                            <th>Email</th>
-                            <th>NISN</th>
-                            <th>Kelas</th>
-                            <th>Tahun Masuk</th>
-                            <th>Password</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>
-                                <input type="checkbox" class="row-checkbox" />
-                            </td>
-                            <td>
-                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
-                            </td>
-                            <td>System Architect</td>
-                            <td>Edinburgh</td>
-                            <td>61</td>
-                            <td>2011-04-25</td>
-                            <td>$320,800</td>
-                            <td>alkjdflkasldfj</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <input type="checkbox" class="row-checkbox" />
-                            </td>
-                            <td>
-                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
-                            </td>
-                            <td>Accountant</td>
-                            <td>Tokyo</td>
-                            <td>63</td>
-                            <td>2011-07-25</td>
-                            <td>$170,750</td>
-                            <td>alksjdflajsldfj</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <input type="checkbox" class="row-checkbox" />
-                            </td>
-                            <td>
-                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
-                            </td>
-                            <td>Junior Technical Author</td>
-                            <td>San Francisco</td>
-                            <td>66</td>
-                            <td>2009-01-12</td>
-                            <td>$86,000</td>
-                            <td>aslkjdflajfl</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <input type="checkbox" class="row-checkbox" />
-                            </td>
-                            <td>
-                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
-                            </td>
-                            <td>Junior Technical Author</td>
-                            <td>San Francisco</td>
-                            <td>66</td>
-                            <td>2009-01-12</td>
-                            <td>$86,000</td>
-                            <td>akljdflajlfdj</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <form method="POST" action="{{ route('kelas.store') }}">
+                    @csrf
+                    <div class="modal-body bg-light">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nama Kelas</label>
+                            <input type="text" name="name" class="form-control" placeholder="Contoh: 10 TKJ 1" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Jurusan</label>
+                            <input type="text" name="major" class="form-control" placeholder="Contoh: Teknik Komputer dan Jaringan" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tingkat</label>
+                            <input type="number" name="grade" class="form-control" placeholder="Contoh: 10" min="10" max="12" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Kode Kelas</label>
+                            <input type="text" name="code" class="form-control" placeholder="Contoh: TKJ" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-white border-0 p-3">
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>Batal
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Simpan
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
-    <!-- End Card Wrapper -->
 
-<!-- Modal Tambah Siswa -->
-<div class="modal fade" id="modalTambahSiswa" tabindex="-1" aria-labelledby="modalTambahSiswaLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content shadow-lg border-0 rounded-4">
-            <div class="modal-header bg-primary border-0 rounded-top-4">
-                <h5 class="modal-title fw-bold text-white" id="modalTambahSiswaLabel" style="color: white;">
-                    Tambah Data Siswa
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+    @php
+        $kelas10 = $classes->where('grade', 10);
+        $kelas11 = $classes->where('grade', 11);
+        $kelas12 = $classes->where('grade', 12);
+    @endphp
+
+    <div class="container">
+        <!-- Kelas 10 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="grade-title">
+                    <i class="fas fa-graduation-cap me-3"></i>
+                    KELAS 10
+                </h2>
             </div>
-            <form id="formTambahSiswa" method="POST" action="" enctype="multipart/form-data">
-                <div class="modal-body p-4 bg-light">
-                    <!-- Baris 1: Nama Lengkap dan Email -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark">
-                                Nama Lengkap
-                            </label>
-                            <input type="text" name="name" class="form-control border-2" placeholder="Masukkan nama lengkap" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark">
-                                Email
-                            </label>
-                            <input type="email" name="email" class="form-control border-2" placeholder="contoh@email.com" required>
-                        </div>
+            @foreach($kelas10 as $kelas)
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="class-card grade-10 floating position-relative">
+                    <a href="{{ route('kelas.absensi_face_recognition') }}" class="stretched-link" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></a>
+                    <div class="dropdown position-absolute" style="top: 1rem; right: 1rem; z-index: 10;">
+                        <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:transparent;border:none;padding:0;">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <form method="POST" action="{{ route('kelas.destroy', $kelas->id) }}" onsubmit="return confirm('Yakin ingin menghapus kelas ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="fas fa-trash me-2"></i>Hapus Kelas
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
                     </div>
-
-                    <!-- Baris 2: Password dan NISN -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark">
-                                Password
-                            </label>
-                            <input type="password" name="password" class="form-control border-2" placeholder="Masukkan password" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark">
-                                NISN
-                            </label>
-                            <input type="number" name="nisn" class="form-control border-2" placeholder="Nomor Induk Siswa" required>
-                        </div>
+                    <div class="decorative-elements">
+                        <div class="circle-1"></div>
+                        <div class="circle-2"></div>
+                        <div class="square"></div>
                     </div>
-
-                    <!-- Baris 3: Kelas dan Tahun Masuk -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark">
-                                Kelas
-                            </label>
-                            <select name="id_class" class="form-select border-2" required>
-                                <option value="">-- Pilih Kelas --</option>
-                                <option value="1">TKR 1</option>
-                                <option value="2">TKR 2</option>
-                                <option value="3">TBSM 1</option>
-                                <option value="4">TBSM 2</option>
-                                <option value="5">TKJ 1</option>
-                                <option value="6">TKJ 2</option>
-                                <option value="7">TAV 1</option>
-                                <option value="8">TAV 2</option>
-                                <option value="9">PS 1</option>
-                            </select>
+                    <div class="card-content">
+                        <div>
+                            <div class="class-number">{{ $kelas->name }}</div> <!-- Ganti dari $kelas->grade ke $kelas->name -->
+                            <!-- Hapus/komentari baris class-name jika tidak ingin duplikat -->
+                            <!-- <div class="class-name">{{ $kelas->name }}</div> -->
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark">
-                                Tahun Masuk
-                            </label>
-                            <input type="number" name="entry_year" class="form-control border-2" placeholder="2024" min="2020" max="2030" required>
-                        </div>
-                    </div>
-
-                    <!-- Baris 4: Foto Profil (Full Width) -->
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <label class="form-label fw-semibold text-dark">
-                                Foto Profil
-                                <small class="text-muted">(opsional)</small>
-                            </label>
-                            <input type="file" name="profile_picture" class="form-control border-2" accept="image/*">
-                            <div class="form-text text-muted">
-                                Format: JPG, PNG, GIF. Maksimal 2MB.
-                            </div>
-                        </div>
+                        <div class="major-name">{{ $kelas->major }}</div>
                     </div>
                 </div>
-                <div class="modal-footer bg-white border-0 p-4 gap-2">
-                    <button type="button" class="btn btn-danger px-4 fw-semibold shadow-sm" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-2"></i>Batal
-                    </button>
-                    <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
-                        <i class="fas fa-save me-2"></i>Simpan Data
-                    </button>
+            </div>
+            @endforeach
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Kelas 11 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="grade-title">
+                    <i class="fas fa-graduation-cap me-3"></i>
+                    KELAS 11
+                </h2>
+            </div>
+            @foreach($kelas11 as $kelas)
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="class-card grade-11 floating position-relative">
+                    <!-- Overlay link -->
+                    <a href="{{route('kelas.absensi_face_recognition') }}" class="stretched-link" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></a>
+                    <!-- Dropdown titik tiga di kanan atas tanpa background bulat -->
+                    <div class="dropdown position-absolute" style="top: 1rem; right: 1rem; z-index: 10;">
+                        <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:transparent;border:none;padding:0;">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <form method="POST" action="{{ route('kelas.destroy', $kelas->id) }}" onsubmit="return confirm('Yakin ingin menghapus kelas ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="fas fa-trash me-2"></i>Hapus Kelas
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="decorative-elements">
+                        <div class="circle-1"></div>
+                        <div class="circle-2"></div>
+                        <div class="square"></div>
+                    </div>
+                    <div class="card-content">
+                        <div>
+                            <div class="class-number">{{ $kelas->name }}</div> <!-- Ganti dari $kelas->grade ke $kelas->name -->
+                            <!-- Hapus/komentari baris class-name jika tidak ingin duplikat -->
+                            <!-- <div class="class-name">{{ $kelas->name }}</div> -->
+                        </div>
+                        <div class="major-name">{{ $kelas->major }}</div>
+                    </div>
                 </div>
-            </form>
+            </div>
+            @endforeach
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Kelas 12 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="grade-title">
+                    <i class="fas fa-graduation-cap me-3"></i>
+                    KELAS 12
+                </h2>
+            </div>
+            @foreach($kelas12 as $kelas)
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="class-card grade-12 floating position-relative">
+                    <!-- Overlay link -->
+                    <a href="{{ route('kelas.absensi_face_recognition') }}" class="stretched-link" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></a>
+                    <!-- Dropdown titik tiga di kanan atas tanpa background bulat -->
+                    <div class="dropdown position-absolute" style="top: 1rem; right: 1rem; z-index: 10;">
+                        <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:transparent;border:none;padding:0;">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <form method="POST" action="{{ route('kelas.destroy', $kelas->id) }}" onsubmit="return confirm('Yakin ingin menghapus kelas ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="fas fa-trash me-2"></i>Hapus Kelas
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="decorative-elements">
+                        <div class="circle-1"></div>
+                        <div class="circle-2"></div>
+                        <div class="square"></div>
+                    </div>
+                    <div class="card-content">
+                        <div>
+                            <div class="class-number">{{ $kelas->name }}</div>
+                            {{ $kelas->name }}
+                        </div>
+                        <div class="major-name">{{ $kelas->major }}</div>
+                    </div>
+                </div>
+            </div>
+            @endforeach
         </div>
     </div>
 </div>
-
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.5/js/dataTables.bootstrap5.min.js"></script>
-    <script>
-        $(document).ready(function () {
-            $('#example').DataTable({
-                lengthChange: false, // Nonaktifkan "Show entries"
-                language: {
-                    search: "Cari:",
-                    info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-                    paginate: {
-                        first: "Awal",
-                        last: "Akhir",
-                        next: "Berikutnya",
-                        previous: "Sebelumnya"
-                    }
-                },
-                pageLength: 10 // Jumlah data default per halaman
-            });
-
-            // Fungsi untuk memilih semua checkbox
-            $('#select-all').on('click', function () {
-                $('.row-checkbox').prop('checked', this.checked);
-            });
-
-            // Button hapus
-            $('#btn-hapus-siswa').on('click', function () {
-                const checked = $('.row-checkbox:checked').length;
-                if (checked === 0) {
-                    alert('Pilih data yang ingin dihapus.');
-                } else {
-                    alert('Menghapus ' + checked + ' data terpilih.');
-                }
-            });
-
-            // Button edit
-            $('#btn-edit-siswa').on('click', function () {
-                const checked = $('.row-checkbox:checked').length;
-                if (checked === 0) {
-                    alert('Pilih data yang ingin diedit.');
-                } else if (checked > 1) {
-                    alert('Pilih hanya satu data untuk diedit.');
-                } else {
-                    // Lakukan aksi edit di sini (misal: buka modal edit, dsb)
-                    alert('Edit data terpilih.');
-                }
-            });
-        });
-    </script>
 @endsection
+
 
