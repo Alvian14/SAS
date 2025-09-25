@@ -23,7 +23,7 @@ class Student extends Model
         return $this->belongsTo(User::class, 'id_user');
     }
 
-    public function classes()
+    public function class()
     {
         return $this->belongsTo(Classes::class, 'id_class');
     }
