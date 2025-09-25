@@ -373,9 +373,50 @@
     </div>
 </div>
 
+<!-- Modal Edit Kelas Massal -->
+<div class="modal fade" id="modalEditKelasMassal" tabindex="-1" aria-labelledby="modalEditKelasMassalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content shadow-lg border-0 rounded-4">
+            <div class="modal-header bg-warning border-0 rounded-top-4">
+                <h5 class="modal-title fw-bold text-dark" id="modalEditKelasMassalLabel">
+                    Edit Kelas Siswa Terpilih
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEditKelasMassal" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-body p-4 bg-light">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">Kelas Baru</label>
+                        <select name="id_class" id="mass-edit-class" class="form-select border-2" required>
+                            <option value="">-- Pilih Kelas --</option>
+                            @foreach($classes as $kelas)
+                                <option value="{{ $kelas->id }}">{{ $kelas->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="alert alert-info mb-0">
+                        Semua siswa yang dipilih akan dipindahkan ke kelas ini.
+                    </div>
+                </div>
+                <div class="modal-footer bg-white border-0 p-4 gap-2">
+                    <button type="button" class="btn btn-danger px-4 fw-semibold shadow-sm" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Batal
+                    </button>
+                    <button type="submit" class="btn btn-warning px-4 fw-semibold shadow-sm text-white">
+                        <i class="fas fa-save me-2"></i>Update Kelas
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function () {
             $('#example').DataTable({
@@ -458,9 +499,7 @@
                 const checked = $('.row-checkbox:checked');
                 if (checked.length === 0) {
                     alert('Pilih data yang ingin diedit.');
-                } else if (checked.length > 1) {
-                    alert('Pilih hanya satu data untuk diedit.');
-                } else {
+                } else if (checked.length === 1) {
                     // Ambil data dari baris yang dicentang
                     const tr = checked.closest('tr');
                     const id = tr.data('id');
@@ -474,21 +513,59 @@
                     $('#edit-name').val(name);
                     $('#edit-email').val(email);
                     $('#edit-nisn').val(nisn);
-                    $('#edit-id_class').val(kelasId); // otomatis select kelas sesuai data
+                    $('#edit-id_class').val(kelasId);
                     $('#edit-entry_year').val(entryYear);
-
-                    // Set action form
                     $('#formEditSiswa').attr('action', '{{ url("/pages/akun/indentitas_siswa") }}/' + id);
-
-                    // Tampilkan modal
                     $('#modalEditSiswa').modal('show');
+                } else {
+                    // Tampilkan modal edit kelas massal
+                    $('#mass-edit-class').val('');
+                    $('#modalEditKelasMassal').modal('show');
+
+                    // Submit massal
+                    $('#formEditKelasMassal').off('submit').on('submit', function(e) {
+                        e.preventDefault();
+                        const kelasBaru = $('#mass-edit-class').val();
+                        if (!kelasBaru) {
+                            Swal.fire('Pilih kelas terlebih dahulu!', '', 'warning');
+                            return;
+                        }
+                        checked.each(function () {
+                            const id = $(this).closest('tr').data('id');
+                            let form = document.createElement('form');
+                            form.action = '{{ url("/pages/akun/indentitas_siswa") }}/' + id;
+                            form.method = 'POST';
+                            form.style.display = 'none';
+
+                            let csrf = document.createElement('input');
+                            csrf.type = 'hidden';
+                            csrf.name = '_token';
+                            csrf.value = '{{ csrf_token() }}';
+                            form.appendChild(csrf);
+
+                            let method = document.createElement('input');
+                            method.type = 'hidden';
+                            method.name = '_method';
+                            method.value = 'PUT';
+                            form.appendChild(method);
+
+                            let kelas = document.createElement('input');
+                            kelas.type = 'hidden';
+                            kelas.name = 'id_class';
+                            kelas.value = kelasBaru;
+                            form.appendChild(kelas);
+
+                            document.body.appendChild(form);
+                            form.submit();
+                        });
+                        $('#modalEditKelasMassal').modal('hide');
+                    });
                 }
             });
         });
     </script>
 
     @if(session('success'))
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({
@@ -505,7 +582,6 @@
     @endif
 
     @if(session('error'))
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({

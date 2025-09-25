@@ -38,6 +38,10 @@ Route::put('/pages/akun/indentitas_siswa/{id}', [AuthController::class, 'updateS
     ->middleware('auth')
     ->name('akun.indentitas_siswa.update');
 
+Route::put('/pages/akun/indentitas_siswa/{id}/edit-kelas', [AuthController::class, 'updateStudentClass'])
+    ->middleware('auth')
+    ->name('akun.indentitas_siswa.update_kelas');
+
 Route::get('/pages/akun/indentitas_guru', function () {
     return view('pages.akun.indentitas_guru');
 })->middleware('auth')->name('akun.indentitas_guru');
