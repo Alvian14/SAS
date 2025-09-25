@@ -16,7 +16,10 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next, $role): Response
     {
         if ($request->user()->role !== $role) {
-            return response()->json(['error' => 'Unauthorized. Role mismatch'], 403);
+            return response()->json([
+                'success' => false,
+                'message' => 'you cannot continue this request cause role mismatch',
+                'errors' => 'Unauthorized. Role mismatch'], 403);
         }
         return $next($request);
     }
