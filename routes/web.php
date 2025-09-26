@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClassController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AkunController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -15,7 +16,7 @@ Route::get('/', function () {
 
 
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-// Route::post('/register/student', [AuthController::class, 'registerStudent'])->name('register.student.post');
+Route::post('/register/student', [AuthController::class, 'registerStudent'])->name('register.student.post');
 // Route::post('/register/teacher', [AuthController::class, 'registerTeacher'])->name('register.teacher.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
@@ -25,13 +26,28 @@ Route::get('/pages/dashboard/dashboard', [DashboardController::class, 'index'])
     ->name('dashboard.index');
 
 ######################### AKUN #########################
-Route::get('/pages/akun/indentitas_siswa', function () {
-    return view('pages.akun.indentitas_siswa');
-})->middleware('auth')->name('akun.indentitas_siswa');
+Route::get('/pages/akun/indentitas_siswa', [AuthController::class, 'identitasSiswa'])
+    ->middleware('auth')
+    ->name('akun.indentitas_siswa');
+
+Route::delete('/pages/akun/indentitas_siswa/{id}', [AuthController::class, 'destroyStudent'])
+    ->middleware('auth')
+    ->name('akun.indentitas_siswa.destroy');
+
+Route::put('/pages/akun/indentitas_siswa/{id}', [AuthController::class, 'updateStudent'])
+    ->middleware('auth')
+    ->name('akun.indentitas_siswa.update');
+
+Route::put('/pages/akun/indentitas_siswa/{id}/edit-kelas', [AuthController::class, 'updateStudentClass'])
+    ->middleware('auth')
+    ->name('akun.indentitas_siswa.update_kelas');
 
 Route::get('/pages/akun/indentitas_guru', function () {
     return view('pages.akun.indentitas_guru');
 })->middleware('auth')->name('akun.indentitas_guru');
+
+// Route untuk hapus siswa
+
 ######################### AKUN #########################
 
 
