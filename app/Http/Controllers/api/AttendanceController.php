@@ -20,6 +20,8 @@ class AttendanceController extends Controller
                 'id_student' => 'required|integer',
                 'id_class'   => 'required|integer',
                 'qrcode'     => 'required|string',
+                'latitude'   => 'required|numeric',
+                'longitude'  => 'required|numeric',
             ]);
             
             // request data variable
@@ -27,6 +29,28 @@ class AttendanceController extends Controller
             $idClass   = $request->id_class;
             $rawCode   = $request->qrcode;
             
+            // Coordinate Location from device client
+            $lat = $request->latitude;
+            $lon = $request->longitude;
+
+            // Center of School Location
+            $schoolLat = -7.7835212;
+            $schoolLon = 112.0384026;
+
+            // count distance with helper
+            $distance = getDistanceInMeters($lat, $lon, $schoolLat, $schoolLon);
+
+            if ($distance > 200) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Lokasi di luar radius 200 meter (jarak: {$distance} m)",
+                ], 403);
+            }
+
+            // log
+            error_log('distance: ');
+            error_log($distance);
+
             // request time
             // $now = Carbon::now();
             $now = $now = Carbon::parse('2025-09-22 11:06:00'); 
