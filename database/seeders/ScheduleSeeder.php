@@ -28,7 +28,6 @@ class ScheduleSeeder extends Seeder
             ['id' => 5, 'code' => 'KIM', 'name' => 'Kimia', 'start' => 7, 'end' => 8],
         ];
 
-        $baseTime = Carbon::createFromTime(7, 0, 0); // jam mulai
         $periods = config('periods.periods');
 
         foreach ($subjects as $subject) {
