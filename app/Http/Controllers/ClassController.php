@@ -30,7 +30,7 @@ class ClassController extends Controller
             'code'  => $request->code,
         ]);
 
-        return redirect()->route('kelas.kelas')->with('success', 'Kelas berhasil ditambahkan.');
+        return redirect()->route('kelas.absensi')->with('success', 'Kelas berhasil ditambahkan.');
     }
 
     public function destroy($id)
@@ -38,6 +38,6 @@ class ClassController extends Controller
         $kelas = Classes::findOrFail($id);
         $kelas->delete();
 
-        return redirect()->route('kelas.kelas')->with('success', 'Kelas berhasil dihapus.');
+        return redirect()->route('kelas.absensi')->with('success', 'Kelas berhasil dihapus.');
     }
 }
