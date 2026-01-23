@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClassController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AkunController;
+use App\Http\Controllers\PeriodeController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -74,4 +75,9 @@ Route::delete('/pages/kelas/kelas/{id}', [ClassController::class, 'destroy'])
 Route::get('/pages/kelas/absensi_face_recognition', function () {
     return view('pages.kelas.absensi_face_recognition');
 })->middleware('auth')->name('kelas.absensi_face_recognition');
+
 ######################## KELAS #########################
+Route::get('/pages/periode/periode', [PeriodeController::class, 'index'])
+    ->middleware('auth')
+    ->name('periode.index');
+######################## PERIODE #########################
