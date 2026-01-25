@@ -2,6 +2,6 @@
 
 return [
 
-    'qrcode' => [ 'valid', 'invalid', 'alpha', 'permission', 'dispen' ], // migration not updated yet
+    'qrcode' => [ 'valid', 'invalid', 'sick', 'alpha', 'permission', 'dispen' ], // migration not updated yet
 
 ];

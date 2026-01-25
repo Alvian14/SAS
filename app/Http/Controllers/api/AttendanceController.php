@@ -34,14 +34,15 @@ class AttendanceController extends Controller
             $lon = $request->longitude;
 
             // Center of School Location
-            $schoolLat = -7.7835212;
-            $schoolLon = 112.0384026;
+            $schoolLat = -7.7811912;
+            $schoolLon = 112.0315286;
 
             // count distance with helper
             $distance = getDistanceInMeters($lat, $lon, $schoolLat, $schoolLon);
 
-            if ($distance > 200) {
-                return response()->json([
+            if ($distance > 4500) {
+                return response()->json(
+                    [
                     'success' => false,
                     'message' => "Lokasi di luar radius 200 meter (jarak: {$distance} m)",
                 ], 403);
@@ -53,7 +54,7 @@ class AttendanceController extends Controller
 
             // request time
             // $now = Carbon::now();
-            $now = $now = Carbon::parse('2025-09-22 11:06:00'); 
+            $now = Carbon::parse('2026-01-19 07:30:00'); 
             $dayOfWeek = strtolower($now->locale('id')->dayName); // example: "senin"
             
             // schedule search (compare with qrcode) => class of student and schedule search
@@ -131,6 +132,7 @@ class AttendanceController extends Controller
             // Set attribute
             $attendance->id_student = $idStudent;
             $attendance->id_schedule = $schedule->id;
+            $attendance->id_class = $idClass;
             $attendance->status = 'hadir';
             $attendance->period_number = $currentPeriod;
             // Set created_at

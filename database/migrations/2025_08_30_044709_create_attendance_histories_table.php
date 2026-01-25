@@ -20,6 +20,7 @@ return new class extends Migration
             // Relationship
             $table->foreignId('id_student')->constrained('students')->onDelete('cascade');
             $table->foreignId('id_schedule')->constrained('schedules')->onDelete('cascade');
+            $table->foreignId('id_class')->constrained('clases')->onDelete('cascade');
         });
     }
 
