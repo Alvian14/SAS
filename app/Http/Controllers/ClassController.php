@@ -13,6 +13,13 @@ class ClassController extends Controller
         return view('pages.kelas.kelas_absensi', compact('classes'));
     }
 
+
+    public function mapel()
+    {
+        $classes = Classes::all();
+        return view('pages.kelas.kelas_mapel', compact('classes'));
+    }
+
     // Proses tambah kelas
     public function store(Request $request)
     {
@@ -31,6 +38,7 @@ class ClassController extends Controller
         ]);
 
         return redirect()->route('kelas.absensi')->with('success', 'Kelas berhasil ditambahkan.');
+        return redirect()->route('kelas.mapel')->with('success', 'Kelas berhasil ditambahkan.');
     }
 
     public function destroy($id)
@@ -39,5 +47,6 @@ class ClassController extends Controller
         $kelas->delete();
 
         return redirect()->route('kelas.absensi')->with('success', 'Kelas berhasil dihapus.');
+        return redirect()->route('kelas.mapel')->with('success', 'Kelas berhasil dihapus.');
     }
 }

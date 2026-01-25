@@ -49,13 +49,18 @@ Route::get('/pages/akun/indentitas_guru', function () {
 
 // Route untuk hapus siswa
 
-######################### AKUN #########################
+######################### END AKUN #########################
 
 
 ######################## KELAS #########################
 Route::get('/pages/kelas/kelas_absensi', [ClassController::class, 'index'])
     ->middleware('auth')
     ->name('kelas.absensi');
+
+
+Route::get('/pages/kelas/kelas_mapel', [ClassController::class, 'mapel'])
+    ->middleware('auth')
+    ->name('kelas.mapel');
 
 // Route untuk tambah kelas
 Route::post('/pages/kelas/kelas', [ClassController::class, 'store'])
@@ -72,12 +77,27 @@ Route::delete('/pages/kelas/kelas/{id}', [ClassController::class, 'destroy'])
 //     return view('pages.kelas.absensi_face_recognition', compact('id'));
 // })->middleware('auth')->name('kelas.absensi_face_recognition');
 
-Route::get('/pages/kelas/absensi_face_recognition', function () {
-    return view('pages.kelas.absensi_face_recognition');
-})->middleware('auth')->name('kelas.absensi_face_recognition');
 
-######################## KELAS #########################
+
+######################## END KELAS #########################
+
+
+######################## ABSENSI #########################
+
+Route::get('/pages/absensi/absensi_harian', function () {
+    return view('pages.absensi.absensi_harian');
+})->middleware('auth')->name('absensi.absensi_harian');
+
+
+Route::get('/pages/absensi/absensi_mapel', function () {
+    return view('pages.absensi.absensi_mapel');
+})->middleware('auth')->name('absensi.absensi_mapel');
+
+######################## END ABSENSI #########################
+
+
+######################## PERIODE #########################
 Route::get('/pages/periode/periode', [PeriodeController::class, 'index'])
     ->middleware('auth')
     ->name('periode.index');
-######################## PERIODE #########################
+######################## END PERIODE #########################
