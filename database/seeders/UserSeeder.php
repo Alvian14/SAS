@@ -18,5 +18,11 @@ class UserSeeder extends Seeder
             'role' => 'admin',
             'password' => bcrypt('admin123'),
         ]);
+
+        User::create([
+            'email' => 'alvian@guru.com',
+            'role' => 'teacher', // pastikan ini sesuai enum di migration
+            'password' => bcrypt('alvianguru123'),
+        ]);
     }
 }
