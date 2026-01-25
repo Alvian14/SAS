@@ -32,8 +32,8 @@
       <nav class="sidebar-nav">
         <ul>
           <!-- Dashboard -->
-          <li class="nav-item">
-            <a href="{{ route('dashboard.index') }}">
+          <li class="nav-item {{ Route::is('dashboard.index') ? 'active' : '' }}">
+            <a href="{{ route('dashboard.index') }}" class="{{ Route::is('dashboard.index') ? 'active' : '' }}">
               <span class="icon">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M8.74999 18.3333C12.2376 18.3333 15.1364 15.8128 15.7244 12.4941C15.8448 11.8143 15.2737 11.25 14.5833 11.25H9.99999C9.30966 11.25 8.74999 10.6903 8.74999 10V5.41666C8.74999 4.7263 8.18563 4.15512 7.50586 4.27556C4.18711 4.86357 1.66666 7.76243 1.66666 11.25C1.66666 15.162 4.83797 18.3333 8.74999 18.3333Z" />
@@ -45,8 +45,10 @@
           </li>
 
           <!-- Akun -->
-          <li class="nav-item nav-item-has-children">
-            <a href="#0" class="collapsed" data-bs-toggle="collapse" data-bs-target="#ddmenu_2"
+          <li class="nav-item nav-item-has-children
+              {{ Route::is('akun.indentitas_guru') || Route::is('akun.indentitas_siswa') ? 'active' : '' }}">
+            <a href="#0" class="collapsed {{ Route::is('akun.indentitas_guru') || Route::is('akun.indentitas_siswa') ? 'active' : '' }}"
+               data-bs-toggle="collapse" data-bs-target="#ddmenu_2"
                aria-controls="ddmenu_2" aria-expanded="false" aria-label="Toggle navigation">
               <span class="icon">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -57,14 +59,24 @@
               <span class="text">Akun</span>
             </a>
             <ul id="ddmenu_2" class="collapse dropdown-nav">
-              <li><a href="{{ route('akun.indentitas_guru') }}">Identitas Guru</a></li>
-              <li><a href="{{ route('akun.indentitas_siswa') }}">Identitas Siswa</a></li>
+              <li>
+                <a href="{{ route('akun.indentitas_guru') }}"
+                   class="{{ Route::is('akun.indentitas_guru') ? 'active' : '' }}">
+                   Identitas Guru
+                </a>
+              </li>
+              <li>
+                <a href="{{ route('akun.indentitas_siswa') }}"
+                   class="{{ Route::is('akun.indentitas_siswa') ? 'active' : '' }}">
+                   Identitas Siswa
+                </a>
+              </li>
             </ul>
           </li>
 
           <!-- Periode -->
-          <li class="nav-item">
-            <a href="{{ route('periode.index') }}">
+          <li class="nav-item {{ Route::is('periode.index') ? 'active' : '' }}">
+            <a href="{{ route('periode.index') }}" class="{{ Route::is('periode.index') ? 'active' : '' }}">
               <span class="icon">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M8 2V5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -86,8 +98,8 @@
           <span class="divider"><hr /></span>
 
           <!-- Kelas -->
-          <li class="nav-item">
-            <a href="{{ route('kelas.absensi') }}">
+          <li class="nav-item ">
+            <a href="{{ route('kelas.absensi') }}" class="{{ Route::is('kelas.absensi') ? 'active' : '' }}">
               <span class="icon">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M3 4C3 2.89543 3.89543 2 5 2H19C20.1046 2 21 2.89543 21 4V14C21 15.1046 20.1046 16 19 16H5C3.89543 16 3 15.1046 3 14V4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -100,7 +112,7 @@
 
           <!-- Mapel -->
           <li class="nav-item">
-            <a href="mapel.html">
+            <a href="{{ route('kelas.mapel') }}" class="{{ Route::is('kelas.mapel') ? 'active' : '' }}">
               <span class="icon">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M3 4H21V16H3V4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -108,13 +120,14 @@
                   <path d="M12 16V20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </span>
-              <span class="text">Mapel</span>
+              <span class="text">Absensi Mapel</span>
             </a>
           </li>
 
           <!-- Forms -->
           <li class="nav-item nav-item-has-children">
-            <a href="#0" class="collapsed" data-bs-toggle="collapse" data-bs-target="#ddmenu_5"
+            <a href="#0" class="collapsed {{ Route::is('form.elements') ? 'active' : '' }}"
+               data-bs-toggle="collapse" data-bs-target="#ddmenu_5"
                aria-controls="ddmenu_5" aria-expanded="false" aria-label="Toggle navigation">
               <span class="icon">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -124,13 +137,18 @@
               <span class="text">Forms</span>
             </a>
             <ul id="ddmenu_5" class="collapse dropdown-nav">
-              <li><a href="form-elements.html">From Elements</a></li>
+              <li>
+                <a href=""
+                   class="">
+                   From Elements
+                </a>
+              </li>
             </ul>
           </li>
 
           <!-- Tables -->
-          <li class="nav-item">
-            <a href="tables.html">
+          <li class="nav-item ">
+            <a href="" class="">
               <span class="icon">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M1.66666 4.16667C1.66666 3.24619 2.41285 2.5 3.33332 2.5H16.6667C17.5872 2.5 18.3333 3.24619 18.3333 4.16667V9.16667C18.3333 10.0872 17.5872 10.8333 16.6667 10.8333H3.33332C2.41285 10.8333 1.66666 10.0872 1.66666 9.16667V4.16667Z" />
@@ -145,8 +163,8 @@
           <span class="divider"><hr /></span>
 
           <!-- Notifications -->
-          <li class="nav-item">
-            <a href="notification.html">
+          <li class="nav-item ">
+            <a href="" class="">
               <span class="icon">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M10.8333 2.50008C10.8333 2.03984 10.4602 1.66675 9.99999 1.66675C9.53975 1.66675 9.16666 2.03984 9.16666 2.50008C9.16666 2.96032 9.53975 3.33341 9.99999 3.33341C10.4602 3.33341 10.8333 2.96032 10.8333 2.50008Z" />
