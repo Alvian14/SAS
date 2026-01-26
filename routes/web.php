@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClassController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AkunController;
+use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\PeriodeController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -52,6 +53,21 @@ Route::get('/pages/akun/indentitas_guru', function () {
 ######################### END AKUN #########################
 
 
+######################## PERIODE #########################
+Route::get('/pages/periode/periode', [PeriodeController::class, 'index'])
+    ->middleware('auth')
+    ->name('periode.index');
+######################## END PERIODE #########################
+
+
+######################### JADWAL #########################
+Route::get('/pages/jadwal/jadwal', [JadwalController::class, 'index'])
+->middleware('auth')
+->name('jadwal.index'); 
+
+######################### END JADWAL #########################
+
+
 ######################## KELAS #########################
 Route::get('/pages/kelas/kelas_absensi', [ClassController::class, 'index'])
     ->middleware('auth')
@@ -96,8 +112,4 @@ Route::get('/pages/absensi/absensi_mapel', function () {
 ######################## END ABSENSI #########################
 
 
-######################## PERIODE #########################
-Route::get('/pages/periode/periode', [PeriodeController::class, 'index'])
-    ->middleware('auth')
-    ->name('periode.index');
-######################## END PERIODE #########################
+

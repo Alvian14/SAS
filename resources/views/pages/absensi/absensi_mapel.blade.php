@@ -129,7 +129,7 @@
                                 <a href="{{ route('kelas.absensi') }}">kelas</a>
                             </li>
                             <li class="breadcrumb-item active" aria-current="page">
-                                Absensi Harian
+                                Absensi Mapel
                             </li>
                         </ol>
                     </nav>
@@ -142,7 +142,7 @@
     <!-- Card Wrapper -->
     <div class="card shadow-sm">
         <div class="card-header bg-gradient-primary text-white d-flex flex-column flex-md-row justify-content-between align-items-md-center align-items-start">
-            <h5 class="mb-2 mb-md-0">Absensi Harian</h5>
+            <h5 class="mb-2 mb-md-0">Absensi Mapel</h5>
             <div class="d-flex w-100 w-md-auto justify-content-md-end mt-2 mt-md-0">
                 <div class="d-flex gap-2 flex-column flex-md-row w-100 w-md-auto">
                     <!-- Export Button -->
