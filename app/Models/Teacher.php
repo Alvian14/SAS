@@ -14,9 +14,9 @@ class Teacher extends Model
     protected $table = 'teachers';
 
     protected $fillable = [
-        'id_user', 
-        'name', 
-        'nip', 
+        'id_user',
+        'name',
+        'nip',
         'subject',
     ];
 
@@ -25,5 +25,10 @@ class Teacher extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'id_user');
+    }
+
+    public static function findById($id)
+    {
+        return self::with('user')->findOrFail($id);
     }
 }

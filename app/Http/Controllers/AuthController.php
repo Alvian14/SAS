@@ -5,10 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Student;
 use App\Models\Classes;
+use App\Models\Teacher;
+use Faker\Provider\Image as ProviderImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Intervention\Image\Facades\Image;
+use Intervention\Image\Image as InterventionImage;
 
 class AuthController extends Controller
 {
@@ -135,11 +139,17 @@ class AuthController extends Controller
 
             $user->email = $request->email;
             if ($request->hasFile('profile_picture')) {
+                // Hapus foto lama jika ada
+                if ($user->profile_picture) {
+                    $oldPath = public_path('storage/student/' . $user->profile_picture);
+                    if (file_exists($oldPath)) {
+                        @unlink($oldPath);
+                    }
+                }
                 $image = $request->file('profile_picture');
                 $imageName = $image->hashName();
                 $image->move(public_path('storage/student/'), $imageName);
                 $user->profile_picture = $imageName;
-                $student->picture = $imageName;
             }
             $user->save();
 
@@ -186,7 +196,6 @@ class AuthController extends Controller
                 'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             ]);
 
-            // Proses upload gambar jika ada
             $imageName = null;
             if ($request->hasFile('profile_picture')) {
                 $image = $request->file('profile_picture');
@@ -208,11 +217,64 @@ class AuthController extends Controller
                 'subject' => $request->subject,
             ]);
 
-            return redirect()->route('login')->with('success', 'Registrasi guru berhasil. Silakan login.');
+            // Redirect ke identitas guru
+            return redirect()->route('akun.indentitas_guru')->with('success', 'Data guru berhasil ditambahkan.');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Registrasi guru gagal. Silakan coba lagi.')->withInput();
+        }
+    }
+
+    public function identitasGuru()
+    {
+        $teachers = \App\Models\Teacher::with('user')->get();
+        return view('pages.akun.indentitas_guru', compact('teachers'));
+    }
+
+    // Update teacher
+
+
+    public function updateTeacher(Request $request, $id)
+    {
+        try {
+            $teacher = \App\Models\Teacher::findOrFail($id);
+            $user = $teacher->user;
+
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+                'nip' => 'required|string|max:50|unique:teachers,nip,' . $teacher->id,
+                'subject' => 'required|string|max:100',
+                'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            ]);
+
+            $user->email = $request->email;
+            if ($request->hasFile('profile_picture')) {
+                // Hapus foto lama jika ada
+                if ($user->profile_picture) {
+                    $oldPath = public_path('storage/teacher/' . $user->profile_picture);
+                    if (file_exists($oldPath)) {
+                        @unlink($oldPath);
+                    }
+                }
+                $image = $request->file('profile_picture');
+                $imageName = $image->hashName();
+                $image->move(public_path('storage/teacher/'), $imageName);
+                $user->profile_picture = $imageName;
+            }
+            $user->save();
+
+            $teacher->name = $request->name;
+            $teacher->nip = $request->nip;
+            $teacher->subject = $request->subject;
+            $teacher->save();
+
+            return redirect()->route('akun.indentitas_guru')->with('success', 'Data guru berhasil diupdate.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Update guru gagal. Silakan coba lagi.')->withInput();
         }
     }
 }
