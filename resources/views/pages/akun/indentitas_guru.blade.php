@@ -165,54 +165,24 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
+                        @foreach($teachers as $teacher)
+                        <tr data-id="{{ $teacher->id }}">
                             <td>
                                 <input type="checkbox" class="row-checkbox" />
                             </td>
                             <td>
-                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
+                                @if($teacher->user && $teacher->user->profile_picture)
+                                    <img src="{{ asset('storage/teacher/' . $teacher->user->profile_picture) }}" alt="Foto" width="36" height="36" class="rounded-circle">
+                                @else
+                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($teacher->name) }}" alt="Foto" width="36" height="36" class="rounded-circle">
+                                @endif
                             </td>
-                            <td>Tiger Nixon</td>
-                            <td>tiger.nixon@email.com</td>
-                            <td>1234567890</td>
-                            <td>Matematika</td>
+                            <td>{{ $teacher->name }}</td>
+                            <td>{{ $teacher->user->email ?? '-' }}</td>
+                            <td>{{ $teacher->nip }}</td>
+                            <td>{{ $teacher->subject }}</td>
                         </tr>
-                        <tr>
-                            <td>
-                                <input type="checkbox" class="row-checkbox" />
-                            </td>
-                            <td>
-                                <img src="https://ui-avatars.com/api/?name=Garrett+Winters" alt="Foto" width="36" height="36" class="rounded-circle">
-                            </td>
-                            <td>Garrett Winters</td>
-                            <td>garrett.winters@email.com</td>
-                            <td>0987654321</td>
-                            <td>Bahasa Inggris</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <input type="checkbox" class="row-checkbox" />
-                            </td>
-                            <td>
-                                <img src="https://ui-avatars.com/api/?name=Ashton+Cox" alt="Foto" width="36" height="36" class="rounded-circle">
-                            </td>
-                            <td>Ashton Cox</td>
-                            <td>ashton.cox@email.com</td>
-                            <td>1122334455</td>
-                            <td>Fisika</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <input type="checkbox" class="row-checkbox" />
-                            </td>
-                            <td>
-                                <img src="https://ui-avatars.com/api/?name=John+Doe" alt="Foto" width="36" height="36" class="rounded-circle">
-                            </td>
-                            <td>John Doe</td>
-                            <td>john.doe@email.com</td>
-                            <td>5566778899</td>
-                            <td>Kimia</td>
-                        </tr>
+                        @endforeach
                     </tbody>
                 </table>
             </div>
@@ -230,7 +200,8 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="formTambahGuru" method="POST" action="" enctype="multipart/form-data">
+            <form id="formTambahGuru" method="POST" action="{{ route('register.teacher.post') }}" enctype="multipart/form-data">
+                @csrf
                 <div class="modal-body p-4 bg-light">
                     <div class="row mb-3">
                         <div class="col-md-6">
@@ -294,13 +265,82 @@
     </div>
 </div>
 
+<!-- Modal Edit Guru -->
+<div class="modal fade" id="modalEditGuru" tabindex="-1" aria-labelledby="modalEditGuruLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content shadow-lg border-0 rounded-4">
+            <div class="modal-header bg-warning border-0 rounded-top-4">
+                <h5 class="modal-title fw-bold text-dark" id="modalEditGuruLabel">
+                    Edit Data Guru
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEditGuru" method="POST" enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
+                <div class="modal-body p-4 bg-light">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark">
+                                Nama Lengkap
+                            </label>
+                            <input type="text" name="name" id="edit-name" class="form-control border-2" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark">
+                                Email
+                            </label>
+                            <input type="email" name="email" id="edit-email" class="form-control border-2" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark">
+                                NIP
+                            </label>
+                            <input type="text" name="nip" id="edit-nip" class="form-control border-2" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark">
+                                Mata Pelajaran
+                            </label>
+                            <input type="text" name="subject" id="edit-subject" class="form-control border-2" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold text-dark">
+                                Foto Profil
+                                <small class="text-muted">(opsional)</small>
+                            </label>
+                            <input type="file" name="profile_picture" class="form-control border-2" accept="image/*">
+                            <div class="form-text text-muted">
+                                Format: JPG, PNG, GIF. Maksimal 2MB.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-white border-0 p-4 gap-2">
+                    <button type="button" class="btn btn-danger px-4 fw-semibold shadow-sm" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Batal
+                    </button>
+                    <button type="submit" class="btn btn-warning px-4 fw-semibold shadow-sm text-white">
+                        <i class="fas fa-save me-2"></i>Update Data
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function () {
             $('#example').DataTable({
-                lengthChange: false, // Nonaktifkan "Show entries"
+                lengthChange: false,
                 language: {
                     search: "Cari:",
                     info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
@@ -311,37 +351,124 @@
                         previous: "Sebelumnya"
                     }
                 },
-                pageLength: 10 // Jumlah data default per halaman
+                pageLength: 10
             });
 
-            // Fungsi untuk memilih semua checkbox
             $('#select-all').on('click', function () {
                 $('.row-checkbox').prop('checked', this.checked);
             });
 
-            // Button hapus
-            $('#btn-hapus-guru').on('click', function () {
-                const checked = $('.row-checkbox:checked').length;
-                if (checked === 0) {
-                    alert('Pilih data yang ingin dihapus.');
+            // Button edit
+            $('#btn-edit-guru').on('click', function () {
+                const checked = $('.row-checkbox:checked');
+                if (checked.length === 0) {
+                    alert('Pilih data yang ingin diedit.');
+                } else if (checked.length > 1) {
+                    alert('Pilih hanya satu data untuk diedit.');
                 } else {
-                    alert('Menghapus ' + checked + ' data terpilih.');
+                    const tr = checked.closest('tr');
+                    const id = tr.data('id');
+                    const name = tr.find('td').eq(2).text().trim();
+                    const email = tr.find('td').eq(3).text().trim();
+                    const nip = tr.find('td').eq(4).text().trim();
+                    const subject = tr.find('td').eq(5).text().trim();
+
+                    $('#edit-name').val(name);
+                    $('#edit-email').val(email);
+                    $('#edit-nip').val(nip);
+                    $('#edit-subject').val(subject);
+                    $('#formEditGuru').attr('action', '{{ url("/pages/akun/indentitas_guru") }}/' + id);
+                    $('#modalEditGuru').modal('show');
                 }
             });
 
-            // Button edit
-            $('#btn-edit-guru').on('click', function () {
-                const checked = $('.row-checkbox:checked').length;
-                if (checked === 0) {
-                    alert('Pilih data yang ingin diedit.');
-                } else if (checked > 1) {
-                    alert('Pilih hanya satu data untuk diedit.');
-                } else {
-                    // Lakukan aksi edit di sini (misal: buka modal edit, dsb)
-                    alert('Edit data terpilih.');
+            // Button hapus guru
+            $('#btn-hapus-guru').on('click', function () {
+                let checked = [];
+                $('#example tbody input.row-checkbox:checked').each(function () {
+                    checked.push($(this).closest('tr').data('id'));
+                });
+
+                if (checked.length === 0) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'bottom-end',
+                        icon: 'warning',
+                        title: 'Pilih data yang ingin dihapus.',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                    return;
                 }
+
+                Swal.fire({
+                    title: 'Yakin ingin menghapus ' + checked.length + ' guru?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, hapus!',
+                    cancelButtonText: 'Batal',
+                    confirmButtonColor: '#dc3545',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        checked.forEach(function(id) {
+                            let form = document.createElement('form');
+                            form.action = '{{ url("/pages/akun/indentitas_guru") }}/' + id;
+                            form.method = 'POST';
+                            form.style.display = 'none';
+
+                            let csrf = document.createElement('input');
+                            csrf.type = 'hidden';
+                            csrf.name = '_token';
+                            csrf.value = '{{ csrf_token() }}';
+                            form.appendChild(csrf);
+
+                            let method = document.createElement('input');
+                            method.type = 'hidden';
+                            method.name = '_method';
+                            method.value = 'DELETE';
+                            form.appendChild(method);
+
+                            document.body.appendChild(form);
+                            form.submit();
+                        });
+                    }
+                });
             });
         });
     </script>
+
+    @if(session('success'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                toast: true,
+                position: 'bottom-end',
+                icon: 'success',
+                title: '{{ session('success') }}',
+                showConfirmButton: false,
+                timer: 2500,
+                timerProgressBar: true
+            });
+        });
+    </script>
+    @endif
+
+    @if(session('error'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                toast: true,
+                position: 'bottom-end',
+                icon: 'error',
+                title: '{{ session('error') }}',
+                showConfirmButton: false,
+                timer: 2500,
+                timerProgressBar: true
+            });
+        });
+    </script>
+    @endif
+
 @endsection
 

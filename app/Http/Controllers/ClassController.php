@@ -33,7 +33,7 @@ class ClassController extends Controller
         Classes::create([
             'name'  => $request->name,
             'major' => $request->major,
-            'grade' => $request->grade,
+            'grade' => $request->grade, 
             'code'  => $request->code,
         ]);
 

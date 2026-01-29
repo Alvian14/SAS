@@ -19,7 +19,7 @@ Route::get('/', function () {
 
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/register/student', [AuthController::class, 'registerStudent'])->name('register.student.post');
-// Route::post('/register/teacher', [AuthController::class, 'registerTeacher'])->name('register.teacher.post');
+Route::post('/register/teacher', [AuthController::class, 'registerTeacher'])->name('register.teacher.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // middleware auth
@@ -44,9 +44,20 @@ Route::put('/pages/akun/indentitas_siswa/{id}/edit-kelas', [AuthController::clas
     ->middleware('auth')
     ->name('akun.indentitas_siswa.update_kelas');
 
-Route::get('/pages/akun/indentitas_guru', function () {
-    return view('pages.akun.indentitas_guru');
-})->middleware('auth')->name('akun.indentitas_guru');
+Route::get('/pages/akun/indentitas_guru', [AuthController::class, 'identitasGuru'])
+    ->middleware('auth')
+    ->name('akun.indentitas_guru');
+
+Route::post('/register/teacher', [AuthController::class, 'registerTeacher'])
+    ->name('register.teacher.post');
+
+Route::put('/pages/akun/indentitas_guru/{id}', [AuthController::class, 'updateTeacher'])
+    ->middleware('auth')
+    ->name('akun.indentitas_guru.update');
+
+Route::delete('/pages/akun/indentitas_guru/{id}', [AuthController::class, 'destroyTeacher'])
+    ->middleware('auth')
+    ->name('akun.indentitas_guru.destroy');
 
 // Route untuk hapus siswa
 
@@ -63,7 +74,7 @@ Route::get('/pages/periode/periode', [PeriodeController::class, 'index'])
 ######################### JADWAL #########################
 Route::get('/pages/jadwal/jadwal', [JadwalController::class, 'index'])
 ->middleware('auth')
-->name('jadwal.index'); 
+->name('jadwal.index');
 
 ######################### END JADWAL #########################
 
