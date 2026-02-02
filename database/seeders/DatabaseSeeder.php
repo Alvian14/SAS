@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             ClasesSeeder::class,
             TeacherSeeder::class,
             SubjectSeeder::class,
+            AcademicPeriodsSeeder::class,
             ScheduleSeeder::class,
         ]);
 

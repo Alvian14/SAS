@@ -134,6 +134,7 @@ class AttendanceController extends Controller
             $attendance->id_schedule = $schedule->id;
             $attendance->id_class = $idClass;
             $attendance->status = 'hadir';
+            $attendance->coordinate = "$lat, $lon";
             $attendance->period_number = $currentPeriod;
             // Set created_at
             $attendance->created_at = $now;

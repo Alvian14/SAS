@@ -1,7 +1,6 @@
 <?php
 
 return [
-
-    'qrcode' => [ 'valid', 'invalid', 'sick', 'alpha', 'permission', 'dispen' ], // migration not updated yet
-
+    'qrcode' => ['hadir', 'izin', 'sakit', 'alpha', 'dispen', 'invalid'],
+    'face_recognition' => ['tepat_waktu', 'terlambat'],
 ];

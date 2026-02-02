@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('attendance_history_dailys', function (Blueprint $table) {
             $table->id();
-            $table->enum('status', ['tepat waktu', 'terlambat']);
+            $table->enum('status', ['tepat_waktu', 'terlambat']);
             $table->string('picture');
             $table->timestamps();
             // Relationship
