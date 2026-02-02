@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('attendance_histories', function (Blueprint $table) {
             $table->id();
             $table->integer('period_number');
-            $table->enum('status', ['hadir', 'izin', 'sakit', 'alpha']);
+            $table->enum('status', ['hadir', 'izin', 'sakit', 'alpha', 'dispen', 'invalid']);
+            $table->string('coordinate')->nullable();
             $table->timestamps();
 
             // Relationship

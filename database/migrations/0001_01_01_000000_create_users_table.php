@@ -17,7 +17,10 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->enum('role', ['student', 'teacher', 'admin']); // siswa, guru, admin.
             $table->string('password');
+            $table->string('device_token')->nullable(); // for push notification
+            $table->string('device_id')->nullable(); // for device identification
             $table->string('profile_picture')->nullable();
+            $table->boolean('is_banned')->default(false);
             $table->rememberToken();
             $table->timestamps();
 
