@@ -88,7 +88,7 @@ class UserController extends Controller
                     'nisn' => $request->nisn,
                     'id_class' => $request->id_class,
                     'entry_year' => $request->entry_year,
-                    'picture' => $request->picture ?? null,
+                    'pictures' => $request->pictures ?? null,
                 ]);
             }
 
