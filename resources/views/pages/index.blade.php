@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="{{ asset('assets/css/materialdesignicons.min.css') }}" type="text/css">
     <link rel="stylesheet" href="{{ asset('assets/css/fullcalendar.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/main.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   </head>
   <body>
