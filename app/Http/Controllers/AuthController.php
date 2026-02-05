@@ -228,7 +228,7 @@ class AuthController extends Controller
 
     public function identitasGuru()
     {
-        $teachers = \App\Models\Teacher::with('user')->get();
+        $teachers = Teacher::with('user')->get();
         return view('pages.akun.indentitas_guru', compact('teachers'));
     }
 
@@ -238,7 +238,7 @@ class AuthController extends Controller
     public function updateTeacher(Request $request, $id)
     {
         try {
-            $teacher = \App\Models\Teacher::findOrFail($id);
+            $teacher = Teacher::findOrFail($id);
             $user = $teacher->user;
 
             $request->validate([

@@ -68,6 +68,10 @@ Route::delete('/pages/akun/indentitas_guru/{id}', [AuthController::class, 'destr
 Route::get('/pages/periode/periode', [PeriodeController::class, 'index'])
     ->middleware('auth')
     ->name('periode.index');
+
+Route::post('/pages/periode/periode', [PeriodeController::class, 'store'])
+    ->middleware('auth')
+    ->name('periode.store');
 ######################## END PERIODE #########################
 
 

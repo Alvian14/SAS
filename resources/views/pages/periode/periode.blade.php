@@ -33,17 +33,38 @@
     <div class="col-lg-4 mb-4">
       <div class="card-style">
         <h5 class="mb-3">Tambah Periode Baru</h5>
-        <form>
+        @if(session('success'))
+          <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
+        @if($errors->any())
+          <div class="alert alert-danger">
+            <ul class="mb-0">
+              @foreach($errors->all() as $err)
+                <li>{{ $err }}</li>
+              @endforeach
+            </ul>
+          </div>
+        @endif
+        <form action="{{ route('periode.store') }}" method="POST">
+          @csrf
           <div class="mb-3">
             <label for="tahun_ajaran" class="form-label">Tahun Ajaran</label>
-            <input type="text" class="form-control" id="tahun_ajaran" placeholder="2023/2024">
+            <input type="text" class="form-control" id="tahun_ajaran" placeholder="2023/2024" name="tahun_ajaran" value="{{ old('tahun_ajaran') }}">
           </div>
           <div class="mb-3">
             <label for="semester" class="form-label">Semester</label>
-            <select class="form-select" id="semester">
-              <option value="ganjil">Ganjil</option>
-              <option value="genap">Genap</option>
+            <select class="form-select" id="semester" name="semester">
+              <option value="ganjil" {{ old('semester') == 'ganjil' ? 'selected' : '' }}>Ganjil</option>
+              <option value="genap" {{ old('semester') == 'genap' ? 'selected' : '' }}>Genap</option>
             </select>
+          </div>
+          <div class="mb-3">
+            <label for="start_date" class="form-label">Tanggal Mulai</label>
+            <input type="date" class="form-control" id="start_date" name="start_date" value="{{ old('start_date') }}">
+          </div>
+          <div class="mb-3">
+            <label for="end_date" class="form-label">Tanggal Selesai</label>
+            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ old('end_date') }}">
           </div>
           <button type="submit" class="btn btn-primary w-100">Tambah</button>
         </form>
@@ -55,45 +76,56 @@
       <div class="card-style">
         <h5 class="mb-3">Daftar Periode</h5>
         <div class="table-responsive">
-          <table class="table table-bordered align-middle">
-            <thead>
+          <table class="table table-striped table-bordered table-hover align-middle">
+            <thead >
               <tr>
-                <th>#</th>
-                <th>Tahun Ajaran</th>
-                <th>Semester</th>
-                <th>Status</th>
-                <th>Aksi</th>
+                <th class="px-3 py-2">No</th>
+                <th class="px-3 py-2">Semester & Tahun Ajaran</th>
+                <th class="px-3 py-2">Tanggal Mulai</th>
+                <th class="px-3 py-2">Tanggal Selesai</th>
+                <th class="px-3 py-2">Status</th>
+                <th class="px-3 py-2" style="min-width:120px;">Aksi</th>
               </tr>
             </thead>
             <tbody>
-              {{-- Contoh data statis, nanti ganti dengan @foreach --}}
+              @forelse($periods as $i => $p)
               <tr>
-                <td>1</td>
-                <td>2023/2024</td>
-                <td>Ganjil</td>
-                <td>
-                  <span class="badge bg-success">Aktif</span>
+                <td class="px-3 py-2">{{ $i+1 }}</td>
+                <td class="px-3 py-2">{{ $p->name }}</td>
+                <td class="px-3 py-2">{{ \Illuminate\Support\Carbon::parse($p->start_date)->format('Y-m-d') }}</td>
+                <td class="px-3 py-2">{{ \Illuminate\Support\Carbon::parse($p->end_date)->format('Y-m-d') }}</td>
+                <td class="px-3 py-2">
+                  @if($p->is_active)
+                    <span class="badge bg-success">Aktif</span>
+                  @else
+                    <span class="badge bg-secondary">Tidak Aktif</span>
+                  @endif
                 </td>
-                <td>
-                  <button class="btn btn-sm btn-secondary" disabled>Aktifkan</button>
-                  <button class="btn btn-sm btn-warning">Edit</button>
-                  <button class="btn btn-sm btn-danger">Hapus</button>
+                <td class="px-3 py-2" style="min-width:120px;">
+                  <button class="btn btn-sm btn-{{ $p->is_active ? 'secondary' : 'success' }} me-1 mb-1" {{ $p->is_active ? 'disabled' : '' }} title="Aktifkan">
+                    <i class="fas fa-toggle-on"></i>
+                  </button>
+                  <button class="btn btn-sm btn-warning me-1 mb-1" title="Edit"
+                    data-bs-toggle="modal" data-bs-target="#editPeriodeModal"
+                    onclick="setEditPeriode(
+                      '{{ $p->name }}',
+                      '{{ $p->semester ?? '' }}',
+                      '{{ \Illuminate\Support\Carbon::parse($p->start_date)->format('Y-m-d') }}',
+                      '{{ \Illuminate\Support\Carbon::parse($p->end_date)->format('Y-m-d') }}',
+                      {{ $p->is_active ? 'true' : 'false' }}
+                    )">
+                    <i class="fas fa-pencil-alt"></i>
+                  </button>
+                  <button class="btn btn-sm btn-danger mb-1" title="Hapus">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
                 </td>
               </tr>
+              @empty
               <tr>
-                <td>2</td>
-                <td>2023/2024</td>
-                <td>Genap</td>
-                <td>
-                  <span class="badge bg-secondary">Tidak Aktif</span>
-                </td>
-                <td>
-                  <button class="btn btn-sm btn-success">Aktifkan</button>
-                  <button class="btn btn-sm btn-warning">Edit</button>
-                  <button class="btn btn-sm btn-danger">Hapus</button>
-                </td>
+                <td colspan="6" class="text-center">Belum ada data periode.</td>
               </tr>
-              {{-- End contoh data --}}
+              @endforelse
             </tbody>
           </table>
         </div>
@@ -101,6 +133,59 @@
       </div>
     </div>
   </div>
+
+  {{-- Modal Edit Periode --}}
+  <div class="modal fade" id="editPeriodeModal" tabindex="-1" aria-labelledby="editPeriodeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editPeriodeModalLabel">Edit Periode</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="edit_tahun_ajaran" class="form-label">Tahun Ajaran</label>
+            <input type="text" class="form-control" id="edit_tahun_ajaran" name="name">
+          </div>
+          <div class="mb-3">
+            <label for="edit_semester" class="form-label">Semester</label>
+            <select class="form-select" id="edit_semester" name="semester">
+              <option value="ganjil">Ganjil</option>
+              <option value="genap">Genap</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="edit_start_date" class="form-label">Tanggal Mulai</label>
+            <input type="date" class="form-control" id="edit_start_date" name="start_date">
+          </div>
+          <div class="mb-3">
+            <label for="edit_end_date" class="form-label">Tanggal Selesai</label>
+            <input type="date" class="form-control" id="edit_end_date" name="end_date">
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" value="1" id="edit_is_active" name="is_active">
+            <label class="form-check-label" for="edit_is_active">
+              Aktifkan Periode Ini
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+  function setEditPeriode(tahun, semester, start, end, isActive) {
+    document.getElementById('edit_tahun_ajaran').value = tahun;
+    document.getElementById('edit_semester').value = semester.toLowerCase();
+    document.getElementById('edit_start_date').value = start;
+    document.getElementById('edit_end_date').value = end;
+    document.getElementById('edit_is_active').checked = !!isActive;
+  }
+  </script>
 </div>
 @endsection
 
