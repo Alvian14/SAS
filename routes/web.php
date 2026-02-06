@@ -72,6 +72,9 @@ Route::get('/pages/periode/periode', [PeriodeController::class, 'index'])
 Route::post('/pages/periode/periode', [PeriodeController::class, 'store'])
     ->middleware('auth')
     ->name('periode.store');
+
+Route::post('/periode/{id}/activate', [PeriodeController::class, 'activate'])->name('periode.activate');
+Route::put('/periode/{id}', [PeriodeController::class, 'update'])->name('periode.update');
 ######################## END PERIODE #########################
 
 

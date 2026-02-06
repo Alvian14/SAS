@@ -1,5 +1,9 @@
 @extends('pages.index')
 
+@php
+  use Carbon\Carbon;
+@endphp
+
 @section('admin_content')
 <div class="container-fluid">
   <!-- ========== title-wrapper start ========== -->
@@ -92,8 +96,8 @@
               <tr>
                 <td class="px-3 py-2">{{ $i+1 }}</td>
                 <td class="px-3 py-2">{{ $p->name }}</td>
-                <td class="px-3 py-2">{{ \Illuminate\Support\Carbon::parse($p->start_date)->format('Y-m-d') }}</td>
-                <td class="px-3 py-2">{{ \Illuminate\Support\Carbon::parse($p->end_date)->format('Y-m-d') }}</td>
+                <td class="px-3 py-2">{{ Carbon::parse($p->start_date)->format('Y-m-d') }}</td>
+                <td class="px-3 py-2">{{ Carbon::parse($p->end_date)->format('Y-m-d') }}</td>
                 <td class="px-3 py-2">
                   @if($p->is_active)
                     <span class="badge bg-success">Aktif</span>
@@ -102,16 +106,20 @@
                   @endif
                 </td>
                 <td class="px-3 py-2" style="min-width:120px;">
-                  <button class="btn btn-sm btn-{{ $p->is_active ? 'secondary' : 'success' }} me-1 mb-1" {{ $p->is_active ? 'disabled' : '' }} title="Aktifkan">
-                    <i class="fas fa-toggle-on"></i>
-                  </button>
+                  <form action="{{ route('periode.activate', $p->id) }}" method="POST" style="display:inline;">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-{{ $p->is_active ? 'secondary' : 'success' }} me-1 mb-1" {{ $p->is_active ? 'disabled' : '' }} title="Aktifkan">
+                      <i class="fas fa-toggle-on"></i>
+                    </button>
+                  </form>
                   <button class="btn btn-sm btn-warning me-1 mb-1" title="Edit"
                     data-bs-toggle="modal" data-bs-target="#editPeriodeModal"
                     onclick="setEditPeriode(
-                      '{{ $p->name }}',
-                      '{{ $p->semester ?? '' }}',
-                      '{{ \Illuminate\Support\Carbon::parse($p->start_date)->format('Y-m-d') }}',
-                      '{{ \Illuminate\Support\Carbon::parse($p->end_date)->format('Y-m-d') }}',
+                      '{{ $p->id }}',
+                      '{{ explode(' ', $p->name, 2)[1] ?? '' }}',
+                      '{{ strtolower(explode(' ', $p->name, 2)[0] ?? '') }}',
+                      '{{ Carbon::parse($p->start_date)->format('Y-m-d') }}',
+                      '{{ Carbon::parse($p->end_date)->format('Y-m-d') }}',
                       {{ $p->is_active ? 'true' : 'false' }}
                     )">
                     <i class="fas fa-pencil-alt"></i>
@@ -137,7 +145,10 @@
   {{-- Modal Edit Periode --}}
   <div class="modal fade" id="editPeriodeModal" tabindex="-1" aria-labelledby="editPeriodeModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-      <form class="modal-content">
+      <form class="modal-content" id="editPeriodeForm" method="POST">
+        @csrf
+        @method('PUT')
+        <input type="hidden" id="edit_id" name="id">
         <div class="modal-header">
           <h5 class="modal-title" id="editPeriodeModalLabel">Edit Periode</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -145,7 +156,7 @@
         <div class="modal-body">
           <div class="mb-3">
             <label for="edit_tahun_ajaran" class="form-label">Tahun Ajaran</label>
-            <input type="text" class="form-control" id="edit_tahun_ajaran" name="name">
+            <input type="text" class="form-control" id="edit_tahun_ajaran" name="tahun_ajaran">
           </div>
           <div class="mb-3">
             <label for="edit_semester" class="form-label">Semester</label>
@@ -178,12 +189,18 @@
   </div>
 
   <script>
-  function setEditPeriode(tahun, semester, start, end, isActive) {
-    document.getElementById('edit_tahun_ajaran').value = tahun;
+  // id, tahun_ajaran, semester, start, end, isActive
+  function setEditPeriode(id, tahun_ajaran, semester, start, end, isActive) {
+    document.getElementById('edit_id').value = id;
+    document.getElementById('edit_tahun_ajaran').value = tahun_ajaran;
     document.getElementById('edit_semester').value = semester.toLowerCase();
     document.getElementById('edit_start_date').value = start;
     document.getElementById('edit_end_date').value = end;
     document.getElementById('edit_is_active').checked = !!isActive;
+
+    // Set action form
+    var form = document.getElementById('editPeriodeForm');
+    form.action = "{{ url('periode') }}/" + id;
   }
   </script>
 </div>
