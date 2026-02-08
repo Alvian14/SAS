@@ -11,6 +11,10 @@ Route::get('/ping', function () {
 });
 
 Route::post('/login', [UserController::class, 'login']);
+Route::middleware('auth:sanctum')->post(
+    '/store-fcm',
+    [UserController::class, 'storeFcmToken']
+);
 Route::post('/register', [UserController::class, 'register']);
 Route::get('/classes', [ClassController::class, 'index']);
 

@@ -9,10 +9,16 @@ use Illuminate\Support\Facades\Crypt;
 use Carbon\Carbon;
 use App\Models\Schedule;
 use Illuminate\Support\Facades\Log;
-
 class AttendanceController extends Controller
+
 {
+
+    public $distanceMaximumTolerance = 4500; // in meters
+
     public function qrAttendance(Request $request) {
+
+
+    /// check academic period active or not.
         
         try {
             // request input validation
@@ -40,11 +46,11 @@ class AttendanceController extends Controller
             // count distance with helper
             $distance = getDistanceInMeters($lat, $lon, $schoolLat, $schoolLon);
 
-            if ($distance > 4500) {
+            if ($distance > $this->distanceMaximumTolerance) {
                 return response()->json(
                     [
                     'success' => false,
-                    'message' => "Lokasi di luar radius 200 meter (jarak: {$distance} m)",
+                    'message' => "Lokasi di luar radius {$this->distanceMaximumTolerance} meter (jarak: {$distance} m)",
                 ], 403);
             }
 
