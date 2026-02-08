@@ -10,6 +10,29 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+
+    public function storeFcmToken(Request $request)
+    {
+        $validated = $request->validate([
+            'fcm_token' => 'required|string',
+            // 'platform'  => 'nullable|string',
+            // device_id DIHAPUS
+        ]);
+
+        $user = $request->user();
+
+        $user->update([
+            'device_token' => $validated['fcm_token'],
+            // 'platform'  => $validated['platform'] ?? 'android',
+            // device_id tidak dipakai
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'FCM token stored successfully',
+        ]);
+    }
+
     public function login(Request $request)
     {
         try {
@@ -21,6 +44,12 @@ class UserController extends Controller
                     'message' => 'Invalid credentials'
                 ], 401);
             }
+
+            // check if user is banned
+
+            // check if user id / token has set or not, so user just login in one device only
+            
+
             
             $token = $user->createToken('auth_token')->plainTextToken;
     

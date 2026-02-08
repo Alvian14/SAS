@@ -24,6 +24,10 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'is_banned',
+        'device_token',
+        'device_id',
+        'topic_subscribe',
         'profile_picture',
         'remember_token',
     ];
