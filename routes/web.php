@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AkunController;
 use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\PeriodeController;
+use App\Http\Controllers\SubjectController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -27,7 +28,7 @@ Route::get('/pages/dashboard/dashboard', [DashboardController::class, 'index'])
     ->middleware('auth')
     ->name('dashboard.index');
 
-######################### AKUN #########################
+// ====================== akun =====================
 Route::get('/pages/akun/indentitas_siswa', [AuthController::class, 'identitasSiswa'])
     ->middleware('auth')
     ->name('akun.indentitas_siswa');
@@ -61,10 +62,28 @@ Route::delete('/pages/akun/indentitas_guru/{id}', [AuthController::class, 'destr
 
 // Route untuk hapus siswa
 
-######################### END AKUN #########################
+// ====================== end akun =====================
 
+// ===================== mata pelajaran ===============
+Route::get('/pages/mapel/mapel', [SubjectController::class, 'index'])
+    ->middleware('auth')
+    ->name('mapel.index');
 
-######################## PERIODE #########################
+Route::post('/pages/mapel/mapel', [SubjectController::class, 'store'])
+    ->middleware('auth')
+    ->name('mapel.store');
+
+Route::put('/pages/mapel/mapel/{id}', [SubjectController::class, 'update'])
+    ->middleware('auth')
+    ->name('mapel.update');
+
+Route::delete('/pages/mapel/mapel/{id}', [SubjectController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('mapel.destroy');
+
+// ==================== end mata pelajaran =============
+
+// ======================== periode ====================
 Route::get('/pages/periode/periode', [PeriodeController::class, 'index'])
     ->middleware('auth')
     ->name('periode.index');
@@ -75,18 +94,18 @@ Route::post('/pages/periode/periode', [PeriodeController::class, 'store'])
 
 Route::post('/periode/{id}/activate', [PeriodeController::class, 'activate'])->name('periode.activate');
 Route::put('/periode/{id}', [PeriodeController::class, 'update'])->name('periode.update');
-######################## END PERIODE #########################
+Route::delete('/periode/{id}', [PeriodeController::class, 'destroy'])->name('periode.destroy');
+// ===================== end periode ====================
 
 
-######################### JADWAL #########################
+// ======================== jadwal ========================
 Route::get('/pages/jadwal/jadwal', [JadwalController::class, 'index'])
 ->middleware('auth')
 ->name('jadwal.index');
+// ========================= end jadwal ======================
 
-######################### END JADWAL #########################
 
-
-######################## KELAS #########################
+// ============================ kelas ==========================
 Route::get('/pages/kelas/kelas_absensi', [ClassController::class, 'index'])
     ->middleware('auth')
     ->name('kelas.absensi');
@@ -113,10 +132,10 @@ Route::delete('/pages/kelas/kelas/{id}', [ClassController::class, 'destroy'])
 
 
 
-######################## END KELAS #########################
+// ========================== end kelas ======================
 
 
-######################## ABSENSI #########################
+// ============================ absensi ======================
 
 Route::get('/pages/absensi/absensi_harian', function () {
     return view('pages.absensi.absensi_harian');
@@ -127,7 +146,7 @@ Route::get('/pages/absensi/absensi_mapel', function () {
     return view('pages.absensi.absensi_mapel');
 })->middleware('auth')->name('absensi.absensi_mapel');
 
-######################## END ABSENSI #########################
+// ============================ end absensi ====================
 
 
 

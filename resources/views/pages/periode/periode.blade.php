@@ -124,9 +124,11 @@
                     )">
                     <i class="fas fa-pencil-alt"></i>
                   </button>
-                  <button class="btn btn-sm btn-danger mb-1" title="Hapus">
-                    <i class="fas fa-trash-alt"></i>
-                  </button>
+                    <button class="btn btn-sm btn-danger mb-1" title="Hapus"
+                      data-bs-toggle="modal" data-bs-target="#deletePeriodeModal"
+                      onclick="setDeletePeriode('{{ $p->id }}', '{{ $p->name }}')">
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
                 </td>
               </tr>
               @empty
@@ -202,7 +204,35 @@
     var form = document.getElementById('editPeriodeForm');
     form.action = "{{ url('periode') }}/" + id;
   }
+  // Set id periode untuk hapus
+  function setDeletePeriode(id, name) {
+    document.getElementById('delete_id').value = id;
+    document.getElementById('deletePeriodeName').innerText = name;
+    var form = document.getElementById('deletePeriodeForm');
+    form.action = "{{ url('periode') }}/" + id;
+  }
   </script>
+  {{-- Modal Hapus Periode --}}
+  <div class="modal fade" id="deletePeriodeModal" tabindex="-1" aria-labelledby="deletePeriodeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="deletePeriodeForm" method="POST">
+        @csrf
+        @method('DELETE')
+        <input type="hidden" id="delete_id" name="id">
+        <div class="modal-header">
+          <h5 class="modal-title" id="deletePeriodeModalLabel">Konfirmasi Hapus Periode</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Apakah Anda yakin ingin menghapus periode <strong id="deletePeriodeName"></strong>?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-danger">Hapus</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 @endsection
 
