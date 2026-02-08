@@ -75,6 +75,15 @@
             </ul>
           </li>
 
+          <li class="nav-item {{ Route::is('mapel.index') ? 'active' : '' }}">
+            <a href="{{ route('mapel.index') }}" class="{{ Route::is('mapel.index') ? 'active' : '' }}">
+              <span class="icon">
+                <i class="fas fa-book-open"></i>
+              </span>
+              <span class="text">Mata pelajaran</span>
+            </a>
+        </li>
+
           <!-- Periode -->
         <li class="nav-item {{ Route::is('periode.index') ? 'active' : '' }}">
             <a href="{{ route('periode.index') }}" class="{{ Route::is('periode.index') ? 'active' : '' }}">

@@ -81,4 +81,11 @@ class PeriodeController extends Controller
 
         return redirect()->route('periode.index')->with('success', 'Periode berhasil diupdate.');
     }
+
+        public function destroy($id)
+        {
+            $period = AcademicPeriod::findOrFail($id);
+            $period->delete();
+            return redirect()->route('periode.index')->with('success', 'Periode berhasil dihapus.');
+        }
 }
