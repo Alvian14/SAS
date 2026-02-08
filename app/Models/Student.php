@@ -14,7 +14,7 @@ class Student extends Model
     // table name
     protected $table = 'students';
 
-    protected $fillable = ['id_user', 'id_class', 'name', 'nisn', 'entry_year', 'picture'];
+    protected $fillable = ['id_user', 'id_class', 'name', 'nisn', 'entry_year', 'pictures'];
 
     public $timestamps = true;
 
