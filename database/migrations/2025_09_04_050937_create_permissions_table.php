@@ -21,7 +21,8 @@ return new class extends Migration
             $table->string('evidence');
             $table->enum('status', ['proses', 'diterima', 'ditolak']);
             $table->string('feedback')->nullable(true); // feedback message from admin
-            $table->timestamp('date_permission'); // 
+            $table->date('date_permission'); // tanggal izin 
+            $table->integer('time_period'); // jumlah jam izin, misal 2 jam untuk 2 periode
 
             // relationship foreign key
             $table->foreignId('id_student')->constrained('students')->onDelete('cascade');

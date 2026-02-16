@@ -19,7 +19,7 @@ class TeacherSeeder extends Seeder
         Teacher::create([
             'name' => 'Alvian hidayatulloh',
             'nip' => '198001012005011001',
-            'subject' => 'Matematika',
+            'subject' => 'SENBUD, SEJ',
             'id_user' => 2,
         ]);
 
