@@ -60,7 +60,7 @@ class AttendanceController extends Controller
 
             // request time
             // $now = Carbon::now();
-            $now = Carbon::parse('2026-01-19 07:30:00'); 
+            $now = Carbon::parse('2026-02-16 07:30:00'); 
             $dayOfWeek = strtolower($now->locale('id')->dayName); // example: "senin"
             
             // schedule search (compare with qrcode) => class of student and schedule search
@@ -176,4 +176,151 @@ class AttendanceController extends Controller
         
     
     }
+
+    // get attendance report based on schedule, student, and date.
+    // expected result: List Schedule [schedule + attendance status (hadir, izin, sakit, alpa), if in schedule hasnt attendance record just return attendance status: null]
+    // get parameter: id_class, date, id_student (from token)
+
+    // this is for personal student attendance report, to show the attendance status for each schedule in that day.
+    public function report(Request $request)
+    {
+        try {
+            $request->validate([
+                'id_class' => 'required|integer',
+                'date' => 'required|date',
+            ]);
+
+            $user = $request->user();
+            $student = $user->student ?? null;
+            if (!$student) {
+                return response()->json(['success' => false, 'message' => 'Student profile not found for user'], 403);
+            }
+
+            $idClass = $request->id_class;
+            $date = Carbon::parse($request->date)->toDateString();
+            $dayName = strtolower(Carbon::parse($date)->locale('id')->dayName);
+            $dayIndex = Carbon::parse($date)->dayOfWeekIso; // 1..7
+
+            // fetch schedules for class where academic period is active and day matches
+            $schedules = Schedule::query()
+                ->where('id_class', $idClass)
+                ->whereHas('academicPeriods', function ($q) {
+                    $q->where('is_active', 1);
+                })
+                ->where(function ($q) use ($dayName, $dayIndex) {
+                    $q->where('day_of_week', $dayName)
+                      ->orWhere('day_of_week', (string) $dayIndex);
+                })
+                ->with(['subject', 'teacher'])
+                ->orderBy('period_start')
+                ->get();
+
+            $result = [];
+            foreach ($schedules as $sch) {
+                $attendance = AttendanceHistory::where('id_student', $student->id)
+                    ->where('id_schedule', $sch->id)
+                    ->whereDate('created_at', $date)
+                    ->first();
+
+                $result[] = [
+                    'schedule' => $sch,
+                    'attendance_status' => $attendance ? $attendance->status : null,
+                    'attendance' => $attendance ?? null,
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Attendance report fetched',
+                'data' => $result,
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // get attendance report history all student in once class filtered by class, and date now. 
+    // expected result: List Schedule [schedule + all user in class + attendance status (hadir, izin, sakit, alpa), if in schedule hasnt attendance record, dont display the student in that schedule] 
+    public function reportClass(Request $request)
+    {
+        try {
+            $request->validate([
+                'id_class' => 'required|integer',
+                'date' => 'required|date',
+            ]);
+
+            $idClass = $request->id_class;
+            $date = Carbon::parse($request->date)->toDateString();
+            $dayName = strtolower(Carbon::parse($date)->locale('id')->dayName);
+            $dayIndex = Carbon::parse($date)->dayOfWeekIso; // 1..7
+
+            // schedules for class on that day and active academic period
+            $schedules = Schedule::query()
+                ->where('id_class', $idClass)
+                ->whereHas('academicPeriods', function ($q) {
+                    $q->where('is_active', 1);
+                })
+                ->where(function ($q) use ($dayName, $dayIndex) {
+                    $q->where('day_of_week', $dayName)
+                      ->orWhere('day_of_week', (string) $dayIndex);
+                })
+                ->with(['subject', 'teacher', 'class'])
+                ->orderBy('period_start')
+                ->get();
+
+            $data = [];
+            foreach ($schedules as $sch) {
+                // get attendance records for that schedule on the date
+                $attendances = AttendanceHistory::query()
+                    ->where('id_schedule', $sch->id)
+                    ->whereDate('created_at', $date)
+                    ->with(['student.user'])
+                    ->get();
+
+                // if there are no attendance records, still include schedule with empty list (per request could be omitted by client)
+                $items = [];
+                foreach ($attendances as $att) {
+                    $items[] = [
+                        'attendance' => $att,
+                        // 'student' => $att->student,
+                        'status' => $att->status,
+                    ];
+                }
+
+                $data[] = [
+                    'schedule' => $sch,
+                    'attendances' => $items,
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Attendance history for class fetched',
+                'data' => $data,
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+    
 }

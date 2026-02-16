@@ -17,6 +17,9 @@ Route::middleware('auth:sanctum')->post(
 );
 Route::post('/register', [UserController::class, 'register']);
 Route::get('/classes', [ClassController::class, 'index']);
+// get schedules for a specific class (only active academic period schedules)
+Route::get('/classes/{id}/schedule', [ClassController::class, 'schedule']);
+Route::get('/classes/{id}/schedule/{dayindex}', [ClassController::class, 'scheduleByDay']);
 
 // route login pakai Sanctum
 Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
@@ -29,5 +32,7 @@ Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
     // attendance record, permission, report, etc...
     Route::get('/testfeedback', [UserController::class, 'feedback']);
     Route::post('/qrattendance', [AttendanceController::class, 'qrAttendance']);
+    Route::get('/attendance/report', [AttendanceController::class, 'report']);
+    Route::get('/attendance/report/class', [AttendanceController::class, 'reportClass']);
     
 });
