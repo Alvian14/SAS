@@ -49,16 +49,20 @@ class UserController extends Controller
 
             // check if user id / token has set or not, so user just login in one device only
             
-
-            
             $token = $user->createToken('auth_token')->plainTextToken;
     
+            $userData = $user->load('teacher', 'student.class');
+            if ($userData->student) {
+                $student = $userData->student;
+                $userData->student = $student;
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Login successful',
                 'access_token' => $token,
                 'token_type' => 'Bearer',
-                'user' => $user->load('teacher', 'student')
+                'user' => $userData
             ], 200);
 
         } catch (\Exception $e) {

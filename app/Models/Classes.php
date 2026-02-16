@@ -15,4 +15,9 @@ class Classes extends Model
     protected $fillable = ['name', 'major', 'grade', 'code'];
 
     public $timestamps = true;
+
+    public function schedules()
+    {
+        return $this->hasMany(\App\Models\Schedule::class, 'id_class');
+    }
 }
