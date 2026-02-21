@@ -67,6 +67,9 @@ class AttendanceController extends Controller
             $schedule = Schedule::query()
                 ->where('id_class', $idClass)
                 ->where('code', $rawCode)
+                ->whereHas('academicPeriods', function ($q) {
+                    $q->where('is_active', 1);
+                })
                 ->first();
             
             if (!$schedule) {
