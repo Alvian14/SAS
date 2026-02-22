@@ -21,9 +21,8 @@ class DatabaseSeeder extends Seeder
             TeacherSeeder::class,
             AcademicPeriodsSeeder::class,
             ScheduleSeeder::class,
+            AttendanceHistoryDailySeeder::class,
         ]);
-
-
 
 
         // User::factory()->create([

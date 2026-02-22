@@ -17,7 +17,7 @@ class Teacher extends Model
         'id_user',
         'name',
         'nip',
-        'subject',
+        'id_subject',
     ];
 
     public $timestamps = true;
@@ -25,6 +25,11 @@ class Teacher extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'id_user');
+    }
+
+    public function subject()
+    {
+        return $this->belongsTo(Subject::class, 'id_subject');
     }
 
     public static function findById($id)

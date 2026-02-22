@@ -9,6 +9,7 @@ use App\Http\Controllers\PeriodeController;
 use App\Http\Controllers\SubjectController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\HistoryDailyController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -100,8 +101,19 @@ Route::delete('/periode/{id}', [PeriodeController::class, 'destroy'])->name('per
 
 // ======================== jadwal ========================
 Route::get('/pages/jadwal/jadwal', [JadwalController::class, 'index'])
-->middleware('auth')
-->name('jadwal.index');
+    ->middleware('auth')
+    ->name('jadwal.index');
+
+Route::post('/pages/jadwal/jadwal', [JadwalController::class, 'store'])
+    ->middleware('auth')
+    ->name('jadwal.store');
+
+Route::put('/pages/jadwal/jadwal/{id}', [JadwalController::class, 'update'])
+    ->middleware('auth')
+    ->name('jadwal.update');
+Route::delete('/pages/jadwal/jadwal', [JadwalController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('jadwal.destroy');
 // ========================= end jadwal ======================
 
 
@@ -137,10 +149,14 @@ Route::delete('/pages/kelas/kelas/{id}', [ClassController::class, 'destroy'])
 
 // ============================ absensi ======================
 
-Route::get('/pages/absensi/absensi_harian', function () {
-    return view('pages.absensi.absensi_harian');
-})->middleware('auth')->name('absensi.absensi_harian');
+// Route::get('/pages/absensi/absensi_harian', function () {
+//     return view('pages.absensi.absensi_harian');
+// })->middleware('auth')->name('absensi.absensi_harian');
 
+
+Route::get('/pages/absensi/absensi_harian', [HistoryDailyController::class, 'index'])
+    ->middleware('auth')
+    ->name('absensi.absensi_harian');
 
 Route::get('/pages/absensi/absensi_mapel', function () {
     return view('pages.absensi.absensi_mapel');
