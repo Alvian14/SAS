@@ -207,62 +207,36 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>
-                                <input type="checkbox" class="row-checkbox" />
-                            </td>
-                            <td>
-                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
-                            </td>
-                            <td>System Architect</td>
-                            <td>Edinburgh</td>
-                            <td>
-                                <span class="badge bg-success text-white border border-success fw-bold px-3 py-2" style="font-size:0.95em;">Tepat Waktu</span>
-                            </td>
-                            <td class="text-success fw-bold">2011-04-25</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <input type="checkbox" class="row-checkbox" />
-                            </td>
-                            <td>
-                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
-                            </td>
-                            <td>Accountant</td>
-                            <td>Tokyo</td>
-                            <td>
-                                <span class="badge bg-danger text-white border border-danger fw-bold px-3 py-2" style="font-size:0.95em;">Terlambat</span>
-                            </td>
-                            <td class="text-danger fw-bold">2011-07-25</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <input type="checkbox" class="row-checkbox" />
-                            </td>
-                            <td>
-                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
-                            </td>
-                            <td>Junior Technical Author</td>
-                            <td>San Francisco</td>
-                            <td>
-                                <span class="badge bg-success text-white border border-success fw-bold px-3 py-2" style="font-size:0.95em;">Tepat Waktu</span>
-                            </td>
-                            <td class="text-success fw-bold">2009-01-12</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <input type="checkbox" class="row-checkbox" />
-                            </td>
-                            <td>
-                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
-                            </td>
-                            <td>Junior Technical Author</td>
-                            <td>San Francisco</td>
-                            <td>
-                                <span class="badge bg-success text-white border border-success fw-bold px-3 py-2" style="font-size:0.95em;">Tepat Waktu</span>
-                            </td>
-                            <td class="text-success fw-bold">2009-01-12</td>
-                        </tr>
+                        @if(isset($absensi) && count($absensi))
+                            @foreach($absensi as $item)
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="row-checkbox" />
+                                </td>
+                                <td>
+                                    <img src="{{ $item->picture ?? 'https://ui-avatars.com/api/?name=' . urlencode($item->student->name ?? '-') }}" alt="Foto" width="36" height="36" class="rounded-circle">
+                                </td>
+                                <td>{{ $item->student->name ?? '-' }}</td>
+                                <td>{{ $item->class->name ?? '-' }}</td>
+                                <td>
+                                    @if($item->status == 'tepat_waktu')
+                                        <span class="badge bg-success text-white border border-success fw-bold px-3 py-2" style="font-size:0.95em;">Tepat Waktu</span>
+                                    @elseif($item->status == 'terlambat')
+                                        <span class="badge bg-danger text-white border border-danger fw-bold px-3 py-2" style="font-size:0.95em;">Terlambat</span>
+                                    @else
+                                        <span class="badge bg-secondary text-white border border-secondary fw-bold px-3 py-2" style="font-size:0.95em;">{{ ucfirst($item->status) }}</span>
+                                    @endif
+                                </td>
+                                <td class="{{ $item->status == 'tepat_waktu' ? 'text-success' : 'text-danger' }} fw-bold">
+                                    {{ \Carbon\Carbon::parse($item->created_at)->format('Y-m-d H:i') }}
+                                </td>
+                            </tr>
+                            @endforeach
+                        @else
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">Tidak ada data absensi harian.</td>
+                            </tr>
+                        @endif
                     </tbody>
                 </table>
             </div>
