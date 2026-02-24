@@ -180,7 +180,7 @@
                             <td>{{ $teacher->name }}</td>
                             <td>{{ $teacher->user->email ?? '-' }}</td>
                             <td>{{ $teacher->nip }}</td>
-                            <td>{{ $teacher->subject }}</td>
+                            <td>{{ $teacher->subject ?? '-' }}</td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -236,7 +236,17 @@
                             <label class="form-label fw-semibold text-dark">
                                 Mata Pelajaran
                             </label>
-                            <input type="text" name="subject" class="form-control border-2" placeholder="Mata Pelajaran" required>
+                            <div id="subjects-wrapper">
+                                <div class="input-group mb-2 subject-group">
+                                    <select name="subjects[]" class="form-control border-2" required>
+                                        <option value="">Pilih Mata Pelajaran</option>
+                                        @foreach($subjects as $subject)
+                                            <option value="{{ $subject->id }}">{{ $subject->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <button type="button" class="btn btn-success btn-add-subject ms-2"><i class="fas fa-plus"></i></button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -304,7 +314,8 @@
                             <label class="form-label fw-semibold text-dark">
                                 Mata Pelajaran
                             </label>
-                            <input type="text" name="subject" id="edit-subject" class="form-control border-2" required>
+                            <div id="edit-subjects-wrapper"></div>
+                            <button type="button" class="btn btn-success btn-add-edit-subject mt-2"><i class="fas fa-plus"></i> Tambah Mapel</button>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -371,12 +382,39 @@
                     const name = tr.find('td').eq(2).text().trim();
                     const email = tr.find('td').eq(3).text().trim();
                     const nip = tr.find('td').eq(4).text().trim();
-                    const subject = tr.find('td').eq(5).text().trim();
+                    const subjectString = tr.find('td').eq(5).text().trim();
 
                     $('#edit-name').val(name);
                     $('#edit-email').val(email);
                     $('#edit-nip').val(nip);
-                    $('#edit-subject').val(subject);
+
+                    // Split subject string dan buat dropdown sesuai jumlah mapel
+                    let subjects = subjectString.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                    let html = '';
+                    subjects.forEach(function(subj, idx) {
+                        html += `<div class="input-group mb-2 subject-group">
+                            <select name="subjects[]" class="form-control border-2" required>
+                                <option value="">Pilih Mata Pelajaran</option>
+                                @foreach($subjects as $subject)
+                                    <option value="{{ $subject->id }}" ${subj === '{{ $subject->name }}' ? 'selected' : ''}>{{ $subject->name }}</option>
+                                @endforeach
+                            </select>
+                            ${idx == 0 ? '' : '<button type="button" class="btn btn-danger btn-remove-subject ms-2"><i class="fas fa-minus"></i></button>'}
+                        </div>`;
+                    });
+                    if (html === '') {
+                        html = `<div class="input-group mb-2 subject-group">
+                            <select name="subjects[]" class="form-control border-2" required>
+                                <option value="">Pilih Mata Pelajaran</option>
+                                @foreach($subjects as $subject)
+                                    <option value="{{ $subject->id }}">{{ $subject->name }}</option>
+                                @endforeach
+                            </select>
+                            <button type="button" class="btn btn-success btn-add-edit-subject ms-2"><i class="fas fa-plus"></i></button>
+                        </div>`;
+                    }
+                    $('#edit-subjects-wrapper').html(html);
+
                     $('#formEditGuru').attr('action', '{{ url("/pages/akun/indentitas_guru") }}/' + id);
                     $('#modalEditGuru').modal('show');
                 }
@@ -434,6 +472,21 @@
                         });
                     }
                 });
+            });
+
+            // Dynamic add/remove subject for modal tambah guru
+            $('#subjects-wrapper').on('click', '.btn-add-subject', function () {
+                let subjectGroup = $(this).closest('.subject-group');
+                let newGroup = subjectGroup.clone();
+                newGroup.find('select').val('');
+                // Ganti tombol plus jadi minus pada group baru
+                newGroup.find('.btn-add-subject').remove();
+                newGroup.append('<button type="button" class="btn btn-danger btn-remove-subject ms-2"><i class="fas fa-minus"></i></button>');
+                $('#subjects-wrapper').append(newGroup);
+            });
+
+            $('#subjects-wrapper').on('click', '.btn-remove-subject', function () {
+                $(this).closest('.subject-group').remove();
             });
         });
     </script>
