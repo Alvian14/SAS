@@ -4,11 +4,13 @@ namespace App\Http\Controllers\api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceHistory;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Crypt;
-use Carbon\Carbon;
+use App\Models\Permission;
 use App\Models\Schedule;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+
 class AttendanceController extends Controller
 
 {
@@ -311,6 +313,68 @@ class AttendanceController extends Controller
                 'message' => 'Attendance history for class fetched',
                 'data' => $data,
             ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // post permission from student using data 
+    public function createPermission(Request $request)
+    {
+        try {
+            $request->validate([
+                'reason' => 'required|string',
+                'information' => 'nullable|string',
+                'evidence' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
+                'date_permission' => 'required|date',
+                // count days
+                'time_period' => 'required|integer|min:1|max:10', 
+            ]);
+
+            $user = $request->user();
+            $student = $user->student ?? null;
+            if (!$student) {
+                return response()->json(['success' => false, 'message' => 'Student profile not found for user'], 403);
+            }
+
+            $permission = new Permission();
+            $permission->id_student = $student->id;
+            $permission->reason = $request->reason;
+            $permission->information = $request->information;
+            $permission->date_permission = Carbon::parse($request->date_permission)->toDateString();
+            $permission->time_period = $request->time_period;
+
+            if ($request->hasFile('evidence')) {
+                $file = $request->file('evidence');
+
+                // filename format: {id_student}_{nama_lengkap}_timestamp.extension
+                $displayName = $student->name ?? ($student->user->name ?? 'student');
+                $safeName = str_replace(' ', '-', strtolower($displayName));
+                // Example: 12_budi-sudarsono_1771945730.jpg
+                $filename = $student->id . '_' . $safeName . '_' . time() . '.' . $file->getClientOriginalExtension();
+
+
+                Storage::disk('public')->putFileAs('permission/evidence', $file, $filename);
+                $permission->evidence = $filename;
+            }
+
+            $permission->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Permission request created successfully',
+                'data' => $permission,
+            ], 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,

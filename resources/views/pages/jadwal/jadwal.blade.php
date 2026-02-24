@@ -137,10 +137,10 @@
             <h5 class="mb-2 mb-md-0">Daftar Jadwal Mapel</h5>
             <div class="d-flex w-100 w-md-auto justify-content-md-end mt-2 mt-md-0">
                 <div class="d-flex gap-2 flex-column flex-md-row w-100 w-md-auto">
-                    <button class="btn btn-light btn-sm btn-tambah-guru w-100 w-md-auto d-block d-md-inline-block" style="font-size:14px;padding:7px 14px;" data-bs-toggle="modal" data-bs-target="#modalTambahGuru">
+                    <button class="btn btn-light btn-sm btn-tambah-guru w-100 w-md-auto d-block d-md-inline-block" style="font-size:14px;padding:7px 14px;" data-bs-toggle="modal" data-bs-target="#modalTambahJadwal">
                         <i class="fas fa-plus"></i> Tambah Jadwal
                     </button>
-                    <button class="btn btn-edit-guru btn-sm w-100 w-md-auto d-block d-md-inline-block" style="font-size:14px;padding:7px 14px;" id="btn-edit-guru" type="button">
+                    <button class="btn btn-edit-guru btn-sm w-100 w-md-auto d-block d-md-inline-block" style="font-size:14px;padding:7px 14px;"  type="button" id="btn-edit-guru">
                         <i class="fas fa-edit"></i> Edit
                     </button>
                     <button class="btn btn-hapus-guru btn-sm w-100 w-md-auto d-block d-md-inline-block" style="font-size:14px;padding:7px 14px;" id="btn-hapus-guru" type="button">
@@ -155,7 +155,6 @@
                     <thead class="table-custom-header">
                         <tr>
                             <th><input type="checkbox" id="select-all" /></th>
-                            <th>ID</th>
                             <th>Hari</th>
                             <th>Jam Ke Awal</th>
                             <th>Jam Ke Akhir</th>
@@ -168,64 +167,148 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @foreach($jadwal as $item)
                         <tr>
-                            <td><input type="checkbox" class="row-checkbox" /></td>
-                            <td>1</td>
-                            <td>Senin</td>
-                            <td>1</td>
-                            <td>2</td>
-                            <td>07:00</td>
-                            <td>08:30</td>
-                            <td>MAT01</td>
-                            <td>X IPA 1</td>
-                            <td>Matematika</td>
-                            <td>Pak Budi</td>
+                            <td>
+                                <input type="checkbox" class="row-checkbox"
+                                    data-id="{{ $item->id }}"
+                                    data-day_of_week="{{ $item->day_of_week }}"
+                                    data-period_start="{{ $item->period_start }}"
+                                    data-period_end="{{ $item->period_end }}"
+                                    data-start_time="{{ $item->start_time }}"
+                                    data-end_time="{{ $item->end_time }}"
+                                    data-code="{{ $item->code }}"
+                                    data-id_class="{{ $item->class ? $item->class->id : '' }}"
+                                    data-id_subject="{{ $item->subject ? $item->subject->id : '' }}"
+                                    data-id_teacher="{{ $item->teacher ? $item->teacher->id : '' }}"
+                                    data-id_academic_periods="{{ $item->id_academic_periods }}"
+                                />
+                            </td>
+                            <td>{{ $item->day_of_week }}</td>
+                            <td>{{ $item->period_start }}</td>
+                            <td>{{ $item->period_end }}</td>
+                            <td>{{ $item->start_time }}</td>
+                            <td>{{ $item->end_time }}</td>
+                            <td>{{ $item->code }}</td>
+                            <td>{{ $item->class ? $item->class->name : '-' }}</td>
+                            <td>{{ $item->subject ? $item->subject->name : '-' }}</td>
+                            <td>{{ $item->teacher ? $item->teacher->name : '-' }}</td>
                         </tr>
-                        <tr>
-                            <td><input type="checkbox" class="row-checkbox" /></td>
-                            <td>2</td>
-                            <td>Selasa</td>
-                            <td>3</td>
-                            <td>4</td>
-                            <td>08:30</td>
-                            <td>10:00</td>
-                            <td>ING01</td>
-                            <td>X IPA 1</td>
-                            <td>Bahasa Inggris</td>
-                            <td>Bu Sari</td>
-                        </tr>
-                        <tr>
-                            <td><input type="checkbox" class="row-checkbox" /></td>
-                            <td>3</td>
-                            <td>Rabu</td>
-                            <td>1</td>
-                            <td>2</td>
-                            <td>07:00</td>
-                            <td>08:30</td>
-                            <td>FIS01</td>
-                            <td>X IPA 2</td>
-                            <td>Fisika</td>
-                            <td>Pak Andi</td>
-                        </tr>
-                        <tr>
-                            <td><input type="checkbox" class="row-checkbox" /></td>
-                            <td>4</td>
-                            <td>Kamis</td>
-                            <td>3</td>
-                            <td>4</td>
-                            <td>08:30</td>
-                            <td>10:00</td>
-                            <td>KIM01</td>
-                            <td>X IPA 2</td>
-                            <td>Kimia</td>
-                            <td>Bu Rina</td>
-                        </tr>
+                        @endforeach
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
     <!-- End Card Wrapper -->
+
+<!-- Modal Edit Jadwal -->
+<div class="modal fade" id="modalEditJadwal" tabindex="-1" aria-labelledby="modalEditJadwalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content shadow-lg border-0 rounded-4">
+            <div class="modal-header bg-warning border-0 rounded-top-4">
+                <h5 class="modal-title fw-bold text-dark" id="modalEditJadwalLabel">
+                    Edit Data Jadwal
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEditJadwal" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-body p-4 bg-light">
+                    <input type="hidden" name="id" id="edit_id">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-dark">Periode</label>
+                            <select name="id_academic_periods" id="edit_id_academic_periods" class="form-control border-2">
+                                <option value="">Pilih Periode</option>
+                                @if(isset($periodes))
+                                    @foreach($periodes as $prd)
+                                        <option value="{{ $prd->id }}">{{ $prd->name }} ({{ $prd->start_date }} - {{ $prd->end_date }})</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-dark">Hari</label>
+                            <select name="day_of_week" id="edit_day_of_week" class="form-control border-2" required>
+                                <option value="">Pilih Hari</option>
+                                <option value="Senin">Senin</option>
+                                <option value="Selasa">Selasa</option>
+                                <option value="Rabu">Rabu</option>
+                                <option value="Kamis">Kamis</option>
+                                <option value="Jumat">Jumat</option>
+                                <option value="Sabtu">Sabtu</option>
+                                <option value="Minggu">Minggu</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-dark">Jam Ke Awal</label>
+                            <input type="number" name="period_start" id="edit_period_start" class="form-control border-2" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-dark">Jam Ke Akhir</label>
+                            <input type="number" name="period_end" id="edit_period_end" class="form-control border-2" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark">Jam Mulai</label>
+                            <input type="time" name="start_time" id="edit_start_time" class="form-control border-2" required id="tambah_start_time" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark">Jam Selesai</label>
+                            <input type="time" name="end_time" id="edit_end_time" class="form-control border-2" required readonly>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-dark">Kode Jadwal</label>
+                            <input type="text" name="code" id="edit_code" class="form-control border-2" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-dark">Kelas</label>
+                            <select name="id_class" id="edit_id_class" class="form-control border-2" required>
+                                <option value="">Pilih Kelas</option>
+                                @foreach($kelas as $kls)
+                                    <option value="{{ $kls->id }}">{{ $kls->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-dark">Mata Pelajaran</label>
+                            <select name="id_subject" id="edit_id_subject" class="form-control border-2" required>
+                                <option value="">Pilih Mapel</option>
+                                @foreach($mapel as $mpl)
+                                    <option value="{{ $mpl->id }}">{{ $mpl->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold text-dark">Guru</label>
+                            <select name="id_teacher" id="edit_id_teacher" class="form-control border-2" required>
+                                <option value="">Pilih Guru</option>
+                                @foreach($guru as $gr)
+                                    <option value="{{ $gr->id }}">{{ $gr->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-white border-0 p-4 gap-2">
+                    <button type="button" class="btn btn-danger px-4 fw-semibold shadow-sm" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Batal
+                    </button>
+                    <button type="submit" class="btn btn-warning px-4 fw-semibold shadow-sm">
+                        <i class="fas fa-save me-2"></i>Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <!-- Modal Tambah Jadwal -->
 <div class="modal fade" id="modalTambahJadwal" tabindex="-1" aria-labelledby="modalTambahJadwalLabel" aria-hidden="true">
@@ -237,26 +320,50 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="formTambahJadwal" method="POST" action="" enctype="multipart/form-data">
+            <form id="formTambahJadwal" method="POST" action="{{ route('jadwal.store') }}" enctype="multipart/form-data">
+                @csrf
                 <div class="modal-body p-4 bg-light">
                     <div class="row mb-3">
                         <div class="col-md-4">
                             <label class="form-label fw-semibold text-dark">
+                                Periode
+                            </label>
+                            <select name="id_academic_periods" class="form-control border-2">
+                                <option value="">Pilih Periode</option>
+                                @if(isset($periodes))
+                                    @foreach($periodes as $prd)
+                                        <option value="{{ $prd->id }}" @if(isset($periode_aktif) && $periode_aktif->id == $prd->id) selected @endif>
+                                            {{ $prd->name }} ({{ $prd->start_date }} - {{ $prd->end_date }})
+                                        </option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-dark">
                                 Hari
                             </label>
-                            <input type="text" name="day_of_week" class="form-control border-2" placeholder="Contoh: Senin" required>
+                            <select name="day_of_week" class="form-control border-2" required>
+                                <option value="">Pilih Hari</option>
+                                <option value="Senin">Senin</option>
+                                <option value="Selasa">Selasa</option>
+                                <option value="Rabu">Rabu</option>
+                                <option value="Kamis">Kamis</option>
+                                <option value="Jumat">Jumat</option>
+                                <option value="Sabtu">Sabtu</option>
+                            </select>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold text-dark">
                                 Jam Ke Awal
                             </label>
-                            <input type="number" name="period_start" class="form-control border-2" placeholder="Contoh: 1" required>
+                            <input type="number" name="period_start" class="form-control border-2" placeholder="Contoh: 1" required id="tambah_period_start">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold text-dark">
                                 Jam Ke Akhir
                             </label>
-                            <input type="number" name="period_end" class="form-control border-2" placeholder="Contoh: 2" required>
+                            <input type="number" name="period_end" class="form-control border-2" placeholder="Contoh: 2" required id="tambah_period_end">
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -264,13 +371,13 @@
                             <label class="form-label fw-semibold text-dark">
                                 Jam Mulai
                             </label>
-                            <input type="time" name="start_time" class="form-control border-2" required>
+                            <input type="time" name="start_time" class="form-control border-2" required id="tambah_start_time" readonly>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold text-dark">
                                 Jam Selesai
                             </label>
-                            <input type="time" name="end_time" class="form-control border-2" required>
+                            <input type="time" name="end_time" class="form-control border-2" required readonly>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -278,19 +385,30 @@
                             <label class="form-label fw-semibold text-dark">
                                 Kode Jadwal
                             </label>
-                            <input type="text" name="code" class="form-control border-2" placeholder="Kode Jadwal" required>
+                            <input type="text" name="code" class="form-control border-2" placeholder="Kode Jadwal" required value="JDW{{ date('YmdHis') }}">
+                            <small class="text-muted">Kode otomatis, bisa diubah jika perlu.</small>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold text-dark">
                                 Kelas
                             </label>
-                            <input type="text" name="class" class="form-control border-2" placeholder="Nama Kelas" required>
+                            <select name="id_class" class="form-control border-2" required>
+                                <option value="">Pilih Kelas</option>
+                                @foreach($kelas as $kls)
+                                    <option value="{{ $kls->id }}">{{ $kls->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold text-dark">
                                 Mata Pelajaran
                             </label>
-                            <input type="text" name="subject" class="form-control border-2" placeholder="Nama Mapel" required>
+                            <select name="id_subject" class="form-control border-2" required>
+                                <option value="">Pilih Mapel</option>
+                                @foreach($mapel as $mpl)
+                                    <option value="{{ $mpl->id }}">{{ $mpl->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -298,7 +416,12 @@
                             <label class="form-label fw-semibold text-dark">
                                 Guru
                             </label>
-                            <input type="text" name="teacher" class="form-control border-2" placeholder="Nama Guru" required>
+                            <select name="id_teacher" class="form-control border-2" required>
+                                <option value="">Pilih Guru</option>
+                                @foreach($guru as $gr)
+                                    <option value="{{ $gr->id }}">{{ $gr->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -314,6 +437,38 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Konfirmasi Hapus Jadwal -->
+<div class="modal fade" id="modalHapusJadwal" tabindex="-1" aria-labelledby="modalHapusJadwalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content shadow-lg border-0 rounded-4">
+            <div class="modal-header bg-danger border-0 rounded-top-4">
+                <h5 class="modal-title fw-bold text-white" id="modalHapusJadwalLabel">
+                    Konfirmasi Hapus Jadwal
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <p class="fw-semibold text-dark mb-0">Anda yakin ingin menghapus <span id="hapus-count"></span> jadwal terpilih?</p>
+            </div>
+            <div class="modal-footer bg-white border-0 p-4 gap-2">
+                <button type="button" class="btn btn-secondary px-4 fw-semibold shadow-sm" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Batal
+                </button>
+                <button type="button" class="btn btn-danger px-4 fw-semibold shadow-sm" id="btn-konfirmasi-hapus">
+                    <i class="fas fa-trash me-2"></i>Hapus
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form hapus jadwal (hidden) -->
+<form id="formHapusJadwal" method="POST" action="{{ route('jadwal.destroy') }}" style="display:none;">
+    @csrf
+    @method('DELETE')
+    <input type="hidden" name="ids" id="hapus_ids">
+</form>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
@@ -335,22 +490,32 @@
                 pageLength: 10 // Jumlah data default per halaman
             });
 
-            // Fungsi untuk memilih semua checkbox
             $('#select-all').on('click', function () {
                 $('.row-checkbox').prop('checked', this.checked);
             });
 
-            // Button hapus
+            // Hapus jadwal menggunakan modal
+            let jadwalIdsToDelete = [];
             $('#btn-hapus-guru').on('click', function () {
                 const checked = $('.row-checkbox:checked').length;
                 if (checked === 0) {
                     alert('Pilih data yang ingin dihapus.');
                 } else {
-                    alert('Menghapus ' + checked + ' data terpilih.');
+                    jadwalIdsToDelete = [];
+                    $('.row-checkbox:checked').each(function() {
+                        jadwalIdsToDelete.push($(this).data('id'));
+                    });
+                    $('#hapus-count').text(checked);
+                    $('#modalHapusJadwal').modal('show');
                 }
             });
 
-            // Button edit
+            $('#btn-konfirmasi-hapus').on('click', function () {
+                $('#hapus_ids').val(jadwalIdsToDelete.join(','));
+                $('#formHapusJadwal').submit();
+                $('#modalHapusJadwal').modal('hide');
+            });
+
             $('#btn-edit-guru').on('click', function () {
                 const checked = $('.row-checkbox:checked').length;
                 if (checked === 0) {
@@ -358,10 +523,73 @@
                 } else if (checked > 1) {
                     alert('Pilih hanya satu data untuk diedit.');
                 } else {
-                    // Lakukan aksi edit di sini (misal: buka modal edit, dsb)
-                    alert('Edit data terpilih.');
+                    // Ambil data dari checkbox terpilih
+                    const cb = $('.row-checkbox:checked').first();
+                    $('#edit_id').val(cb.data('id'));
+                    $('#edit_day_of_week').val(cb.data('day_of_week'));
+                    $('#edit_period_start').val(cb.data('period_start'));
+                    $('#edit_period_end').val(cb.data('period_end'));
+                    $('#edit_start_time').val(cb.data('start_time'));
+                    $('#edit_end_time').val(cb.data('end_time'));
+                    $('#edit_code').val(cb.data('code'));
+                    $('#edit_id_class').val(cb.data('id_class'));
+                    $('#edit_id_subject').val(cb.data('id_subject'));
+                    $('#edit_id_teacher').val(cb.data('id_teacher'));
+                    $('#edit_id_academic_periods').val(cb.data('id_academic_periods'));
+                    // Set action form
+                    $('#formEditJadwal').attr('action', '/pages/jadwal/jadwal/' + cb.data('id'));
+                    // Buka modal edit
+                    $('#modalEditJadwal').modal('show');
                 }
             });
+
+            // Otomatis isi jam mulai pada modal tambah jadwal
+            function updateStartTime() {
+                let periodStart = parseInt($('#tambah_period_start').val());
+                if (!isNaN(periodStart) && periodStart > 0) {
+                    // Jam ke-1 mulai 07:00, jam ke-2 mulai 08:00, dst
+                    let hour = 7 + (periodStart - 1);
+                    let hourStr = hour.toString().padStart(2, '0');
+                    $('#tambah_start_time').val(hourStr + ':00');
+                }
+            }
+            $('#tambah_period_start').on('input', updateStartTime);
+            $('#tambah_period_start').on('change', updateStartTime);
+
+            // Otomatis isi jam selesai pada modal tambah jadwal
+            function updateEndTime() {
+                let periodEnd = parseInt($('#tambah_period_end').val());
+                if (!isNaN(periodEnd) && periodEnd > 0) {
+                    let hour = 7 + (periodEnd - 1);
+                    let hourStr = hour.toString().padStart(2, '0');
+                    $('input[name="end_time"]').val(hourStr + ':00');
+                }
+            }
+            $('#tambah_period_end').on('input', updateEndTime);
+            $('#tambah_period_end').on('change', updateEndTime);
+
+            // ========== Tambahan untuk Modal Edit ==========
+            function updateEditStartTime() {
+                let periodStart = parseInt($('#edit_period_start').val());
+                if (!isNaN(periodStart) && periodStart > 0) {
+                    let hour = 7 + (periodStart - 1);
+                    let hourStr = hour.toString().padStart(2, '0');
+                    $('#edit_start_time').val(hourStr + ':00');
+                }
+            }
+            $('#edit_period_start').on('input', updateEditStartTime);
+            $('#edit_period_start').on('change', updateEditStartTime);
+
+            function updateEditEndTime() {
+                let periodEnd = parseInt($('#edit_period_end').val());
+                if (!isNaN(periodEnd) && periodEnd > 0) {
+                    let hour = 7 + (periodEnd - 1);
+                    let hourStr = hour.toString().padStart(2, '0');
+                    $('#edit_end_time').val(hourStr + ':00');
+                }
+            }
+            $('#edit_period_end').on('input', updateEditEndTime);
+            $('#edit_period_end').on('change', updateEditEndTime);
         });
     </script>
 @endsection

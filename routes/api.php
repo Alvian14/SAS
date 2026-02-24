@@ -34,5 +34,5 @@ Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
     Route::post('/qrattendance', [AttendanceController::class, 'qrAttendance']);
     Route::get('/attendance/report', [AttendanceController::class, 'report']);
     Route::get('/attendance/report/class', [AttendanceController::class, 'reportClass']);
-    
+    Route::post('/attendance/permission', [AttendanceController::class, 'createPermission']);
 });

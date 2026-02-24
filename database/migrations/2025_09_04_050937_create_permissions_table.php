@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->integer('period_start')->nullable();
             $table->integer('period_end')->nullable();
-            $table->string('subject');
             $table->enum('reason', ['sakit', 'izin', 'dispen', 'lainnya']);
             $table->text('information')->nullable(true);
             $table->string('evidence');
@@ -26,6 +25,9 @@ return new class extends Migration
 
             // relationship foreign key
             $table->foreignId('id_student')->constrained('students')->onDelete('cascade');
+
+            // relation for approval by admin or teacher.
+            $table->foreignId('approved_by')->constrained('users')->onDelete('set null')->nullable();
 
             // timestamp
             $table->timestamps();

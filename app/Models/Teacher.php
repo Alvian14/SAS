@@ -17,7 +17,7 @@ class Teacher extends Model
         'id_user',
         'name',
         'nip',
-        'subject',
+        'id_subject',
     ];
 
     public $timestamps = true;

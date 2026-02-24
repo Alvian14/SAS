@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Student;
 use App\Models\Classes;
 use App\Models\Teacher;
+use App\Models\Subject;
 use Faker\Provider\Image as ProviderImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -192,7 +193,8 @@ class AuthController extends Controller
                 'email' => 'required|string|email|max:255|unique:users',
                 'password' => 'required|string|min:6',
                 'nip' => 'required|string|max:50|unique:teachers,nip',
-                'subject' => 'required|string|max:100',
+                'subjects' => 'required|array|min:1',
+                'subjects.*' => 'integer|exists:subjects,id',
                 'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             ]);
 
@@ -203,6 +205,10 @@ class AuthController extends Controller
                 $image->move(public_path('storage/teacher/'), $imageName);
             }
 
+            // Ambil nama semua subject yang dipilih
+            $subjectNames = Subject::whereIn('id', $request->subjects)->pluck('name')->toArray();
+            $subjectString = implode(', ', $subjectNames);
+
             $user = User::create([
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
@@ -210,26 +216,26 @@ class AuthController extends Controller
                 'profile_picture' => $imageName,
             ]);
 
-            $user->teacher()->create([
-                'id_user' => $user->id,
-                'name' => $request->name,
-                'nip' => $request->nip,
-                'subject' => $request->subject,
-            ]);
+            $teacher = new Teacher();
+            $teacher->id_user = $user->id;
+            $teacher->name = $request->name;
+            $teacher->nip = $request->nip;
+            $teacher->subject = $subjectString;
+            $teacher->save();
 
-            // Redirect ke identitas guru
             return redirect()->route('akun.indentitas_guru')->with('success', 'Data guru berhasil ditambahkan.');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Registrasi guru gagal. Silakan coba lagi.')->withInput();
+            return redirect()->back()->with('error', 'Registrasi guru gagal: ' . $e->getMessage())->withInput();
         }
     }
 
     public function identitasGuru()
     {
-        $teachers = Teacher::with('user')->get();
-        return view('pages.akun.indentitas_guru', compact('teachers'));
+        $teachers = Teacher::with('user')->get(); // Hapus 'subjects'
+        $subjects = Subject::all();
+        return view('pages.akun.indentitas_guru', compact('teachers', 'subjects'));
     }
 
     // Update teacher
@@ -245,13 +251,13 @@ class AuthController extends Controller
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
                 'nip' => 'required|string|max:50|unique:teachers,nip,' . $teacher->id,
-                'subject' => 'required|string|max:100',
+                'subjects' => 'required|array|min:1',
+                'subjects.*' => 'integer|exists:subjects,id',
                 'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             ]);
 
             $user->email = $request->email;
             if ($request->hasFile('profile_picture')) {
-                // Hapus foto lama jika ada
                 if ($user->profile_picture) {
                     $oldPath = public_path('storage/teacher/' . $user->profile_picture);
                     if (file_exists($oldPath)) {
@@ -265,9 +271,13 @@ class AuthController extends Controller
             }
             $user->save();
 
+            // Ambil nama semua subject yang dipilih
+            $subjectNames = Subject::whereIn('id', $request->subjects)->pluck('name')->toArray();
+            $subjectString = implode(', ', $subjectNames);
+
             $teacher->name = $request->name;
             $teacher->nip = $request->nip;
-            $teacher->subject = $request->subject;
+            $teacher->subject = $subjectString;
             $teacher->save();
 
             return redirect()->route('akun.indentitas_guru')->with('success', 'Data guru berhasil diupdate.');
@@ -276,6 +286,18 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Update guru gagal. Silakan coba lagi.')->withInput();
         }
+    }
+
+    public function destroyTeacher($id)
+    {
+        $teacher = Teacher::findOrFail($id);
+        // Hapus user terkait (akan otomatis hapus teacher jika foreign key cascade)
+        if ($teacher->user) {
+            $teacher->user->delete();
+        } else {
+            $teacher->delete();
+        }
+        return redirect()->route('akun.indentitas_guru')->with('success', 'Data guru berhasil dihapus.');
     }
 }
 
