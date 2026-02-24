@@ -27,11 +27,6 @@ class Teacher extends Model
         return $this->belongsTo(User::class, 'id_user');
     }
 
-    public function subject()
-    {
-        return $this->belongsTo(Subject::class, 'id_subject');
-    }
-
     public static function findById($id)
     {
         return self::with('user')->findOrFail($id);
