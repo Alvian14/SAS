@@ -258,7 +258,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold text-dark">Jam Selesai</label>
-                            <input type="time" name="end_time" id="edit_end_time" class="form-control border-2" required readonly>
+                            <input type="time" name="end_time" id="edit_end_time" class="form-control border-2" required id="tambah_end_time" readonly>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -377,7 +377,7 @@
                             <label class="form-label fw-semibold text-dark">
                                 Jam Selesai
                             </label>
-                            <input type="time" name="end_time" class="form-control border-2" required readonly>
+                            <input type="time" name="end_time" class="form-control border-2" required id="tambah_end_time" readonly>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -543,30 +543,30 @@
                 }
             });
 
-            // Otomatis isi jam mulai pada modal tambah jadwal
-            function updateStartTime() {
-                let periodStart = parseInt($('#tambah_period_start').val());
-                if (!isNaN(periodStart) && periodStart > 0) {
-                    // Jam ke-1 mulai 07:00, jam ke-2 mulai 08:00, dst
-                    let hour = 7 + (periodStart - 1);
-                    let hourStr = hour.toString().padStart(2, '0');
-                    $('#tambah_start_time').val(hourStr + ':00');
-                }
-            }
-            $('#tambah_period_start').on('input', updateStartTime);
-            $('#tambah_period_start').on('change', updateStartTime);
+            // // Otomatis isi jam mulai pada modal tambah jadwal
+            // function updateStartTime() {
+            //     let periodStart = parseInt($('#tambah_period_start').val());
+            //     if (!isNaN(periodStart) && periodStart > 0) {
+            //         // Jam ke-1 mulai 07:00, jam ke-2 mulai 08:00, dst
+            //         let hour = 7 + (periodStart - 1);
+            //         let hourStr = hour.toString().padStart(2, '0');
+            //         $('#tambah_start_time').val(hourStr + ':00');
+            //     }
+            // }
+            // $('#tambah_period_start').on('input', updateStartTime);
+            // $('#tambah_period_start').on('change', updateStartTime);
 
-            // Otomatis isi jam selesai pada modal tambah jadwal
-            function updateEndTime() {
-                let periodEnd = parseInt($('#tambah_period_end').val());
-                if (!isNaN(periodEnd) && periodEnd > 0) {
-                    let hour = 7 + (periodEnd - 1);
-                    let hourStr = hour.toString().padStart(2, '0');
-                    $('input[name="end_time"]').val(hourStr + ':00');
-                }
-            }
-            $('#tambah_period_end').on('input', updateEndTime);
-            $('#tambah_period_end').on('change', updateEndTime);
+            // // Otomatis isi jam selesai pada modal tambah jadwal
+            // function updateEndTime() {
+            //     let periodEnd = parseInt($('#tambah_period_end').val());
+            //     if (!isNaN(periodEnd) && periodEnd > 0) {
+            //         let hour = 7 + (periodEnd - 1);
+            //         let hourStr = hour.toString().padStart(2, '0');
+            //         $('input[name="end_time"]').val(hourStr + ':00');
+            //     }
+            // }
+            // $('#tambah_period_end').on('input', updateEndTime);
+            // $('#tambah_period_end').on('change', updateEndTime);
 
             // ========== Tambahan untuk Modal Edit ==========
             function updateEditStartTime() {
@@ -592,5 +592,44 @@
             $('#edit_period_end').on('change', updateEditEndTime);
         });
     </script>
+
+    <script>
+        // PERIODS mapping from server config; keys are period numbers
+        const PERIODS = @json(config('periods.periods'));
+
+        // standalone functions for Tambah (add) modal
+        function updateAddStartTime() {
+            const start = parseInt($('#tambah_period_start').val());
+            if (!start) {
+                $('#tambah_start_time').val('');
+                return;
+            }
+            if (!PERIODS[start]) {
+                $('#tambah_start_time').val('');
+                return;
+            }
+            $('#tambah_start_time').val(PERIODS[start].start);
+        }
+
+        function updateAddEndTime() {
+            const end = parseInt($('#tambah_period_end').val());
+            if (!end) {
+                $('#tambah_end_time').val('');
+                return;
+            }
+            if (!PERIODS[end]) {
+                $('#tambah_end_time').val('');
+                return;
+            }
+            $('#tambah_end_time').val(PERIODS[end].end);
+        }
+
+        // bind events after DOM ready (only for add functions - edit handlers already exist above)
+        $(function(){
+            $('#tambah_period_start').on('input change', updateAddStartTime);
+            $('#tambah_period_end').on('input change', updateAddEndTime);
+        });
+    </script>
+    
 @endsection
 
