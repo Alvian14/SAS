@@ -180,7 +180,8 @@
                             <td>{{ $teacher->name }}</td>
                             <td>{{ $teacher->user->email ?? '-' }}</td>
                             <td>{{ $teacher->nip }}</td>
-                            <td>{{ $teacher->subject ?? '-' }}</td>
+                            {{-- kode pramudya --}}
+                            <td>{{ $teacher->subject_objects->pluck('name')->join(', ') ?: '-' }}</td>  
                         </tr>
                         @endforeach
                     </tbody>

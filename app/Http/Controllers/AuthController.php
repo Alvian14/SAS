@@ -206,7 +206,7 @@ class AuthController extends Controller
             }
 
             // Ambil nama semua subject yang dipilih
-            $subjectNames = Subject::whereIn('id', $request->subjects)->pluck('name')->toArray();
+            $subjectNames = Subject::whereIn('id', $request->subjects)->pluck('code')->toArray();
             $subjectString = implode(', ', $subjectNames);
 
             $user = User::create([
@@ -235,6 +235,9 @@ class AuthController extends Controller
     {
         $teachers = Teacher::with('user')->get(); // Hapus 'subjects'
         $subjects = Subject::all();
+
+        
+
         return view('pages.akun.indentitas_guru', compact('teachers', 'subjects'));
     }
 
@@ -272,7 +275,7 @@ class AuthController extends Controller
             $user->save();
 
             // Ambil nama semua subject yang dipilih
-            $subjectNames = Subject::whereIn('id', $request->subjects)->pluck('name')->toArray();
+            $subjectNames = Subject::whereIn('id', $request->subjects)->pluck('code')->toArray();
             $subjectString = implode(', ', $subjectNames);
 
             $teacher->name = $request->name;
