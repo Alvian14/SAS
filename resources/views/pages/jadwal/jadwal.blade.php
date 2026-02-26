@@ -160,10 +160,10 @@
                             <th>Jam Ke Akhir</th>
                             <th>Jam Mulai</th>
                             <th>Jam Selesai</th>
-                            <th>Kode</th>
                             <th>Kelas</th>
                             <th>Mapel</th>
                             <th>Guru</th>
+                            <th>Kode</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -177,11 +177,11 @@
                                     data-period_end="{{ $item->period_end }}"
                                     data-start_time="{{ $item->start_time }}"
                                     data-end_time="{{ $item->end_time }}"
-                                    data-code="{{ $item->code }}"
                                     data-id_class="{{ $item->class ? $item->class->id : '' }}"
                                     data-id_subject="{{ $item->subject ? $item->subject->id : '' }}"
                                     data-id_teacher="{{ $item->teacher ? $item->teacher->id : '' }}"
                                     data-id_academic_periods="{{ $item->id_academic_periods }}"
+                                    data-code="{{ $item->code }}"
                                 />
                             </td>
                             <td>{{ $item->day_of_week }}</td>
@@ -189,10 +189,14 @@
                             <td>{{ $item->period_end }}</td>
                             <td>{{ $item->start_time }}</td>
                             <td>{{ $item->end_time }}</td>
-                            <td>{{ $item->code }}</td>
                             <td>{{ $item->class ? $item->class->name : '-' }}</td>
                             <td>{{ $item->subject ? $item->subject->name : '-' }}</td>
                             <td>{{ $item->teacher ? $item->teacher->name : '-' }}</td>
+                            <td>
+                                <a href="{{ route('jadwal.qr', $item->id) }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-qrcode"></i> Lihat QR
+                                </a>
+                            </td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -264,7 +268,8 @@
                     <div class="row mb-3">
                         <div class="col-md-4">
                             <label class="form-label fw-semibold text-dark">Kode Jadwal</label>
-                            <input type="text" name="code" id="edit_code" class="form-control border-2" required>
+                            <input type="text" name="code" id="edit_code" class="form-control border-2" readonly>
+                            <small class="text-muted">Kode akan otomatis berubah jika ada perubahan data.</small>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold text-dark">Kelas</label>
@@ -385,8 +390,8 @@
                             <label class="form-label fw-semibold text-dark">
                                 Kode Jadwal
                             </label>
-                            <input type="text" name="code" class="form-control border-2" placeholder="Kode Jadwal" required value="JDW{{ date('YmdHis') }}">
-                            <small class="text-muted">Kode otomatis, bisa diubah jika perlu.</small>
+                            <input type="text" name="code" class="form-control border-2" placeholder="Kosongkan Kode !!" value="{{ old('code') ? md5(old('code')) : '' }}" readonly>
+                            <small class="text-muted">Biarkan kosong untuk kode otomatis</small>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold text-dark">
@@ -473,6 +478,7 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     <script>
         $(document).ready(function () {
             $('#example').DataTable({
@@ -543,31 +549,6 @@
                 }
             });
 
-            // // Otomatis isi jam mulai pada modal tambah jadwal
-            // function updateStartTime() {
-            //     let periodStart = parseInt($('#tambah_period_start').val());
-            //     if (!isNaN(periodStart) && periodStart > 0) {
-            //         // Jam ke-1 mulai 07:00, jam ke-2 mulai 08:00, dst
-            //         let hour = 7 + (periodStart - 1);
-            //         let hourStr = hour.toString().padStart(2, '0');
-            //         $('#tambah_start_time').val(hourStr + ':00');
-            //     }
-            // }
-            // $('#tambah_period_start').on('input', updateStartTime);
-            // $('#tambah_period_start').on('change', updateStartTime);
-
-            // // Otomatis isi jam selesai pada modal tambah jadwal
-            // function updateEndTime() {
-            //     let periodEnd = parseInt($('#tambah_period_end').val());
-            //     if (!isNaN(periodEnd) && periodEnd > 0) {
-            //         let hour = 7 + (periodEnd - 1);
-            //         let hourStr = hour.toString().padStart(2, '0');
-            //         $('input[name="end_time"]').val(hourStr + ':00');
-            //     }
-            // }
-            // $('#tambah_period_end').on('input', updateEndTime);
-            // $('#tambah_period_end').on('change', updateEndTime);
-
             // ========== Tambahan untuk Modal Edit ==========
             function updateEditStartTime() {
                 let periodStart = parseInt($('#edit_period_start').val());
@@ -591,11 +572,8 @@
             $('#edit_period_end').on('input', updateEditEndTime);
             $('#edit_period_end').on('change', updateEditEndTime);
         });
-    </script>
 
-    <script>
-        // PERIODS mapping from server config; keys are period numbers
-        const PERIODS = @json(config('periods.periods'));
+         const PERIODS = @json(config('periods.periods'));
 
         // standalone functions for Tambah (add) modal
         function updateAddStartTime() {
@@ -630,6 +608,7 @@
             $('#tambah_period_end').on('input change', updateAddEndTime);
         });
     </script>
-    
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 @endsection
 

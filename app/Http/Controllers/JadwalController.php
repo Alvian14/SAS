@@ -9,6 +9,8 @@ use App\Models\Classes;
 use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\AcademicPeriod;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\View;
 
 class JadwalController extends Controller
 {
@@ -29,7 +31,9 @@ class JadwalController extends Controller
             'day_of_week' => 'required|string',
             'period_start' => 'required|integer',
             'period_end' => 'required|integer',
-            'code' => 'required|string',
+            'start_time' => 'required|string',
+            'end_time' => 'required|string',
+            'code' => 'nullable|string',
             'id_class' => 'required|exists:clases,id',
             'id_subject' => 'required|exists:subjects,id',
             'id_teacher' => 'required|exists:teachers,id',
@@ -42,13 +46,31 @@ class JadwalController extends Controller
         $start_time = sprintf('%02d:00', $startHour);
         $end_time = sprintf('%02d:00', $endHour);
 
+        // Ambil data untuk kode otomatis
+        $class = Classes::find($validated['id_class']);
+        $subject = Subject::find($validated['id_subject']);
+        $period = $validated['id_academic_periods'] ?? '';
+        $token = (string) random_int(1000, 9999);
+
+        $day = strtoupper(substr($validated['day_of_week'], 0, 3));
+        $className = $class ? $class->name : '';
+        $subjectCode = $subject ? $subject->code : '';
+        $periodCode = $period ?: '0';
+
+        $autoCode = "{$className}-{$day}-{$validated['period_start']}-{$validated['period_end']}-{$subjectCode}-{$periodCode}-{$token}";
+
+        $code = $request->input('code') ?: $autoCode;
+
+        // Hash code sebelum simpan ke database
+        $hashedCode = md5($code);
+
         Schedule::create([
             'day_of_week' => $validated['day_of_week'],
             'period_start' => $validated['period_start'],
             'period_end' => $validated['period_end'],
-            'start_time' => $start_time,
-            'end_time' => $end_time,
-            'code' => $validated['code'],
+            'start_time' => $validated['start_time'],
+            'end_time' => $validated['end_time'],
+            'code' => $hashedCode,
             'id_class' => $validated['id_class'],
             'id_subject' => $validated['id_subject'],
             'id_teacher' => $validated['id_teacher'],
@@ -64,6 +86,8 @@ class JadwalController extends Controller
             'day_of_week' => 'required|string',
             'period_start' => 'required|integer',
             'period_end' => 'required|integer',
+            'start_time' => 'required|string',
+            'end_time' => 'required|string',
             'code' => 'required|string',
             'id_class' => 'required|exists:clases,id',
             'id_subject' => 'required|exists:subjects,id',
@@ -71,19 +95,23 @@ class JadwalController extends Controller
             'id_academic_periods' => 'nullable|exists:academic_periods,id',
         ]);
 
+        // Hitung jam mulai dan jam selesai
         $startHour = 7 + ($validated['period_start'] - 1);
         $endHour = 7 + ($validated['period_end'] - 1);
         $start_time = sprintf('%02d:00', $startHour);
         $end_time = sprintf('%02d:00', $endHour);
+
+        // Hash code sebelum update ke database
+        $hashedCode = md5($validated['code']);
 
         $jadwal = Schedule::findOrFail($id);
         $jadwal->update([
             'day_of_week' => $validated['day_of_week'],
             'period_start' => $validated['period_start'],
             'period_end' => $validated['period_end'],
-            'start_time' => $start_time,
-            'end_time' => $end_time,
-            'code' => $validated['code'],
+            'start_time' => $validated['start_time'],
+            'end_time' => $validated['end_time'],
+            'code' => $hashedCode,
             'id_class' => $validated['id_class'],
             'id_subject' => $validated['id_subject'],
             'id_teacher' => $validated['id_teacher'],
@@ -105,5 +133,11 @@ class JadwalController extends Controller
         }
         Schedule::destroy($ids);
         return redirect()->route('jadwal.index')->with('success', 'Jadwal berhasil dihapus!');
+    }
+
+    public function showQr($id)
+    {
+        $jadwal = \App\Models\Schedule::findOrFail($id);
+        return view('pages.jadwal.qr', compact('jadwal'));
     }
 }
