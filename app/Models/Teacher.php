@@ -44,4 +44,9 @@ class Teacher extends Model
         // Search by subject.code and return Subject models so we can show their names
         return Subject::whereIn('code', $names)->get();
     }
+
+    public function subjects()
+{
+    return $this->hasMany(Subject::class, 'id_teacher');
+}
 }
