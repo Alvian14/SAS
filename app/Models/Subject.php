@@ -15,4 +15,12 @@ class Subject extends Model
     protected $fillable = ['name', 'type', 'code'];
 
     public $timestamps = true;
+
+
+    public function teacher()
+{
+    return $this->belongsTo(Teacher::class, 'id_teacher');
 }
+}
+
+

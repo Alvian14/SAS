@@ -114,6 +114,7 @@ Route::put('/pages/jadwal/jadwal/{id}', [JadwalController::class, 'update'])
 Route::delete('/pages/jadwal/jadwal', [JadwalController::class, 'destroy'])
     ->middleware('auth')
     ->name('jadwal.destroy');
+Route::get('/jadwal/qr/{id}', [\App\Http\Controllers\JadwalController::class, 'showQr'])->name('jadwal.qr');
 // ========================= end jadwal ======================
 
 
