@@ -4,6 +4,7 @@ namespace App\Http\Controllers\api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceHistory;
+use App\Models\AttendanceHistoryDaily;
 use App\Models\Permission;
 use App\Models\Schedule;
 use Carbon\Carbon;
@@ -182,6 +183,59 @@ class AttendanceController extends Controller
     
     }
 
+    // get attendance report from eloquent AttendanceHistoryDaily from face recognition attendance
+    // based on student and date.
+    public function dailyAttendanceReport(Request $request)
+    {
+        try {
+            $request->validate([
+                'date' => 'required|date',
+            ]);
+
+            $user = $request->user();
+            $student = $user->student ?? null;
+            if (!$student) {
+                return response()->json(['success' => false, 'message' => 'Student profile not found for user'], 403);
+            }
+
+            $date = Carbon::parse($request->date)->toDateString();
+
+            $attendanceRecords = AttendanceHistoryDaily::query()
+                ->where('id_student', $student->id)
+                ->whereDate('created_at', $date)
+                ->get()
+                ->first();
+            
+            // if record is empty, return message no attendance record for that date
+            if (!$attendanceRecords) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No attendance record for this date',
+                    'data' => null,
+                ], 200);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Daily attendance report fetched',
+                'data' => $attendanceRecords,
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+    
     // get attendance report based on schedule, student, and date.
     // expected result: List Schedule [schedule + attendance status (hadir, izin, sakit, alpa), if in schedule hasnt attendance record just return attendance status: null]
     // get parameter: id_class, date, id_student (from token)
