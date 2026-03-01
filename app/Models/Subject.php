@@ -17,10 +17,10 @@ class Subject extends Model
     public $timestamps = true;
 
 
-    public function teacher()
-{
-    return $this->belongsTo(Teacher::class, 'id_teacher');
-}
+        public function teacher()
+    {
+        return $this->belongsTo(Teacher::class, 'id_teacher');
+    }
 }
 
 

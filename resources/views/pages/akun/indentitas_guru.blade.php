@@ -6,158 +6,149 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/dataTables.bootstrap5.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <style>
-        .table-custom-header {
-            background-color: #365CF5 !important; /* Biru tua */
-            color: white !important;
-        }
-        .table-custom-footer {
-            background-color: #DCE4F7 !important; /* Biru muda lembut */
-        }
-        .table {
-            border: none !important; /* Hilangkan border tabel */
-            font-size: 14px; /* Kurangi ukuran teks tabel */
-        }
-        .table th, .table td {
-            border: none !important; /* Hilangkan border untuk sel */
-        }
-        .dataTables_paginate .paginate_button {
-            background-color: transparent !important;
-            border: none !important;
-            color: #365CF5 !important;
-        }
-        .dataTables_paginate .paginate_button:hover {
-            background-color: white !important;
-            color: #365CF5 !important; /* Pastikan teks tetap biru */
-            border-radius: 4px !important;
-        }
-        .dataTables_paginate .paginate_button.current {
-            background-color: #365CF5 !important;
-            color: white !important;
-            border-radius: 4px !important;
-        }
-        .btn-tambah-guru {
-            font-weight: bold;
-            background-color: #365CF5;
-            color: white;
-            padding: 8px 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
-        .btn-tambah-guru:hover {
-            color: white;
-            background-color: #365CF5;
-        }
-        .btn-hapus-guru {
-            font-weight: bold;
-            background-color: transparent;
-            color: #dc3545;
-            border: 2px solid #dc3545;
-            padding: 8px 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
-        .btn-hapus-guru:hover {
-            background-color: #dc3545;
-            color: white;
-        }
-        .btn-edit-guru {
-            font-weight: bold;
-            background-color: transparent;
-            color: #ffc107;
-            border: 2px solid #ffc107;
-            padding: 8px 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
-        .btn-edit-guru:hover {
-            background-color: #ffc107;
-            color: #212529;
-        }
-         @media (min-width: 768px) {
-            .btn-tambah-guru,
-            .btn-edit-guru,
-            .btn-hapus-guru {
-                font-size: 14px !important;
-                padding: 7px 14px !important;
-                width: auto !important;
-                min-width: 100px;
-            }
-            .card-header .d-flex.gap-2.flex-column.flex-md-row.w-100.w-md-auto {
-                width: auto !important;
-            }
-        }
-        @media (max-width: 767.98px) {
-            .btn-tambah-guru,
-            .btn-edit-guru,
-            .btn-hapus-guru {
-                font-size: 15px !important;
-                padding: 10px 18px !important;
-                width: 100% !important;
-            }
-        }
+    .table-custom-header th {
+        background: linear-gradient(90deg, #365CF5 0%, #6a8ffd 100%) !important;
+        color: white !important; font-weight: 600; letter-spacing: 0.5px;
+        padding: 14px 12px !important; border: none !important; white-space: nowrap;
+    }
+    .table tbody tr { transition: background 0.2s; }
+    .table tbody tr:nth-child(even) { background: #f4f7ff !important; }
+    .table tbody tr:hover { background: #e3eafd !important; }
+    .table th, .table td { border: none !important; vertical-align: middle !important; }
+    .table { border-collapse: separate !important; border-spacing: 0 !important; font-size: 16px; }
+    .summary-card { border-radius: 16px; padding: 18px 24px; color: white; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.10); transition: transform 0.2s; }
+    .summary-card:hover { transform: translateY(-3px); }
+    .summary-card .icon-wrap { width: 52px; height: 52px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; }
+    .summary-card .label { font-size: 0.85rem; opacity: 0.85; }
+    .summary-card .count { font-size: 2rem; font-weight: 800; line-height: 1; }
+    .btn-edit-guru {
+        font-weight: bold;
+        background-color: transparent;
+        color: #ffc107;
+        border: 2px solid #ffc107;
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        border-radius: 8px;
+    }
+    .btn-edit-guru:hover {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    .btn-hapus-guru {
+        font-weight: bold;
+        background-color: transparent;
+        color: #dc3545;
+        border: 2px solid #dc3545;
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        border-radius: 8px;
+    }
+    .btn-hapus-guru:hover {
+        background-color: #dc3545;
+        color: white;
+    }
+    .btn-tambah-guru {
+        font-weight: bold;
+        background-color: #365CF5;
+        color: white;
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        border-radius: 8px;
+    }
+    .btn-tambah-guru:hover {
+        color: white;
+        background-color: #365CF5;
+    }
+    @media (max-width: 767.98px) {
+        .btn-edit-guru, .btn-hapus-guru, .btn-tambah-guru { font-size: 15px !important; padding: 10px 18px !important; width: 100% !important; }
+    }
 </style>
 
 <div class="container-fluid">
-    <!-- ========== title-wrapper start ========== -->
     <div class="title-wrapper pt-30">
         <div class="row align-items-start">
             <div class="col-md-6">
-                <div class="title">
-                    <h2 style="font-weight: 500;">Identitas Guru</h2> <!-- Kurangi ketebalan judul -->
-                </div>
+                <h2 style="font-weight:500;">
+                    <i class="fas fa-chalkboard-teacher me-2 text-primary"></i>Identitas Guru
+                </h2>
             </div>
             <div class="col-md-6">
-                <div class="breadcrumb-wrapper">
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb">
-                            <li class="breadcrumb-item">
-                                <a href="{{ route('dashboard.index') }}">Dashboard</a>
-                            </li>
-                            <li class="breadcrumb-item active" aria-current="page">
-                                Identitas Guru
-                            </li>
-                        </ol>
-                    </nav>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb justify-content-md-end" style="font-size: 0.85rem;">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard.index') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Identitas Guru</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    @php
+        $totalGuru = $teachers->count();
+        $totalMapel = $subjects->count();
+        $totalNIP = $teachers->whereNotNull('nip')->count();
+        $totalEmail = $teachers->filter(fn($t) => $t->user && $t->user->email)->count();
+    @endphp
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4 mt-3">
+        <div class="col-6 col-md-3">
+            <div class="summary-card" style="background:linear-gradient(135deg,#365CF5,#6a8ffd);">
+                <div class="icon-wrap"><i class="fas fa-chalkboard-teacher"></i></div>
+                <div>
+                    <div class="label">Total Guru</div>
+                    <div class="count">{{ $totalGuru }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="summary-card" style="background:linear-gradient(135deg,#22c55e,#4ade80);">
+                <div class="icon-wrap"><i class="fas fa-book"></i></div>
+                <div>
+                    <div class="label">Total Mapel</div>
+                    <div class="count">{{ $totalMapel }}</div>
                 </div>
             </div>
         </div>
     </div>
-    <!-- ========== title-wrapper end ========== -->
 
-    <!-- Card Wrapper -->
-    <div class="card shadow-sm">
-        <div class="card-header bg-gradient-primary text-white d-flex flex-column flex-md-row justify-content-between align-items-md-center align-items-start">
-            <h5 class="mb-2 mb-md-0">Daftar Identitas Guru</h5>
-            <div class="d-flex w-100 w-md-auto justify-content-md-end mt-2 mt-md-0">
-                <div class="d-flex gap-2 flex-column flex-md-row w-100 w-md-auto">
-                    <button class="btn btn-light btn-sm btn-tambah-guru w-100 w-md-auto d-block d-md-inline-block" style="font-size:14px;padding:7px 14px;" data-bs-toggle="modal" data-bs-target="#modalTambahGuru">
-                        <i class="fas fa-plus"></i> Tambah Guru
-                    </button>
-                    <button class="btn btn-edit-guru btn-sm w-100 w-md-auto d-block d-md-inline-block" style="font-size:14px;padding:7px 14px;" id="btn-edit-guru" type="button">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                    <button class="btn btn-hapus-guru btn-sm w-100 w-md-auto d-block d-md-inline-block" style="font-size:14px;padding:7px 14px;" id="btn-hapus-guru" type="button">
-                        <i class="fas fa-trash"></i> Hapus
-                    </button>
-                </div>
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white border-0 rounded-top-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center align-items-start py-3 px-4">
+            <h5 class="mb-2 mb-md-0 fw-bold text-primary">
+                <i class="fas fa-list me-2"></i>
+                Daftar Identitas Guru
+            </h5>
+            <div class="d-flex gap-2 flex-column flex-md-row w-100 w-md-auto justify-content-md-end mt-2 mt-md-0">
+                <button class="btn btn-tambah-guru btn-sm" style="font-size:14px;padding:7px 14px;" data-bs-toggle="modal" data-bs-target="#modalTambahGuru">
+                    <i class="fas fa-plus"></i> Tambah Guru
+                </button>
+                <button class="btn btn-edit-guru btn-sm" style="font-size:14px;padding:7px 14px;" id="btn-edit-guru" type="button">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="btn btn-hapus-guru btn-sm" style="font-size:14px;padding:7px 14px;" id="btn-hapus-guru" type="button">
+                    <i class="fas fa-trash"></i> Hapus
+                </button>
             </div>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table id="example" class="table table-hover align-middle">
+        <div class="card-body px-4 py-3">
+            <div class="table-responsive rounded-3">
+                <table id="example" class="table table-hover align-middle w-100">
                     <thead class="table-custom-header">
                         <tr>
-                            <th>
+                            <th class="text-center" style="width:40px;border-radius:12px 0 0 0;">
                                 <input type="checkbox" id="select-all" />
                             </th>
-                            <th>Foto</th>
+                            <th class="text-center" style="width:60px;">Foto</th>
                             <th>Nama</th>
                             <th>Email</th>
                             <th>NIP</th>
@@ -167,21 +158,32 @@
                     <tbody>
                         @foreach($teachers as $teacher)
                         <tr data-id="{{ $teacher->id }}">
-                            <td>
+                            <td class="text-center">
                                 <input type="checkbox" class="row-checkbox" />
                             </td>
-                            <td>
+                            <td class="text-center">
                                 @if($teacher->user && $teacher->user->profile_picture)
-                                    <img src="{{ asset('storage/teacher/' . $teacher->user->profile_picture) }}" alt="Foto" width="36" height="36" class="rounded-circle">
+                                    <img src="{{ asset('storage/teacher/' . $teacher->user->profile_picture) }}" alt="Foto" width="36" height="36" class="rounded-circle border border-2 border-primary shadow-sm">
                                 @else
-                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($teacher->name) }}" alt="Foto" width="36" height="36" class="rounded-circle">
+                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($teacher->name) }}" alt="Foto" width="36" height="36" class="rounded-circle border border-2 border-primary shadow-sm">
                                 @endif
                             </td>
-                            <td>{{ $teacher->name }}</td>
-                            <td>{{ $teacher->user->email ?? '-' }}</td>
-                            <td>{{ $teacher->nip }}</td>
-                            {{-- kode pramudya --}}
-                            <td>{{ $teacher->subject_objects->pluck('name')->join(', ') ?: '-' }}</td>  
+                            <td>
+                                <span class="fw-semibold text-dark d-block">{{ $teacher->name }}</span>
+                            </td>
+                            <td>
+                                <span class="text-muted">{{ $teacher->user->email ?? '-' }}</span>
+                            </td>
+                            <td>
+                                <span class="badge rounded-pill px-3 py-2" style="background:#e3eafd;color:#365CF5;font-weight:600;">
+                                    {{ $teacher->nip ?? '-' }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge rounded-pill px-3 py-2" style="background:#dcfce7;color:#16a34a;font-weight:600;">
+                                    {{ $teacher->subject_objects->pluck('name')->join(', ') ?: '-' }}
+                                </span>
+                            </td>
                         </tr>
                         @endforeach
                     </tbody>

@@ -119,7 +119,7 @@ Route::get('/jadwal/qr/{id}', [\App\Http\Controllers\JadwalController::class, 's
 
 
 // ============================ kelas ==========================
-Route::get('/pages/kelas/kelas_absensi', [ClassController::class, 'index'])
+Route::get('/pages/kelas/kelas_absensi', [ClassController::class, 'harian'])
     ->middleware('auth')
     ->name('kelas.absensi');
 
@@ -155,7 +155,7 @@ Route::delete('/pages/kelas/kelas/{id}', [ClassController::class, 'destroy'])
 // })->middleware('auth')->name('absensi.absensi_harian');
 
 
-Route::get('/pages/absensi/absensi_harian', [HistoryDailyController::class, 'index'])
+Route::get('/pages/absensi/absensi_harian/{classId}', [HistoryDailyController::class, 'absensiHarian'])
     ->middleware('auth')
     ->name('absensi.absensi_harian');
 

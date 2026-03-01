@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Classes;
+use App\Models\AttendanceHistoryDaily;
 use Illuminate\Http\Request;
 
 class ClassController extends Controller
 {
-    public function index()
+    public function harian()
     {
         $classes = Classes::all();
         return view('pages.kelas.kelas_absensi', compact('classes'));
@@ -33,7 +34,7 @@ class ClassController extends Controller
         Classes::create([
             'name'  => $request->name,
             'major' => $request->major,
-            'grade' => $request->grade, 
+            'grade' => $request->grade,
             'code'  => $request->code,
         ]);
 
