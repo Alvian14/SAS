@@ -6,130 +6,67 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css">
 <style>
-        .table-custom-header {
-            background-color: #365CF5 !important; /* Biru tua */
-            color: white !important;
-        }
-        .table-custom-footer {
-            background-color: #DCE4F7 !important; /* Biru muda lembut */
-        }
-        .table {
-            border: none !important; /* Hilangkan border tabel */
-            font-size: 14px; /* Kurangi ukuran teks tabel */
-        }
-        .table th, .table td {
-            border: none !important; /* Hilangkan border untuk sel */
-        }
-        .dataTables_paginate .paginate_button {
-            background-color: transparent !important;
-            border: none !important;
-            color: #365CF5 !important;
-        }
-        .dataTables_paginate .paginate_button:hover {
-            background-color: white !important;
-            color: #365CF5 !important; /* Pastikan teks tetap biru */
-            border-radius: 4px !important;
-        }
-        .dataTables_paginate .paginate_button.current {
-            background-color: #365CF5 !important;
-            color: white !important;
-            border-radius: 4px !important;
-        }
-        .btn-tambah-siswa {
-            font-weight: bold;
-            background-color: #365CF5;
-            color: white;
-            padding: 8px 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
-        .btn-tambah-siswa:hover {
-            color: white;
-            background-color: #365CF5;
-        }
-        .btn-hapus-siswa {
-            font-weight: bold;
-            background-color: transparent;
-            color: #dc3545;
-            border: 2px solid #dc3545;
-            padding: 8px 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
-        .btn-hapus-siswa:hover {
-            background-color: #dc3545;
-            color: white;
-        }
-        .btn-edit-siswa {
-            font-weight: bold;
-            background-color: transparent;
-            color: #ffc107;
-            border: 2px solid #ffc107;
-            padding: 8px 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
-        .btn-edit-siswa:hover {
-            background-color: #ffc107;
-            color: #212529;
-        }
-         @media (min-width: 768px) {
-            .btn-tambah-siswa,
-            .btn-edit-siswa,
-            .btn-hapus-siswa {
-                font-size: 14px !important;
-                padding: 7px 14px !important;
-                width: auto !important;
-                min-width: 100px;
-            }
-            .card-header .d-flex.gap-2.flex-column.flex-md-row.w-100.w-md-auto {
-                width: auto !important;
-            }
-        }
-        @media (max-width: 767.98px) {
-            .btn-tambah-siswa,
-            .btn-edit-siswa,
-            .btn-hapus-siswa {
-                font-size: 15px !important;
-                padding: 10px 18px !important;
-                width: 100% !important;
-            }
-        }
-        /* Tambahkan jarak antara search box dan tabel */
-        div.dataTables_filter {
-            margin-bottom: 1rem !important;
-            margin-top: 0.5rem !important;
-        }
+    .table-custom-header th {
+        background: linear-gradient(90deg, #365CF5 0%, #6a8ffd 100%) !important;
+        color: white !important;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        padding: 14px 12px !important;
+        border: none !important;
+        white-space: nowrap;
+    }
+    .table tbody tr { transition: background 0.2s; }
+    .table tbody tr:nth-child(even) { background: #f4f7ff !important; }
+    .table tbody tr:hover { background: #e3eafd !important; }
+    .table th, .table td { border: none !important; vertical-align: middle !important; }
+    .table { border-collapse: separate !important; border-spacing: 0 !important; font-size: 14px; }
+    .dataTables_paginate .paginate_button { background-color: transparent !important; border: none !important; color: #365CF5 !important; }
+    .dataTables_paginate .paginate_button:hover { background-color: #e3eafd !important; color: #365CF5 !important; border-radius: 6px !important; }
+    .dataTables_paginate .paginate_button.current { background: linear-gradient(90deg, #365CF5, #6a8ffd) !important; color: white !important; border-radius: 6px !important; }
+    .btn-edit-siswa {
+        font-weight: bold; background-color: transparent; color: #ffc107;
+        border: 2px solid #ffc107; padding: 8px 16px; display: flex;
+        align-items: center; gap: 8px; transition: all 0.3s ease; border-radius: 8px;
+    }
+    .btn-edit-siswa:hover { background-color: #ffc107; color: #212529; }
+    .summary-card {
+        border-radius: 16px; padding: 18px 24px; color: white;
+        display: flex; align-items: center; gap: 16px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.10); transition: transform 0.2s;
+    }
+    .summary-card:hover { transform: translateY(-3px); }
+    .summary-card .icon-wrap {
+        width: 52px; height: 52px; background: rgba(255,255,255,0.2);
+        border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.7rem;
+    }
+    .summary-card .label { font-size: 0.85rem; opacity: 0.85; }
+    .summary-card .count { font-size: 2rem; font-weight: 800; line-height: 1; }
+    .filter-label { font-size: 0.8rem; font-weight: 600; color: #6c757d; margin-bottom: 4px; }
+    div.dataTables_filter { margin-bottom: 1rem !important; margin-top: 0.5rem !important; }
+    @media (max-width: 767.98px) {
+        .btn-edit-siswa { font-size: 15px !important; padding: 10px 18px !important; width: 100% !important; }
+    }
 </style>
 
 <div class="container-fluid">
-    <!-- ========== title-wrapper start ========== -->
     <div class="title-wrapper pt-30">
         <div class="row align-items-start">
             <div class="col-md-6">
                 <div class="title">
-                    <h2 style="font-weight: 500;">Absensi Mapel</h2> <!-- Kurangi ketebalan judul -->
+                    <h2 style="font-weight:500;">
+                        Absensi Mapel
+                        @if(isset($kelas)) - {{ $kelas->name }} @endif
+                    </h2>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="breadcrumb-wrapper">
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
-                            <li class="breadcrumb-item">
-                                <a href="{{ route('dashboard.index') }}">Dashboard</a>
-                            </li>
-                            <li class="breadcrumb-item">
-                                <a href="{{ route('kelas.absensi') }}">kelas</a>
-                            </li>
+                            <li class="breadcrumb-item"><a href="{{ route('dashboard.index') }}">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('kelas.absensi') }}">Kelas</a></li>
                             <li class="breadcrumb-item active" aria-current="page">
-                                Absensi Mapel
+                                Absensi Mapel @if(isset($kelas)) - {{ $kelas->name }} @endif
                             </li>
                         </ol>
                     </nav>
@@ -137,54 +74,75 @@
             </div>
         </div>
     </div>
-    <!-- ========== title-wrapper end ========== -->
 
-    <!-- Card Wrapper -->
-    <div class="card shadow-sm">
-        <div class="card-header bg-gradient-primary text-white d-flex flex-column flex-md-row justify-content-between align-items-md-center align-items-start">
-            <h5 class="mb-2 mb-md-0">Absensi Mapel</h5>
-            <div class="d-flex w-100 w-md-auto justify-content-md-end mt-2 mt-md-0">
-                <div class="d-flex gap-2 flex-column flex-md-row w-100 w-md-auto">
-                    <!-- Export Button -->
-                    <div id="export-container"></div>
-                    <button class="btn btn-edit-siswa btn-sm w-100 w-md-auto d-block d-md-inline-block" style="font-size:14px;padding:7px 14px;" id="btn-edit-siswa" type="button">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                </div>
+    @php
+        $totalHadir     = isset($absensi) ? $absensi->where('status','tepat_waktu')->count() : 0;
+        $totalTerlambat = isset($absensi) ? $absensi->where('status','terlambat')->count() : 0;
+        $totalLainnya   = isset($absensi) ? $absensi->whereNotIn('status',['tepat_waktu','terlambat'])->count() : 0;
+        $totalSemua     = isset($absensi) ? $absensi->count() : 0;
+    @endphp
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="summary-card" style="background:linear-gradient(135deg,#365CF5,#6a8ffd);">
+                <div class="icon-wrap"><i class="fas fa-users"></i></div>
+                <div><div class="label">Total</div><div class="count">{{ $totalSemua }}</div></div>
             </div>
         </div>
-        <div class="card-body">
-            <!-- Filter Tanggal, Bulan, Tahun -->
-            <div class="row mb-3">
-                <div class="col-md-4 mb-2">
-                    <input type="date" id="filter-tanggal" class="form-control" placeholder="Tanggal">
+        <div class="col-6 col-md-3">
+            <div class="summary-card" style="background:linear-gradient(135deg,#22c55e,#4ade80);">
+                <div class="icon-wrap"><i class="fas fa-check-circle"></i></div>
+                <div><div class="label">Tepat Waktu</div><div class="count">{{ $totalHadir }}</div></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="summary-card" style="background:linear-gradient(135deg,#ef4444,#f87171);">
+                <div class="icon-wrap"><i class="fas fa-clock"></i></div>
+                <div><div class="label">Terlambat</div><div class="count">{{ $totalTerlambat }}</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Wrapper -->
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white border-0 rounded-top-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center align-items-start py-3 px-4">
+            <h5 class="mb-2 mb-md-0 fw-bold text-primary">
+                <i class="fas fa-book me-2"></i>
+                Absensi Mapel
+                @if(isset($kelas))
+                    <span class="badge bg-primary ms-2 rounded-pill">{{ $kelas->name }}</span>
+                @endif
+            </h5>
+            <div class="d-flex gap-2 flex-column flex-md-row w-100 w-md-auto justify-content-md-end mt-2 mt-md-0">
+                <div id="export-container"></div>
+                <button class="btn btn-edit-siswa btn-sm" style="font-size:14px;padding:7px 14px;" id="btn-edit-siswa" type="button">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+            </div>
+        </div>
+        <div class="card-body px-4 py-3">
+            <!-- Filter -->
+            <div class="row mb-4 g-2">
+                <div class="col-md-4">
+                    <div class="filter-label"><i class="fas fa-calendar me-1"></i> Tanggal</div>
+                    <input type="date" id="filter-tanggal" class="form-control rounded-3 shadow-sm">
                 </div>
-                <div class="col-md-4 mb-2">
-                    <select id="filter-bulan" class="form-select">
+                <div class="col-md-4">
+                    <div class="filter-label"><i class="fas fa-calendar-alt me-1"></i> Bulan</div>
+                    <select id="filter-bulan" class="form-select rounded-3 shadow-sm">
                         <option value="">-- Pilih Bulan --</option>
                         @php
-                            $bulanIndo = [
-                                '01' => 'Januari',
-                                '02' => 'Februari',
-                                '03' => 'Maret',
-                                '04' => 'April',
-                                '05' => 'Mei',
-                                '06' => 'Juni',
-                                '07' => 'Juli',
-                                '08' => 'Agustus',
-                                '09' => 'September',
-                                '10' => 'Oktober',
-                                '11' => 'November',
-                                '12' => 'Desember'
-                            ];
+                            $bulanIndo = ['01'=>'Januari','02'=>'Februari','03'=>'Maret','04'=>'April','05'=>'Mei','06'=>'Juni','07'=>'Juli','08'=>'Agustus','09'=>'September','10'=>'Oktober','11'=>'November','12'=>'Desember'];
                         @endphp
                         @foreach($bulanIndo as $num => $nama)
                             <option value="{{ $num }}">{{ $nama }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-4 mb-2">
-                    <select id="filter-tahun" class="form-select">
+                <div class="col-md-4">
+                    <div class="filter-label"><i class="fas fa-calendar-week me-1"></i> Tahun</div>
+                    <select id="filter-tahun" class="form-select rounded-3 shadow-sm">
                         <option value="">-- Pilih Tahun --</option>
                         @for($y = date('Y')-5; $y <= date('Y')+1; $y++)
                             <option value="{{ $y }}">{{ $y }}</option>
@@ -192,83 +150,66 @@
                     </select>
                 </div>
             </div>
-            <div class="table-responsive">
-                <table id="example" class="table table-hover align-middle">
+            <div class="table-responsive rounded-3">
+                <table id="example" class="table table-hover align-middle w-100">
                     <thead class="table-custom-header">
                         <tr>
-                            <th>
-                                <input type="checkbox" id="select-all" />
-                            </th>
-                            <th>Foto</th>
-                            <th>Nama</th>
+                            <th class="text-center" style="width:40px;"><input type="checkbox" id="select-all" /></th>
+                            <th class="text-center" style="width:60px;">Foto</th>
+                            <th>Nama Siswa</th>
                             <th>Kelas</th>
                             <th>Status</th>
                             <th>Waktu</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>
-                                <input type="checkbox" class="row-checkbox" />
-                            </td>
-                            <td>
-                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
-                            </td>
-                            <td>System Architect</td>
-                            <td>Edinburgh</td>
-                            <td>
-                                <span class="badge bg-success text-white border border-success fw-bold px-3 py-2" style="font-size:0.95em;">Tepat Waktu</span>
-                            </td>
-                            <td class="text-success fw-bold">2011-04-25</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <input type="checkbox" class="row-checkbox" />
-                            </td>
-                            <td>
-                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
-                            </td>
-                            <td>Accountant</td>
-                            <td>Tokyo</td>
-                            <td>
-                                <span class="badge bg-danger text-white border border-danger fw-bold px-3 py-2" style="font-size:0.95em;">Terlambat</span>
-                            </td>
-                            <td class="text-danger fw-bold">2011-07-25</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <input type="checkbox" class="row-checkbox" />
-                            </td>
-                            <td>
-                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
-                            </td>
-                            <td>Junior Technical Author</td>
-                            <td>San Francisco</td>
-                            <td>
-                                <span class="badge bg-success text-white border border-success fw-bold px-3 py-2" style="font-size:0.95em;">Tepat Waktu</span>
-                            </td>
-                            <td class="text-success fw-bold">2009-01-12</td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <input type="checkbox" class="row-checkbox" />
-                            </td>
-                            <td>
-                                <img src="https://ui-avatars.com/api/?name=Tiger+Nixon" alt="Foto" width="36" height="36" class="rounded-circle">
-                            </td>
-                            <td>Junior Technical Author</td>
-                            <td>San Francisco</td>
-                            <td>
-                                <span class="badge bg-success text-white border border-success fw-bold px-3 py-2" style="font-size:0.95em;">Tepat Waktu</span>
-                            </td>
-                            <td class="text-success fw-bold">2009-01-12</td>
-                        </tr>
+                        @if(isset($absensi) && count($absensi))
+                            @foreach($absensi as $item)
+                            <tr>
+                                <td class="text-center"><input type="checkbox" class="row-checkbox" /></td>
+                                <td class="text-center">
+                                    <img src="{{ $item->picture ?? 'https://ui-avatars.com/api/?name=' . urlencode($item->student->name ?? '-') . '&background=365CF5&color=fff' }}"
+                                        alt="Foto" class="rounded-circle shadow-sm border border-2 border-primary"
+                                        style="width:42px;height:42px;object-fit:cover;">
+                                </td>
+                                <td>
+                                    <span class="fw-semibold text-dark d-block">{{ $item->student->name ?? '-' }}</span>
+                                    <span class="text-muted" style="font-size:0.8rem;">NISN: {{ $item->student->nisn ?? '-' }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill px-3 py-2" style="background:#e3eafd;color:#365CF5;font-weight:600;">
+                                        {{ $item->class->name ?? '-' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    @if($item->status == 'tepat_waktu')
+                                        <span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#dcfce7;color:#16a34a;font-size:0.9em;">
+                                            <i class="fas fa-check-circle me-1"></i> Tepat Waktu
+                                        </span>
+                                    @elseif($item->status == 'terlambat')
+                                        <span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#fee2e2;color:#dc2626;font-size:0.9em;">
+                                            <i class="fas fa-clock me-1"></i> Terlambat
+                                        </span>
+                                    @else
+                                        <span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#f3f4f6;color:#6b7280;font-size:0.9em;">
+                                            {{ ucfirst($item->status) }}
+                                        </span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <span class="fw-semibold {{ $item->status == 'tepat_waktu' ? 'text-success' : 'text-danger' }}">
+                                        <i class="fas fa-clock me-1"></i>
+                                        {{ \Carbon\Carbon::parse($item->created_at)->format('d M Y, H:i') }}
+                                    </span>
+                                </td>
+                            </tr>
+                            @endforeach
+                        @endif
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
-    <!-- End Card Wrapper -->
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
@@ -288,81 +229,42 @@
                 language: {
                     search: "Cari:",
                     info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-                    paginate: {
-                        first: "Awal",
-                        last: "Akhir",
-                        next: "Berikutnya",
-                        previous: "Sebelumnya"
-                    }
+                    emptyTable: "Tidak ada data absensi mapel.",
+                    paginate: { first:"Awal", last:"Akhir", next:"Berikutnya", previous:"Sebelumnya" }
                 },
                 pageLength: 10,
                 dom: 'Bfrtip',
                 buttons: [
-                    {
-                        extend: 'excelHtml5',
-                        text: '<i class="fas fa-file-excel me-1"></i> Excel',
-                        className: 'btn btn-success btn-sm'
-                    },
-                    {
-                        extend: 'pdfHtml5',
-                        text: '<i class="fas fa-file-pdf me-1"></i> PDF',
-                        className: 'btn btn-danger btn-sm'
-                    },
-                    {
-                        extend: 'csvHtml5',
-                        text: '<i class="fas fa-file-csv me-1"></i> CSV',
-                        className: 'btn btn-info btn-sm'
-                    },
-
-                    {
-                        extend: 'print',
-                        text: '<i class="fas fa-print me-1"></i> Print',
-                        className: 'btn btn-primary btn-sm'
-                    }
+                    { extend:'excelHtml5', text:'<i class="fas fa-file-excel me-1"></i> Excel', className:'btn btn-success btn-sm' },
+                    { extend:'pdfHtml5',   text:'<i class="fas fa-file-pdf me-1"></i> PDF',   className:'btn btn-danger btn-sm' },
+                    { extend:'csvHtml5',   text:'<i class="fas fa-file-csv me-1"></i> CSV',   className:'btn btn-info btn-sm' },
+                    { extend:'print',      text:'<i class="fas fa-print me-1"></i> Print',    className:'btn btn-primary btn-sm' }
                 ]
             });
 
-            // Pindahkan tombol export ke kiri tombol Edit
             table.buttons().container().appendTo('#export-container');
 
-            // Fungsi untuk memilih semua checkbox
             $('#select-all').on('click', function () {
                 $('.row-checkbox').prop('checked', this.checked);
             });
 
-
-            // Button edit
             $('#btn-edit-siswa').on('click', function () {
                 const checked = $('.row-checkbox:checked').length;
-                if (checked === 0) {
-                    alert('Pilih data yang ingin diedit.');
-                } else if (checked > 1) {
-                    alert('Pilih hanya satu data untuk diedit.');
-                } else {
-                    alert('Edit data terpilih.');
-                }
+                if (checked === 0) alert('Pilih data yang ingin diedit.');
+                else if (checked > 1) alert('Pilih hanya satu data untuk diedit.');
+                else alert('Edit data terpilih.');
             });
 
-            // Filter Tanggal, Bulan, Tahun
             $('#filter-tanggal').on('change', function () {
-                let val = $(this).val();
-                table.column(5).search(val).draw(); // kolom ke-6 (index 5) asumsikan kolom tanggal
+                table.column(5).search($(this).val()).draw();
             });
             $('#filter-bulan').on('change', function () {
                 let bulan = $(this).val();
-                if (bulan) {
-                    table.column(5).search('-' + bulan + '-').draw();
-                } else {
-                    table.column(5).search('').draw();
-                }
+                table.column(5).search(bulan ? '-' + bulan + '-' : '').draw();
             });
             $('#filter-tahun').on('change', function () {
                 let tahun = $(this).val();
-                if (tahun) {
-                    table.column(5).search('^' + tahun, true, false).draw();
-                } else {
-                    table.column(5).search('').draw();
-                }
+                table.column(5).search(tahun ? '^' + tahun : '', true, false).draw();
             });
         });
     </script>

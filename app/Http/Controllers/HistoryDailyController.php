@@ -9,11 +9,16 @@ use App\Models\Student;
 
 class HistoryDailyController extends Controller
 {
-    public function index()
+    public function absensiHarian($classId)
     {
-        // Ambil semua data absensi harian beserta relasi siswa dan kelas
-        $absensi = AttendanceHistoryDaily::with(['student', 'class'])->orderByDesc('created_at')->get();
+        $kelas = Classes::findOrFail($classId);
 
-        return view('pages.absensi.absensi_harian', compact('absensi'));
+        $absensi = AttendanceHistoryDaily::with(['student', 'class'])
+            ->whereHas('class', function ($q) use ($classId) {
+                $q->where('id', $classId);
+            })
+            ->get();
+
+        return view('pages.absensi.absensi_harian', compact('absensi', 'kelas'));
     }
 }
