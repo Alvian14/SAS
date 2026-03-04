@@ -159,6 +159,9 @@ Route::get('/pages/absensi/absensi_harian/{classId}', [HistoryDailyController::c
     ->middleware('auth')
     ->name('absensi.absensi_harian');
 
+Route::post('/absensi-harian/edit-status/{id}', [HistoryDailyController::class, 'editStatus'])
+->name('absensi_harian.edit_status');
+
 Route::get('/pages/absensi/absensi_mapel', function () {
     return view('pages.absensi.absensi_mapel');
 })->middleware('auth')->name('absensi.absensi_mapel');
