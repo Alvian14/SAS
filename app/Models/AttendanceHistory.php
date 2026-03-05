@@ -14,7 +14,7 @@ class AttendanceHistory extends Model
     // table name
     protected $table = 'attendance_histories';
 
-    protected $fillable = ['period_number', 'status', 'id_student', 'id_schedule', 'coordinates'];
+    protected $fillable = ['period_number', 'status', 'id_student', 'id_schedule', 'coordinates', 'attendance_date', 'id_class', 'coordinate'];
 
     public $timestamps = true;
 
