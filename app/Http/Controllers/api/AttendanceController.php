@@ -9,7 +9,10 @@ use App\Models\Permission;
 use App\Models\Schedule;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use App\Jobs\WriteAttendanceJob;
 use Illuminate\Support\Facades\Storage;
 
 class AttendanceController extends Controller
@@ -62,8 +65,8 @@ class AttendanceController extends Controller
             error_log($distance);
 
             // request time
-            // $now = Carbon::now();
-            $now = Carbon::parse('2026-02-16 07:30:00'); 
+            $now = Carbon::parse('2026-02-16 08:35:00', timezone: 'Asia/Jakarta');
+            // $now = Carbon::now('Asia/Jakarta');
             $dayOfWeek = strtolower($now->locale('id')->dayName); // example: "senin"
             
             // schedule search (compare with qrcode) => class of student and schedule search
@@ -112,58 +115,65 @@ class AttendanceController extends Controller
                     'message' => 'jam pelajaran sudah lewat / belum dimulai'], 422);
             }
 
-            $alreadyAttendance = AttendanceHistory::where('id_student', $idStudent)
-                ->where('id_schedule', $schedule->id)
-                ->whereDate('created_at', $now->toDateString())
-                ->first();
+            $lockKey = "attendance:{$idStudent}:{$schedule->id}:" . $now->toDateString();
 
-            // --- Add debugging here ---
-            // Log nilai-nilai yang digunakan dalam query
-            Log::info('Checking for existing attendance record:', [
-                'id_student' => $idStudent,
-                'id_schedule' => $schedule->id,
-                'date_query' => $now->toDateString(),
-            ]);
+            return Cache::lock($lockKey, 5)->block(3, function () use (
+                $idStudent,
+                $idClass,
+                $schedule,
+                $lat,
+                $lon,
+                $currentPeriod,
+                $now,
+                $lockKey
+            ) {
+                Log::info('Attendance lock acquired', ['key' => $lockKey]);
+                error_log('Attendance lock acquired: ' . $lockKey);
 
-            // Log hasil dari query
-            Log::info('Query result:', [
-                'attendance_record' => $alreadyAttendance,
-            ]);
-            // --- End debugging ---
+                $alreadyAttendance = AttendanceHistory::where('id_student', $idStudent)
+                    ->where('id_schedule', $schedule->id)
+                    ->where('attendance_date', $now->toDateString())
+                    ->first();
 
-            if ($alreadyAttendance) {
+                Log::info('Checking for existing attendance record:', [
+                    'id_student' => $idStudent,
+                    'id_schedule' => $schedule->id,
+                    'date_query' => $now->toDateString(),
+                ]);
+
+                Log::info('Query result:', [
+                    'attendance_record' => $alreadyAttendance,
+                ]);
+
+                if ($alreadyAttendance) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda sudah absen untuk mapel ini!'
+                    ], 422);
+                }
+
+                // Dispatch background job to write attendance (quick response to client)
+                $jobData = [
+                    'id_student' => $idStudent,
+                    'id_schedule' => $schedule->id,
+                    'id_class' => $idClass,
+                    'status' => 'hadir',
+                    'coordinate' => "$lat, $lon",
+                    'period_number' => $currentPeriod,
+                    'attendance_date' => $now->toDateString(),
+                    'created_at' => $now,
+                ];
+
+                WriteAttendanceJob::dispatch($jobData);
+
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Anda sudah absen untuk mapel ini!'
-                ], 422);
-            }
-            
-            // Store attendance history
-            // create new instance model
-            $attendance = new AttendanceHistory();
-            // Set attribute
-            $attendance->id_student = $idStudent;
-            $attendance->id_schedule = $schedule->id;
-            $attendance->id_class = $idClass;
-            $attendance->status = 'hadir';
-            $attendance->coordinate = "$lat, $lon";
-            $attendance->period_number = $currentPeriod;
-            // Set created_at
-            $attendance->created_at = $now;
-            // Set updated_at
-            $attendance->updated_at = now(); 
-            // save record to database
-            $attendance->save();
-            
-            // return response
-            return response()->json([
-                'success' => true,
-                'message' => 'Absensi berhasil',
-                'data' => [
-                    'schedule' => $schedule,
-                    'attendance' => $attendance,
-                ]
-            ], 200);
+                    'success' => true,
+                    'message' => 'Absensi diterima dan sedang diproses',
+                    'data' => [
+                        'schedule' => $schedule,
+                    ]
+                ], 202);
+            });
         } catch (\Illuminate\Validation\ValidationException $e) {
             // This will catch validation errors and return a 422 status
             return response()->json([
@@ -171,6 +181,11 @@ class AttendanceController extends Controller
                 'message' => 'Validasi gagal',
                 'errors' => $e->errors()
             ], 422);
+        } catch (LockTimeoutException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Permintaan sedang diproses, silakan coba lagi sebentar',
+            ], 429);
         } catch (\Exception $e) {
             // This will catch any other general exceptions
             return response()->json([
@@ -278,7 +293,7 @@ class AttendanceController extends Controller
             foreach ($schedules as $sch) {
                 $attendance = AttendanceHistory::where('id_student', $student->id)
                     ->where('id_schedule', $sch->id)
-                    ->whereDate('created_at', $date)
+                    ->where('attendance_date', $date)
                     ->first();
 
                 $result[] = [
@@ -342,7 +357,7 @@ class AttendanceController extends Controller
                 // get attendance records for that schedule on the date
                 $attendances = AttendanceHistory::query()
                     ->where('id_schedule', $sch->id)
-                    ->whereDate('created_at', $date)
+                    ->where('attendance_date', $date)
                     ->with(['student.user'])
                     ->get();
 
