@@ -232,8 +232,8 @@
                     </thead>
                     <tbody>
                         @if(isset($absensi) && count($absensi))
-                            @foreach($absensi as $item)
-                            <tr>
+                            @foreach($absensi as $idx => $item)
+                            <tr data-absensi-index="{{ $idx }}">
                                 <td class="text-center">
                                     <input type="checkbox" class="row-checkbox" />
                                 </td>
@@ -260,6 +260,10 @@
                                         <span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#fee2e2;color:#dc2626;font-size:0.9em;">
                                             <i class="fas fa-clock me-1"></i> Terlambat
                                         </span>
+                                    @elseif($item->status == 'in progress')
+                                        <span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#f3f4f6;color:#6b7280;font-size:0.9em;">
+                                            In Progress
+                                        </span>
                                     @else
                                         <span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#f3f4f6;color:#6b7280;font-size:0.9em;">
                                             {{ ucfirst($item->status) }}
@@ -267,10 +271,14 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <span class="fw-semibold {{ $item->status == 'tepat_waktu' ? 'text-success' : 'text-danger' }}">
-                                        <i class="fas fa-clock me-1"></i>
-                                        {{ \Carbon\Carbon::parse($item->created_at)->format('d M Y, H:i') }}
-                                    </span>
+                                    @if($item->created_at)
+                                        <span class="fw-semibold {{ $item->status == 'tepat_waktu' ? 'text-success' : 'text-danger' }}">
+                                            <i class="fas fa-clock me-1"></i>
+                                            {{ \Carbon\Carbon::parse($item->created_at)->format('d M Y, H:i') }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
                                 </td>
                             </tr>
                             @endforeach
@@ -281,6 +289,36 @@
         </div>
     </div>
     <!-- End Card Wrapper -->
+
+    <!-- Modal Edit Status -->
+    <div class="modal fade" id="modalEditStatus" tabindex="-1" aria-labelledby="modalEditStatusLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <form id="formEditStatus">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modalEditStatusLabel">Edit Status Absensi</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" id="editAbsensiId" name="id">
+              <div class="mb-3">
+                <label for="editStatus" class="form-label">Status</label>
+                <select class="form-select" id="editStatus" name="status" required>
+                  <option value="in progress">In Progress</option>
+                  <option value="tepat_waktu">Tepat Waktu</option>
+                  <option value="terlambat">Terlambat</option>
+                  <option value="Izin">Izin</option>
+                </select>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+              <button type="submit" class="btn btn-primary">Simpan</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
@@ -293,6 +331,7 @@
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.colVis.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         $(document).ready(function () {
             var table = $('#example').DataTable({
@@ -319,11 +358,51 @@
                 $('.row-checkbox').prop('checked', this.checked);
             });
 
+            // Inisialisasi modal Bootstrap
+            var modalEditStatus = new bootstrap.Modal(document.getElementById('modalEditStatus'));
+
             $('#btn-edit-siswa').on('click', function () {
-                const checked = $('.row-checkbox:checked').length;
-                if (checked === 0) alert('Pilih data yang ingin diedit.');
-                else if (checked > 1) alert('Pilih hanya satu data untuk diedit.');
-                else alert('Edit data terpilih.');
+                const checked = $('.row-checkbox:checked');
+                if (checked.length === 0) {
+                    alert('Pilih data yang ingin diedit.');
+                } else if (checked.length > 1) {
+                    alert('Pilih hanya satu data untuk diedit.');
+                } else {
+                    const row = checked.closest('tr');
+                    const absensiIndex = row.data('absensi-index');
+                    const absensiList = @json($absensi);
+                    const absensiData = absensiList[absensiIndex];
+                    const absensiId = absensiData?.id;
+                    const status = absensiData?.status;
+                    $('#editAbsensiId').val(absensiId);
+                    $('#editStatus').val(status);
+                    modalEditStatus.show(); // Tampilkan modal
+                }
+            });
+
+            $('#formEditStatus').on('submit', function(e) {
+                e.preventDefault();
+                const id = $('#editAbsensiId').val();
+                const status = $('#editStatus').val();
+                $.ajax({
+                    url: "{{ url('/absensi-harian/edit-status') }}/" + id, // gunakan url() agar sesuai dengan route
+                    type: "POST",
+                    data: {
+                        status: status,
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function(res) {
+                        if(res.success) {
+                            modalEditStatus.hide();
+                            location.reload();
+                        } else {
+                            alert('Gagal mengupdate status.');
+                        }
+                    },
+                    error: function() {
+                        alert('Terjadi kesalahan.');
+                    }
+                });
             });
 
             $('#filter-tanggal').on('change', function () {
@@ -339,5 +418,9 @@
             });
         });
     </script>
+
+    @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    @endpush
 @endsection
 

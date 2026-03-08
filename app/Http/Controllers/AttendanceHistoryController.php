@@ -3,47 +3,43 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\AttendanceHistoryDaily;
+use App\Models\AttendanceHistory;
 use App\Models\Classes;
 use App\Models\Student;
 
-class HistoryDailyController extends Controller
+class AttendanceHistoryController extends Controller
 {
-    public function absensiHarian($classId)
+    public function absensiMapel($classId)
     {
         $kelas = Classes::findOrFail($classId);
 
-        // Ambil semua siswa di kelas berdasarkan kolom id_class
         $students = Student::where('id_class', $classId)->get();
 
-        // Ambil absensi harian yang sudah ada
-        $absensi = AttendanceHistoryDaily::with(['student', 'class'])
+        $absensi = AttendanceHistory::with(['student', 'class'])
             ->where('id_class', $classId)
             ->get();
 
-        // Gabungkan data siswa dan absensi
         $result = [];
         foreach ($students as $student) {
             $absensiItem = $absensi->where('id_student', $student->id)->first();
             $result[] = (object)[
-                'id' => $absensiItem ? $absensiItem->id : null,
-                'student' => $student,
-                'class' => $kelas,
-                'status' => $absensiItem ? $absensiItem->status : 'in progress',
+                'id'         => $absensiItem ? $absensiItem->id : null,
+                'student'    => $student,
+                'class'      => $kelas,
+                'status'     => $absensiItem ? $absensiItem->status : 'in progress',
                 'created_at' => $absensiItem ? $absensiItem->created_at : null,
-                'picture' => $absensiItem ? $absensiItem->picture : null,
             ];
         }
 
-        return view('pages.absensi.absensi_harian', [
+        return view('pages.absensi.absensi_mapel', [
             'absensi' => collect($result),
-            'kelas' => $kelas
+            'kelas'   => $kelas,
         ]);
     }
 
     public function editStatus(Request $request, $id)
     {
-        $absensi = AttendanceHistoryDaily::findOrFail($id);
+        $absensi = AttendanceHistory::findOrFail($id);
         $request->validate([
             'status' => 'required|string'
         ]);
