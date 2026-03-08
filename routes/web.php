@@ -10,6 +10,7 @@ use App\Http\Controllers\SubjectController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HistoryDailyController;
+use App\Http\Controllers\AttendanceHistoryController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -162,9 +163,12 @@ Route::get('/pages/absensi/absensi_harian/{classId}', [HistoryDailyController::c
 Route::post('/absensi-harian/edit-status/{id}', [HistoryDailyController::class, 'editStatus'])
 ->name('absensi_harian.edit_status');
 
-Route::get('/pages/absensi/absensi_mapel', function () {
-    return view('pages.absensi.absensi_mapel');
-})->middleware('auth')->name('absensi.absensi_mapel');
+Route::get('/pages/absensi/absensi_mapel/{classId}', [AttendanceHistoryController::class, 'absensiMapel'])
+    ->middleware('auth')
+    ->name('absensi.absensi_mapel');
+
+Route::post('/absensi-mapel/edit-status/{id}', [AttendanceHistoryController::class, 'editStatus'])
+    ->name('absensi_mapel.edit_status');
 
 // ============================ end absensi ====================
 

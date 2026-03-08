@@ -314,7 +314,7 @@
             @foreach($kelas10 as $kelas)
             <div class="col-lg-4 col-md-6 mb-4">
                 <div class="class-card grade-10 floating position-relative">
-                    <a href="{{ route('absensi.absensi_mapel') }}" class="stretched-link" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></a>
+                    <a href="{{ route('absensi.absensi_mapel', ['classId' => $kelas->id]) }}" class="stretched-link" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></a>
                     <div class="dropdown position-absolute" style="top: 1rem; right: 1rem; z-index: 10;">
                         <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:transparent;border:none;padding:0;">
                             <i class="fas fa-ellipsis-v"></i>
@@ -362,9 +362,7 @@
             @foreach($kelas11 as $kelas)
             <div class="col-lg-4 col-md-6 mb-4">
                 <div class="class-card grade-11 floating position-relative">
-                    <!-- Overlay link -->
-                    <a href="{{route('absensi.absensi_mapel') }}" class="stretched-link" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></a>
-                    <!-- Dropdown titik tiga di kanan atas tanpa background bulat -->
+                    <a href="{{ route('absensi.absensi_mapel', ['classId' => $kelas->id]) }}" class="stretched-link" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></a>
                     <div class="dropdown position-absolute" style="top: 1rem; right: 1rem; z-index: 10;">
                         <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:transparent;border:none;padding:0;">
                             <i class="fas fa-ellipsis-v"></i>
@@ -412,9 +410,7 @@
             @foreach($kelas12 as $kelas)
             <div class="col-lg-4 col-md-6 mb-4">
                 <div class="class-card grade-12 floating position-relative">
-                    <!-- Overlay link -->
-                    <a href="{{ route('absensi.absensi_mapel') }}" class="stretched-link" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></a>
-                    <!-- Dropdown titik tiga di kanan atas tanpa background bulat -->
+                    <a href="{{ route('absensi.absensi_mapel', ['classId' => $kelas->id]) }}" class="stretched-link" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></a>
                     <div class="dropdown position-absolute" style="top: 1rem; right: 1rem; z-index: 10;">
                         <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:transparent;border:none;padding:0;">
                             <i class="fas fa-ellipsis-v"></i>
