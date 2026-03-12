@@ -37,10 +37,26 @@ class AttendanceController extends Controller
             ]);
             
             // request data variable
-            $idStudent = $request->id_student;
+            // $idStudent = $request->id_student;
+            // $idClass   = $request->id_class;
+            // $rawCode   = $request->qrcode;
+
+            // get request based on auth user
+            $user = $request->user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            }
+
+            // check if user has student profile
+            $student = $user->student ?? null;
+            if (!$student) {
+                return response()->json(['success' => false, 'message' => 'Student profile not found for user'], 403);
+            }
+
+            $idStudent = $student->id;
             $idClass   = $request->id_class;
             $rawCode   = $request->qrcode;
-            
+        
             // Coordinate Location from device client
             $lat = $request->latitude;
             $lon = $request->longitude;
@@ -444,6 +460,57 @@ class AttendanceController extends Controller
                 'message' => 'Permission request created successfully',
                 'data' => $permission,
             ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function permissionReport(Request $request)
+    {
+        try {
+            $request->validate([
+                'start_date' => 'required|date',
+                'end_date' => 'required|date|after_or_equal:start_date',
+            ]);
+
+            $user = $request->user();
+            $student = $user->student ?? null;
+            if (!$student) {
+                return response()->json(['success' => false, 'message' => 'Student profile not found for user'], 403);
+            }
+
+            $startDate = Carbon::parse($request->start_date)->toDateString();
+            $endDate = Carbon::parse($request->end_date)->toDateString();
+
+            $permissions = Permission::query()
+                ->where('id_student', $student->id)
+                ->whereBetween('date_permission', [$startDate, $endDate])
+                ->get();
+            
+            if ($permissions->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No permission records for this date',
+                    'data' => null,
+                ], 200);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Permission report fetched',
+                'data' => $permissions,
+            ], 200);
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,

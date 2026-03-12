@@ -12,7 +12,7 @@ class Permission extends Model
     // table name
     protected $table = 'permissions';
     
-    protected $fillable = ['period_start', 'period_end', 'reason', 'information', 'evidence', 'status', 'feedback', 'date_permission', 'time_period', 'id_student'];
+    protected $fillable = ['period_start', 'period_end', 'reason', 'information', 'evidence', 'status', 'feedback', 'date_permission', 'time_period', 'id_student', 'approved_by'];
     
     public $timestamps = true;
 
