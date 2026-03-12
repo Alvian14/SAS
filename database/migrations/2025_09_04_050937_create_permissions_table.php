@@ -27,7 +27,7 @@ return new class extends Migration
             $table->foreignId('id_student')->constrained('students')->onDelete('cascade');
 
             // relation for approval by admin or teacher.
-            $table->foreignId('approved_by')->constrained('users')->onDelete('set null')->nullable();
+            $table->foreignId('approved_by')->constrained('users')->nullOnDelete();
 
             // timestamp
             $table->timestamps();
