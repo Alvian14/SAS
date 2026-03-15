@@ -2,9 +2,10 @@
 
 use App\Http\Controllers\api\AttendanceController;
 use App\Http\Controllers\api\ClassController;
+use App\Http\Controllers\api\ScheduleController;
+use App\Http\Controllers\api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\api\UserController;
 
 Route::get('/ping', function () {
     return response()->json(['message' => 'pong'], 200);
@@ -28,7 +29,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 // route login pakai Sanctum
 Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
-    
+
     // get user
     Route::get('/user', function (Request $request) {
         return $request->user()->load('teacher', 'student');
@@ -42,4 +43,15 @@ Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
     Route::get('/attendance/permission/report', [AttendanceController::class, 'permissionReport']);
     Route::post('/attendance/permission', [AttendanceController::class, 'createPermission']);
     
+});
+
+Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
+    Route::get('/user', function (Request $request) {
+        return $request->user()->load('teacher', 'student');
+    });
+
+    // schedule teacher personal
+    Route::get('/teacher/schedules', [ScheduleController::class, 'scheduleTeacherPersonal']);
+    Route::get('/teacher/schedules/day', [ScheduleController::class, 'scheduleTeacherPersonalByDay']);
+    Route::get('/schedules/{classId}', [ScheduleController::class, 'scheduleByClass']);
 });
