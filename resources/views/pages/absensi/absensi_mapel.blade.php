@@ -75,7 +75,7 @@
         </div>
     </div>
 
-    @php
+    {{-- @php
         $totalHadir     = isset($absensi) ? $absensi->where('status','tepat_waktu')->count() : 0;
         $totalTerlambat = isset($absensi) ? $absensi->where('status','terlambat')->count() : 0;
         $totalLainnya   = isset($absensi) ? $absensi->whereNotIn('status',['tepat_waktu','terlambat'])->count() : 0;
@@ -93,16 +93,10 @@
         <div class="col-6 col-md-3">
             <div class="summary-card" style="background:linear-gradient(135deg,#22c55e,#4ade80);">
                 <div class="icon-wrap"><i class="fas fa-check-circle"></i></div>
-                <div><div class="label">Tepat Waktu</div><div class="count">{{ $totalHadir }}</div></div>
+                <div><div class="label">Hadir</div><div class="count">{{ $totalHadir }}</div></div>
             </div>
         </div>
-        <div class="col-6 col-md-3">
-            <div class="summary-card" style="background:linear-gradient(135deg,#ef4444,#f87171);">
-                <div class="icon-wrap"><i class="fas fa-clock"></i></div>
-                <div><div class="label">Terlambat</div><div class="count">{{ $totalTerlambat }}</div></div>
-            </div>
-        </div>
-    </div>
+    </div> --}}
 
     <!-- Card Wrapper -->
     <div class="card border-0 shadow-sm rounded-4">
@@ -155,23 +149,19 @@
                     <thead class="table-custom-header">
                         <tr>
                             <th class="text-center" style="width:40px;"><input type="checkbox" id="select-all" /></th>
-                            <th class="text-center" style="width:60px;">Foto</th>
                             <th>Nama Siswa</th>
                             <th>Kelas</th>
                             <th>Status</th>
+                            <th>Koordinat</th>
                             <th>Waktu</th>
                         </tr>
                     </thead>
                     <tbody>
+                        @php $rownum = 1; @endphp
                         @if(isset($absensi) && count($absensi))
                             @foreach($absensi as $item)
-                            <tr>
+                            <tr data-id="{{ $item->id }}">
                                 <td class="text-center"><input type="checkbox" class="row-checkbox" /></td>
-                                <td class="text-center">
-                                    <img src="{{ $item->picture ?? 'https://ui-avatars.com/api/?name=' . urlencode($item->student->name ?? '-') . '&background=365CF5&color=fff' }}"
-                                        alt="Foto" class="rounded-circle shadow-sm border border-2 border-primary"
-                                        style="width:42px;height:42px;object-fit:cover;">
-                                </td>
                                 <td>
                                     <span class="fw-semibold text-dark d-block">{{ $item->student->name ?? '-' }}</span>
                                     <span class="text-muted" style="font-size:0.8rem;">NISN: {{ $item->student->nisn ?? '-' }}</span>
@@ -182,13 +172,29 @@
                                     </span>
                                 </td>
                                 <td>
-                                    @if($item->status == 'tepat_waktu')
+                                    @if($item->status == 'hadir')
                                         <span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#dcfce7;color:#16a34a;font-size:0.9em;">
-                                            <i class="fas fa-check-circle me-1"></i> Tepat Waktu
+                                            <i class="fas fa-check-circle me-1"></i> Hadir
                                         </span>
-                                    @elseif($item->status == 'terlambat')
+                                    @elseif($item->status == 'izin')
+                                        <span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#fef9c3;color:#eab308;font-size:0.9em;">
+                                            <i class="fas fa-envelope me-1"></i> Izin
+                                        </span>
+                                    @elseif($item->status == 'sakit')
+                                        <span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#f0fdf4;color:#22c55e;font-size:0.9em;">
+                                            <i class="fas fa-medkit me-1"></i> Sakit
+                                        </span>
+                                    @elseif($item->status == 'alpha')
                                         <span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#fee2e2;color:#dc2626;font-size:0.9em;">
-                                            <i class="fas fa-clock me-1"></i> Terlambat
+                                            <i class="fas fa-times-circle me-1"></i> Alpha
+                                        </span>
+                                    @elseif($item->status == 'dispen')
+                                        <span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#e0e7ff;color:#6366f1;font-size:0.9em;">
+                                            <i class="fas fa-user-shield me-1"></i> Dispen
+                                        </span>
+                                    @elseif($item->status == 'invalid')
+                                        <span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#f3f4f6;color:#6b7280;font-size:0.9em;">
+                                            <i class="fas fa-question-circle me-1"></i> Invalid
                                         </span>
                                     @else
                                         <span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#f3f4f6;color:#6b7280;font-size:0.9em;">
@@ -196,12 +202,37 @@
                                         </span>
                                     @endif
                                 </td>
+                                <td class="text-center">{{ $item->coordinate ?? '-' }}</td>
                                 <td>
-                                    <span class="fw-semibold {{ $item->status == 'tepat_waktu' ? 'text-success' : 'text-danger' }}">
+                                    <span class="fw-semibold text-primary">
                                         <i class="fas fa-clock me-1"></i>
-                                        {{ \Carbon\Carbon::parse($item->created_at)->format('d M Y, H:i') }}
+                                        {{ $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('d M Y, H:i') : '-' }}
                                     </span>
                                 </td>
+                            </tr>
+                            @php $rownum++; @endphp
+                            @endforeach
+                        @endif
+                        @if(isset($belumAbsen) && count($belumAbsen))
+                            @foreach($belumAbsen as $siswa)
+                            <tr data-id="{{ $siswa->id }}">
+                                <td class="text-center"><input type="checkbox" class="row-checkbox" disabled /></td>
+                                <td>
+                                    <span class="fw-semibold text-dark d-block">{{ $siswa->name }}</span>
+                                    <span class="text-muted" style="font-size:0.8rem;">NISN: {{ $siswa->nisn }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill px-3 py-2" style="background:#f3f4f6;color:#6b7280;font-weight:600;">
+                                        {{ $kelas->name ?? '-' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#fff3cd;color:#b45309;font-size:0.9em;">
+                                        <i class="fas fa-minus-circle me-1"></i> Belum Absen
+                                    </span>
+                                </td>
+                                <td class="text-center">-</td>
+                                <td>-</td>
                             </tr>
                             @endforeach
                         @endif
@@ -249,24 +280,93 @@
             });
 
             $('#btn-edit-siswa').on('click', function () {
-                const checked = $('.row-checkbox:checked').length;
-                if (checked === 0) alert('Pilih data yang ingin diedit.');
-                else if (checked > 1) alert('Pilih hanya satu data untuk diedit.');
-                else alert('Edit data terpilih.');
+                const checked = $('.row-checkbox:checked');
+                if (checked.length === 0) {
+                    alert('Pilih data yang ingin diedit.');
+                    return;
+                }
+                if (checked.length > 1) {
+                    alert('Pilih hanya satu data untuk diedit.');
+                    return;
+                }
+                // Ambil data dari baris terpilih
+                const row = checked.closest('tr');
+                const id = row.data('id');
+                const nama = row.find('.fw-semibold.text-dark').text().trim();
+                let status = row.find('td:nth-child(4) .badge').text().trim().toLowerCase();
+                // Normalisasi status
+                if (status.includes('belum')) status = 'belum';
+                else if (status.includes('hadir')) status = 'hadir';
+                else if (status.includes('izin')) status = 'izin';
+                else if (status.includes('sakit')) status = 'sakit';
+                else if (status.includes('alpha')) status = 'alpha';
+                else if (status.includes('dispen')) status = 'dispen';
+                else if (status.includes('invalid')) status = 'invalid';
+                $('#edit-id').val(id);
+                $('#edit-nama').val(nama);
+                $('#edit-status').val(status);
+                $('#modalEditStatus').modal('show');
             });
 
-            $('#filter-tanggal').on('change', function () {
-                table.column(5).search($(this).val()).draw();
-            });
-            $('#filter-bulan').on('change', function () {
-                let bulan = $(this).val();
-                table.column(5).search(bulan ? '-' + bulan + '-' : '').draw();
-            });
-            $('#filter-tahun').on('change', function () {
-                let tahun = $(this).val();
-                table.column(5).search(tahun ? '^' + tahun : '', true, false).draw();
+            $('#formEditStatus').on('submit', function (e) {
+                e.preventDefault();
+                const id = $('#edit-id').val();
+                const status = $('#edit-status').val();
+                $.ajax({
+                    url: '/absensi-mapel/edit-status/' + id,
+                    method: 'POST',
+                    data: {
+                        status: status,
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function (res) {
+                        $('#modalEditStatus').modal('hide');
+                        location.reload();
+                    },
+                    error: function (xhr) {
+                        alert(xhr.responseJSON?.message || 'Terjadi kesalahan.');
+                    }
+                });
             });
         });
     </script>
+
+    <!-- Modal Edit Status -->
+    <div class="modal fade" id="modalEditStatus" tabindex="-1" aria-labelledby="modalEditStatusLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalEditStatusLabel">Edit Status Absensi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formEditStatus">
+                    <div class="modal-body">
+                        <input type="hidden" id="edit-id" name="id">
+                        <div class="mb-3">
+                            <label for="edit-nama" class="form-label">Nama Siswa</label>
+                            <input type="text" class="form-control" id="edit-nama" name="nama" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-status" class="form-label">Status</label>
+                            <select class="form-select" id="edit-status" name="status" required>
+                                <option value="hadir">Hadir</option>
+                                <option value="izin">Izin</option>
+                                <option value="sakit">Sakit</option>
+                                <option value="alpha">Alpha</option>
+                                <option value="dispen">Dispen</option>
+                                <option value="invalid">Invalid</option>
+                                <option value="belum">Belum Absen</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 @endsection
 

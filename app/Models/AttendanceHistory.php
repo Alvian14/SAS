@@ -27,4 +27,9 @@ class AttendanceHistory extends Model
     {
         return $this->belongsTo(Schedule::class, 'id_schedule');
     }
+
+    public function class()
+    {
+        return $this->belongsTo(Classes::class, 'id_class');
+    }
 }

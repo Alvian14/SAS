@@ -170,6 +170,8 @@ Route::get('/pages/absensi/absensi_mapel/{classId}', [AttendanceHistoryControlle
 Route::post('/absensi-mapel/edit-status/{id}', [AttendanceHistoryController::class, 'editStatus'])
     ->name('absensi_mapel.edit_status');
 
+    
+
 // ============================ end absensi ====================
 
 
