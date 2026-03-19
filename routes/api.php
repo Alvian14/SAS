@@ -4,6 +4,7 @@ use App\Http\Controllers\api\AttendanceController;
 use App\Http\Controllers\api\ClassController;
 use App\Http\Controllers\api\ScheduleController;
 use App\Http\Controllers\api\UserController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -21,10 +22,15 @@ Route::get('/classes', [ClassController::class, 'index']);
 Route::get('/classes/{id}/schedule', [ClassController::class, 'schedule']);
 Route::get('/classes/{id}/schedule/{dayindex}', [ClassController::class, 'scheduleByDay']);
 
+// firebase notification test
+Route::post('/fcm/send-token', [NotificationController::class, 'sendToToken']);
+Route::post('/fcm/send-topic', [NotificationController::class, 'sendToTopic']);
+
 // protected routes, need authentication
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/attendance-daily/report', [AttendanceController::class, 'dailyAttendanceReport']);
     Route::post('/store-fcm', [UserController::class, 'storeFcmToken']);
+    Route::post('/get-topic-from-class/{classId}', [UserController::class, 'getTopicFromClass']);
 });
 
 // route login pakai Sanctum
@@ -54,4 +60,7 @@ Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
     Route::get('/teacher/schedules', [ScheduleController::class, 'scheduleTeacherPersonal']);
     Route::get('/teacher/schedules/day', [ScheduleController::class, 'scheduleTeacherPersonalByDay']);
     Route::get('/schedules/{classId}', [ScheduleController::class, 'scheduleByClass']);
+
+    // get class information
+    Route::get('/info/class/{id}', [ClassController::class, 'studentClassInformation']);
 });
