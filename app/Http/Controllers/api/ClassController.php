@@ -105,5 +105,29 @@ class ClassController extends Controller
             'data' => $schedules
         ], 200);
     }
+    
+    // teacher only
+    public function studentClassInformation($id)
+    {
+        $class = Classes::where('id', $id)->with(['students'])->first();
+
+        if (!$class) {
+            return response()->json(['message' => 'Class not found'], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Class information fetched successfully',
+            'data' => $class,
+        ], 200);
+    }
+
+    public function sendAnnouncement(Request $request, $id)
+    {
+        // This method can be implemented to send announcements to students of the class
+        // For example, you can use Laravel's Notification system to send notifications to students
+        return response()->json(['message' => 'Announcement sent successfully'], 200);
+    }
+
 
 }

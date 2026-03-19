@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('major');
             $table->integer('grade');
             $table->string('code');
+            $table->string('fcm_topic')->nullable();
             $table->timestamps();
         });
     }
