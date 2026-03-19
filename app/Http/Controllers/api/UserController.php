@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\api;
 
+use App\Http\Controllers\Controller;
+use App\Models\Classes;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
@@ -33,6 +34,39 @@ class UserController extends Controller
         ]);
     }
 
+    public function getTopicFromClass(Request $request, $classId)
+    {
+        // request check Authorization header for Bearer token
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+        
+        $class = Classes::find($classId);
+
+        if (!$class) {
+            return response()->json(['success' => false, 'message' => 'Class not found'], 404);
+        }
+
+        if (!$class->fcm_topic) {
+            return response()->json(['success' => false, 'message' => 'Class does not have an FCM topic'], 400);
+        }
+
+        // Logic untuk subscribe ke topic bisa ditambahkan di sini
+        // Misalnya simpan di database atau langsung panggil service FCM
+        return response()->json([
+            'success' => true,
+            'message' => "Subscribed to class topic: {$class->fcm_topic}",
+            'data' => [
+                'class_id' => $class->id,
+                'class_name' => $class->name,
+                'fcm_topic' => $class->fcm_topic,
+            ]
+        ], 200);
+
+    }
+    
     public function login(Request $request)
     {
         try {
