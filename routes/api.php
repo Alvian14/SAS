@@ -63,4 +63,8 @@ Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
 
     // get class information
     Route::get('/info/class/{id}', [ClassController::class, 'studentClassInformation']);
+
+    // attendance record, permission...
+    Route::get('/teacher/attendance/class/{classId}/{date}', [AttendanceController::class, 'reportClassById']);
+
 });
