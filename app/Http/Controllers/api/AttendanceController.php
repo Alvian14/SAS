@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Storage;
 class AttendanceController extends Controller
 
 {
-    public $distanceMaximumTolerance = 4500; // in meters
+    public $distanceMaximumTolerance = 100000; // in meters
 
     public function qrAttendance(Request $request) {
 
