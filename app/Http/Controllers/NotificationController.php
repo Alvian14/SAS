@@ -64,7 +64,7 @@ class NotificationController extends Controller
         try {
             
             // user auth check
-            $user = auth()->user();
+            $user = $request->user();
             if (!$user) {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
