@@ -7,6 +7,12 @@ use App\Services\FirebaseMessagingService;
 
 class NotificationController extends Controller
 {
+
+    public function index()
+    {
+        return view('pages.notifikasi.notifikasi');
+    }
+
     protected FirebaseMessagingService $fcm;
 
     public function __construct(FirebaseMessagingService $fcm)

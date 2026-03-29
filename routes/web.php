@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HistoryDailyController;
 use App\Http\Controllers\AttendanceHistoryController;
+use App\Http\Controllers\NotificationController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -163,6 +164,10 @@ Route::get('/pages/absensi/absensi_harian/{classId}', [HistoryDailyController::c
 Route::post('/absensi-harian/edit-status/{id}', [HistoryDailyController::class, 'editStatus'])
 ->name('absensi_harian.edit_status');
 
+Route::get('/absensi-harian/export-excel/{classId}', [HistoryDailyController::class, 'exportExcel'])
+    ->middleware('auth')
+    ->name('absensi_harian.export_excel');
+
 Route::get('/pages/absensi/absensi_mapel/{classId}', [AttendanceHistoryController::class, 'absensiMapel'])
     ->middleware('auth')
     ->name('absensi.absensi_mapel');
@@ -170,9 +175,10 @@ Route::get('/pages/absensi/absensi_mapel/{classId}', [AttendanceHistoryControlle
 Route::post('/absensi-mapel/edit-status/{id}', [AttendanceHistoryController::class, 'editStatus'])
     ->name('absensi_mapel.edit_status');
 
-    
+
 
 // ============================ end absensi ====================
 
-
-
+Route::get('/pages/notifikasi/notifikasi', [NotificationController::class, 'index'])
+    ->middleware('auth')
+    ->name('notifikasi.index');
