@@ -51,6 +51,12 @@ Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
     
 });
 
+// role admin only
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    // announcement
+    Route::post('/fcm/send-all', [NotificationController::class, 'sendToAll']);
+});
+
 Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user()->load('teacher', 'student');
@@ -63,4 +69,11 @@ Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
 
     // get class information
     Route::get('/info/class/{id}', [ClassController::class, 'studentClassInformation']);
+
+    // attendance record, permission...
+    Route::get('/teacher/attendance/class/{classId}/{date}', [AttendanceController::class, 'reportClassById']);
+
+    // announcement
+    Route::post('/fcm/send-class-topic', [NotificationController::class, 'sendToClassTopic']);
+
 });

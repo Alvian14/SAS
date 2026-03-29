@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Storage;
 class AttendanceController extends Controller
 
 {
-    public $distanceMaximumTolerance = 4500; // in meters
+    public $distanceMaximumTolerance = 100000; // in meters
 
     public function qrAttendance(Request $request) {
 
@@ -525,4 +525,76 @@ class AttendanceController extends Controller
         }
     }
     
+    // get attendance in schedule per day by class id. (teacher only)
+    public function reportClassById(Request $request, $classId, $date)
+    {
+        try {
+
+            // check bearer token and get user
+            $user = $request->user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            }
+
+            $date = Carbon::parse($date)->toDateString();
+            $dayName = strtolower(Carbon::parse($date)->locale('id')->dayName);
+            $dayIndex = Carbon::parse($date)->dayOfWeekIso; // 1..7
+
+            // schedules for class on that day and active academic period
+            $schedules = Schedule::query()
+                ->where('id_class', $classId)
+                ->whereHas('academicPeriods', function ($q) {
+                    $q->where('is_active', 1);
+                })
+                ->where(function ($q) use ($dayName, $dayIndex) {
+                    $q->where('day_of_week', $dayName)
+                      ->orWhere('day_of_week', (string) $dayIndex);
+                })
+                ->with(['subject', 'teacher', 'class'])
+                ->orderBy('period_start')
+                ->get();
+
+            $data = [];
+            foreach ($schedules as $sch) {
+                // fetch all attendance records for the schedule and date (include student + user for display)
+                $attendances = AttendanceHistory::query()
+                    ->where('id_schedule', $sch->id)
+                    ->where('attendance_date', $date)
+                    ->with(['student.user'])
+                    ->get();
+
+                $items = [];
+                foreach ($attendances as $att) {
+                    $items[] = [
+                        'attendance' => $att,
+                        'status' => $att->status,
+                    ];
+                }
+
+                $data[] = [
+                    'schedule' => $sch,
+                    'attendances' => $items,
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Attendance history for class fetched',
+                'data' => $data,
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
 }
