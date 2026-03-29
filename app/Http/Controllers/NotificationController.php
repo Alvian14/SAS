@@ -9,6 +9,12 @@ use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+
+   public function index()
+    {
+        return view('pages.notifikasi.notifikasi');
+    }
+
     protected FirebaseMessagingService $fcm;
 
     public function __construct(FirebaseMessagingService $fcm)
@@ -62,9 +68,9 @@ class NotificationController extends Controller
     public function sendToClassTopic(Request $request)
     {
         try {
-            
+
             // user auth check
-            $user = auth()->user();
+            $user = $request->user();
             if (!$user) {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
@@ -75,14 +81,14 @@ class NotificationController extends Controller
             $title = $request->input('title', 'Judul Notifikasi');
             $body  = $request->input('body', 'Isi notifikasi');
             $data = $request->input('data', []);
-    
+
             // get fcm topic from database based on class_id
             $topic = Classes::find($classId)->fcm_topic;
-    
+
             if (!$topic) {
                 return response()->json(['error' => 'Class not found or no FCM topic assigned'], 404);
             }
-    
+
             // save to database
             $response = Notification::create([
                 'title' => $title,
@@ -97,7 +103,7 @@ class NotificationController extends Controller
             if (!$response) {
                 return response()->json(['error' => 'Failed to save notification to database'], 500);
             }
-    
+
             // send as notification to devices subscribed to the class topic
             $this->fcm->sendToTopic($topic, $title, $body, $data);
 
@@ -117,7 +123,7 @@ class NotificationController extends Controller
             //throw $th;
             return response()->json([
                 'success' => false,
-                'error' => 'Failed to send notification', 
+                'error' => 'Failed to send notification',
                 'message' => $th->getMessage()], 500);
         }
 

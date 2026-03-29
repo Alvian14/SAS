@@ -158,8 +158,8 @@
           <span class="divider"><hr /></span>
 
           <!-- Notifications -->
-          <li class="nav-item ">
-            <a href="" class="">
+          <li class="nav-item {{ Route::is('notifikasi.index') ? 'active' : '' }}">
+          <a href="{{ route('notifikasi.index') }}" class="{{ Route::is('notifikasi.index') ? 'active' : '' }}">
               <span class="icon">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M10.8333 2.50008C10.8333 2.03984 10.4602 1.66675 9.99999 1.66675C9.53975 1.66675 9.16666 2.03984 9.16666 2.50008C9.16666 2.96032 9.53975 3.33341 9.99999 3.33341C10.4602 3.33341 10.8333 2.96032 10.8333 2.50008Z" />
@@ -168,7 +168,7 @@
                   <path d="M7.48901 17.1925C8.10004 17.8918 8.99841 18.3335 10 18.3335C11.0016 18.3335 11.9 17.8918 12.511 17.1925C10.8482 17.4634 9.15183 17.4634 7.48901 17.1925Z" />
                 </svg>
               </span>
-              <span class="text">Notifications</span>
+              <span class="text">Notifikasi</span>
             </a>
           </li>
         </ul>
