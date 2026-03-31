@@ -12,7 +12,8 @@ class NotificationController extends Controller
 
    public function index()
     {
-        return view('pages.notifikasi.notifikasi');
+        $notifications = Notification::all();
+        return view('pages.notifikasi.notifikasi', compact('notifications'));
     }
 
     protected FirebaseMessagingService $fcm;
