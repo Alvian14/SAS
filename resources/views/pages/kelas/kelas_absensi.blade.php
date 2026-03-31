@@ -223,7 +223,7 @@
         <div class="row align-items-start">
             <div class="col-md-6">
                 <div class="title">
-                    <h2 style="font-weight: 500;">Kelas</h2> <!-- Kurangi ketebalan judul -->
+                    <h2 style="font-weight: 500;">Kelas Harian</h2> <!-- Kurangi ketebalan judul -->
                 </div>
             </div>
             <div class="col-md-6">
