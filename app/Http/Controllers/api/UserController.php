@@ -84,12 +84,9 @@ class UserController extends Controller
             // check if user id / token has set or not, so user just login in one device only
             
             $token = $user->createToken('auth_token')->plainTextToken;
-    
+            $this->syncTopicSubscribe($user);
+
             $userData = $user->load('teacher', 'student.class');
-            if ($userData->student) {
-                $student = $userData->student;
-                $userData->student = $student;
-            }
 
             return response()->json([
                 'success' => true,
@@ -159,6 +156,8 @@ class UserController extends Controller
                 ]);
             }
 
+            $this->syncTopicSubscribe($user);
+
             DB::commit();
     
             $token = $user->createToken('auth_token')->plainTextToken;
@@ -193,6 +192,37 @@ class UserController extends Controller
             'message' => 'Halo student, ini feedback testing!',
             'user'    => $request->user()->only(['id', 'name', 'email', 'role']),
         ]);
+    }
+
+    private function syncTopicSubscribe(User $user): ?string
+    {
+        $user->loadMissing('student.class');
+
+        if (!$user->student) {
+            return null;
+        }
+
+        $topics = ['student_notifications'];
+
+        if ($topic = $user->student->class?->fcm_topic) {
+            $topics[] = $topic;
+        }
+
+        $topics = array_unique(array_filter($topics));
+
+        if (empty($topics)) {
+            return null;
+        }
+
+        $topicSubscribe = implode(', ', $topics);
+
+        if ($user->topic_subscribe !== $topicSubscribe) {
+            $user->update(['topic_subscribe' => $topicSubscribe]);
+        }
+
+        $user->topic_subscribe = $topicSubscribe;
+
+        return $topicSubscribe;
     }
 
 }
