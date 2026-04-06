@@ -11,6 +11,7 @@ use Faker\Provider\Image as ProviderImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use Intervention\Image\Facades\Image;
 use Intervention\Image\Image as InterventionImage;
@@ -43,6 +44,168 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    public function showForgotPassword()
+    {
+        return view('auth.forgot-password');
+    }
+
+    public function showConfirmPassword(Request $request)
+    {
+        if (!$request->filled('email')) {
+            return redirect()->route('password.request')
+                ->withErrors(['email' => 'Link konfirmasi password tidak valid.']);
+        }
+
+        return view('auth.confirm-password');
+    }
+
+    private function getRegisteredAdminByEmail(string $email): ?User
+    {
+        return User::where('email', $email)
+            ->where('role', 'admin')
+            ->first();
+    }
+
+    public function sendResetLink(Request $request)
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        $adminUser = $this->getRegisteredAdminByEmail($request->email);
+
+        if ($adminUser) {
+            return redirect()->route('password.confirm.form', [
+                'email' => $adminUser->email,
+            ])->with('status', 'Email admin terverifikasi. Silakan ganti password baru.');
+        }
+
+        $status = Password::sendResetLink($request->only('email'));
+
+        return $status === Password::RESET_LINK_SENT
+            ? back()->with('status', __($status))
+            : back()->withErrors(['email' => __($status)])->withInput($request->only('email'));
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required', 'confirmed', 'min:8'],
+        ]);
+
+        $adminUser = $this->getRegisteredAdminByEmail($request->email);
+
+        if (!$adminUser) {
+            return back()->withErrors([
+                'email' => ['Email tersebut bukan akun admin.'],
+            ]);
+        }
+
+        $adminUser->password = Hash::make($request->password);
+        $adminUser->save();
+
+        return redirect()->route('login')->with('success', 'Password admin berhasil diperbarui. Silakan login.');
+    }
+
+    public function showSetting()
+    {
+        $user = Auth::user();
+
+        return view('pages.setting.setting', compact('user'));
+    }
+
+    public function updateSetting(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        if ($request->input('form_type') === 'profile') {
+            return $this->updateSettingProfile($request, $user);
+        }
+
+        if ($request->input('form_type') === 'password') {
+            return $this->updateSettingPassword($request, $user);
+        }
+
+        return back()->withErrors(['form' => 'Form tidak valid.']);
+    }
+
+    public function deleteProfilePicture()
+    {
+        $user = Auth::user();
+
+        if (!$user instanceof User) {
+            return redirect()->route('login');
+        }
+
+        if (empty($user->profile_picture)) {
+            return back()->with('success', 'Foto profil sudah kosong.');
+        }
+
+        $photoPath = public_path('storage/profile/' . $user->profile_picture);
+        if (file_exists($photoPath)) {
+            @unlink($photoPath);
+        }
+
+        $user->profile_picture = null;
+        $user->save();
+
+        return back()->with('success', 'Foto profil berhasil dihapus.');
+    }
+
+    private function updateSettingProfile(Request $request, User $user)
+    {
+        $request->validate([
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+        ]);
+
+        $user->email = $request->email;
+
+        if ($request->hasFile('profile_picture')) {
+            if (!empty($user->profile_picture)) {
+                $oldPath = public_path('storage/profile/' . $user->profile_picture);
+                if (file_exists($oldPath)) {
+                    @unlink($oldPath);
+                }
+            }
+
+            $image = $request->file('profile_picture');
+            $imageName = $image->hashName();
+            $image->move(public_path('storage/profile/'), $imageName);
+            $user->profile_picture = $imageName;
+        }
+
+        $user->save();
+
+        return back()->with('success', 'Email dan gambar profil berhasil diperbarui.');
+    }
+
+    private function updateSettingPassword(Request $request, User $user)
+    {
+        $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8|confirmed',
+        ], [
+            'new_password.confirmed' => 'Konfirmasi password baru tidak cocok.',
+        ]);
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors([
+                'current_password' => 'Password saat ini tidak sesuai.',
+            ]);
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return back()->with('success', 'Password berhasil diperbarui.');
     }
 
     // start register student
@@ -236,7 +399,7 @@ class AuthController extends Controller
         $teachers = Teacher::with('user')->get(); // Hapus 'subjects'
         $subjects = Subject::all();
 
-        
+
 
         return view('pages.akun.indentitas_guru', compact('teachers', 'subjects'));
     }

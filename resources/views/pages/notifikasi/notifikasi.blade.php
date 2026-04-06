@@ -129,11 +129,14 @@
     .notif-card.unread::before {
         content: '';
         position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 4px;
+        left: 12px;
+        top: 12px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
         background: #0d6efd;
+        box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.15);
+        z-index: 2;
     }
 
     .notif-icon-wrap {
@@ -294,7 +297,8 @@
         @if(isset($notifications) && $notifications->count() > 0)
             <div id="notificationList">
                 @foreach($notifications as $notification)
-                    <div class="notif-card unread" onclick="showNotificationDetails(this)"
+                    <div class="notif-card unread" onclick="openNotificationModal(this, 'notifDetailModal-{{ $notification->id }}')"
+                        data-id="{{ $notification->id }}"
                         data-title="{{ $notification->title }}"
                         data-message="{{ $notification->body }}"
                         data-time="{{ $notification->created_at?->format('d M Y H:i') }}"
@@ -334,6 +338,51 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="modal fade" id="notifDetailModal-{{ $notification->id }}" tabindex="-1" aria-labelledby="notifDetailModalLabel-{{ $notification->id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content" style="border-radius: 16px; border: none; overflow: hidden;">
+                                <div class="modal-header" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); color: white; border: none; padding: 20px 24px;">
+                                    <h5 class="modal-title" id="notifDetailModalLabel-{{ $notification->id }}" style="font-weight: 600;">
+                                        <i class="fas fa-info-circle me-2"></i> Detail Notifikasi
+                                    </h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body" style="padding: 24px;">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="notif-icon-wrap me-3" style="width: 40px; height: 40px; font-size: 16px;">
+                                            <i class="fas fa-envelope"></i>
+                                        </div>
+                                        <div>
+                                            <h4 style="margin: 0; font-size: 18px; font-weight: 700; color: #111827;">{{ $notification->title }}</h4>
+                                            <small style="color: #6b7280;">{{ $notification->created_at?->format('d M Y H:i') }}</small>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                                        <p style="margin: 0; color: #4b5563; font-size: 15px; line-height: 1.6;">{{ $notification->body }}</p>
+                                    </div>
+                                    <div class="d-flex gap-3">
+                                        <div style="flex: 1; background: white; border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px;">
+                                            <span style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">Pengirim</span>
+                                            <div style="font-weight: 600; font-size: 14px; color: #111827;">
+                                                <i class="fas fa-user text-primary me-1"></i> {{ $notification->sender->name ?? 'Sistem' }}
+                                            </div>
+                                        </div>
+                                        <div style="flex: 1; background: white; border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px;">
+                                            <span style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">Kelas</span>
+                                            <div style="font-weight: 600; font-size: 14px; color: #111827;">
+                                                <i class="fas fa-chalkboard text-primary me-1"></i> {{ $notification->class->name ?? '-' }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer" style="border-top: 1px solid #f3f4f6; padding: 16px 24px;">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 8px; padding: 8px 20px;">Tutup</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 @endforeach
             </div>
         @else
@@ -349,73 +398,118 @@
     </div>
 </div>
 
-<!-- Modal Detail Notifikasi -->
-<div class="modal fade" id="notifDetailModal" tabindex="-1" aria-labelledby="notifDetailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 16px; border: none; overflow: hidden;">
-            <div class="modal-header" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); color: white; border: none; padding: 20px 24px;">
-                <h5 class="modal-title" id="notifDetailModalLabel" style="font-weight: 600;">
-                    <i class="fas fa-info-circle me-2"></i> Detail Notifikasi
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" style="padding: 24px;">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="notif-icon-wrap me-3" style="width: 40px; height: 40px; font-size: 16px;">
-                        <i class="fas fa-envelope"></i>
-                    </div>
-                    <div>
-                        <h4 id="modalNotifTitle" style="margin: 0; font-size: 18px; font-weight: 700; color: #111827;"></h4>
-                        <small id="modalNotifTime" style="color: #6b7280;"></small>
-                    </div>
-                </div>
-                <hr>
-                <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-                    <p id="modalNotifMessage" style="margin: 0; color: #4b5563; font-size: 15px; line-height: 1.6;"></p>
-                </div>
-                <div class="d-flex gap-3">
-                    <div style="flex: 1; background: white; border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px;">
-                        <span style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">Pengirim</span>
-                        <div style="font-weight: 600; font-size: 14px; color: #111827;">
-                            <i class="fas fa-user text-primary me-1"></i> <span id="modalNotifSender"></span>
-                        </div>
-                    </div>
-                    <div style="flex: 1; background: white; border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px;">
-                        <span style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">Kelas</span>
-                        <div style="font-weight: 600; font-size: 14px; color: #111827;">
-                            <i class="fas fa-chalkboard text-primary me-1"></i> <span id="modalNotifClass"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer" style="border-top: 1px solid #f3f4f6; padding: 16px 24px;">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 8px; padding: 8px 20px;">Tutup</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
-    function showNotificationDetails(card) {
-        // Ambil data dari atribut element
-        const title = card.getAttribute('data-title');
-        const message = card.getAttribute('data-message');
-        const time = card.getAttribute('data-time');
-        const sender = card.getAttribute('data-sender');
-        const className = card.getAttribute('data-class');
+    // kode untuk localStorage untuk menyimpan status baca notifikasi
+    const READ_NOTIFICATION_STORAGE_KEY = 'sas_read_notifications';
 
-        // Isi modal dengan data
-        document.getElementById('modalNotifTitle').innerText = title;
-        document.getElementById('modalNotifMessage').innerText = message;
-        document.getElementById('modalNotifTime').innerText = time;
-        document.getElementById('modalNotifSender').innerText = sender;
-        document.getElementById('modalNotifClass').innerText = className;
+    function getReadNotificationIds() {
+        try {
+            const savedValue = localStorage.getItem(READ_NOTIFICATION_STORAGE_KEY);
+            const parsedValue = savedValue ? JSON.parse(savedValue) : [];
+            return Array.isArray(parsedValue) ? parsedValue : [];
+        } catch (error) {
+            return [];
+        }
+    }
 
+    function saveReadNotificationId(notificationId) {
+        if (!notificationId) {
+            return;
+        }
+
+        const readIds = new Set(getReadNotificationIds());
+        readIds.add(String(notificationId));
+        localStorage.setItem(READ_NOTIFICATION_STORAGE_KEY, JSON.stringify(Array.from(readIds)));
+    }
+
+    // Tandai semua notifikasi sebagai sudah dibaca
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchNotification');
+        const filterSelect = document.getElementById('filterNotification');
+        const notificationList = document.getElementById('notificationList');
+        const notificationContainer = document.getElementById('notificationContainer');
+
+        if (!searchInput || !notificationList) {
+            return;
+        }
+
+        const cards = Array.from(notificationList.querySelectorAll('.notif-card'));
+        const readIds = new Set(getReadNotificationIds());
+
+        cards.forEach(function(card) {
+            const cardId = card.getAttribute('data-id');
+            if (cardId && readIds.has(String(cardId))) {
+                card.classList.remove('unread');
+            }
+        });
+
+        const searchEmptyState = document.createElement('div');
+        searchEmptyState.className = 'empty-state';
+        searchEmptyState.style.display = 'none';
+        searchEmptyState.innerHTML = `
+            <div class="empty-state-icon">
+                <i class="fas fa-search"></i>
+            </div>
+            <h3>Notifikasi tidak ditemukan</h3>
+            <p>Coba gunakan kata kunci lain.</p>
+        `;
+        notificationContainer.appendChild(searchEmptyState);
+
+        function getCardSearchText(card) {
+            const title = card.getAttribute('data-title') || '';
+            const message = card.getAttribute('data-message') || '';
+            const sender = card.getAttribute('data-sender') || '';
+            const className = card.getAttribute('data-class') || '';
+            const time = card.getAttribute('data-time') || '';
+
+            return `${title} ${message} ${sender} ${className} ${time}`.toLowerCase();
+        }
+
+        function applyNotificationFilters() {
+            const searchKeyword = searchInput.value.trim().toLowerCase();
+            const statusFilter = filterSelect ? filterSelect.value : '';
+            let visibleCount = 0;
+
+            cards.forEach(function(card) {
+                const matchesSearch = !searchKeyword || getCardSearchText(card).includes(searchKeyword);
+                const isUnread = card.classList.contains('unread');
+                const matchesStatus = !statusFilter
+                    || (statusFilter === 'unread' && isUnread)
+                    || (statusFilter === 'read' && !isUnread);
+
+                const shouldShow = matchesSearch && matchesStatus;
+                card.style.display = shouldShow ? '' : 'none';
+
+                if (shouldShow) {
+                    visibleCount += 1;
+                }
+            });
+
+            searchEmptyState.style.display = visibleCount === 0 ? '' : 'none';
+        }
+
+        searchInput.addEventListener('input', applyNotificationFilters);
+
+        if (filterSelect) {
+            filterSelect.addEventListener('change', applyNotificationFilters);
+        }
+
+        window.applyNotificationFilters = applyNotificationFilters;
+        applyNotificationFilters();
+    });
+
+    // Fungsi untuk menampilkan detail notifikasi di modal
+    function openNotificationModal(card, modalId) {
         // Tandai sebagai sudah dibaca secara visual jika perlu
         card.classList.remove('unread');
+        saveReadNotificationId(card.getAttribute('data-id'));
+
+        if (typeof window.applyNotificationFilters === 'function') {
+            window.applyNotificationFilters();
+        }
 
         // Tampilkan modal
-        var notifModal = new bootstrap.Modal(document.getElementById('notifDetailModal'));
+        var notifModal = new bootstrap.Modal(document.getElementById(modalId));
         notifModal.show();
     }
 </script>

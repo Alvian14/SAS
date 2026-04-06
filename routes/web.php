@@ -26,6 +26,22 @@ Route::post('/register/student', [AuthController::class, 'registerStudent'])->na
 Route::post('/register/teacher', [AuthController::class, 'registerTeacher'])->name('register.teacher.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])
+    ->middleware('guest')
+    ->name('password.request');
+
+Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])
+    ->middleware('guest')
+    ->name('password.email');
+
+Route::get('/confirm-password', [AuthController::class, 'showConfirmPassword'])
+    ->middleware('guest')
+    ->name('password.confirm.form');
+
+Route::post('/reset-password', [AuthController::class, 'updatePassword'])
+    ->middleware('guest')
+    ->name('password.update');
+
 // middleware auth
 Route::get('/pages/dashboard/dashboard', [DashboardController::class, 'index'])
     ->middleware('auth')
@@ -116,7 +132,7 @@ Route::put('/pages/jadwal/jadwal/{id}', [JadwalController::class, 'update'])
 Route::delete('/pages/jadwal/jadwal', [JadwalController::class, 'destroy'])
     ->middleware('auth')
     ->name('jadwal.destroy');
-Route::get('/jadwal/qr/{id}', [\App\Http\Controllers\JadwalController::class, 'showQr'])->name('jadwal.qr');
+Route::get('/jadwal/qr/{id}', [JadwalController::class, 'showQr'])->name('jadwal.qr');
 // ========================= end jadwal ======================
 
 
@@ -182,3 +198,15 @@ Route::post('/absensi-mapel/edit-status/{id}', [AttendanceHistoryController::cla
 Route::get('/pages/notifikasi/notifikasi', [NotificationController::class, 'index'])
     ->middleware('auth')
     ->name('notifikasi.index');
+
+Route::get('/pages/setting/setting', [AuthController::class, 'showSetting'])
+    ->middleware('auth')
+    ->name('setting.index');
+
+Route::post('/pages/setting/setting', [AuthController::class, 'updateSetting'])
+    ->middleware('auth')
+    ->name('setting.update');
+
+Route::post('/pages/setting/delete-profile-picture', [AuthController::class, 'deleteProfilePicture'])
+    ->middleware('auth')
+    ->name('setting.photo.delete');
