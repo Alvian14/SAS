@@ -15,6 +15,39 @@
     <link rel="stylesheet" href="{{ asset('assets/css/main.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      .profile-box .profile-info .info .image {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        border-radius: 50% !important;
+        overflow: hidden !important;
+      }
+
+      .author-info .image {
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 40px !important;
+        border-radius: 50% !important;
+        overflow: hidden !important;
+      }
+
+      .profile-avatar-circle {
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: 50% !important;
+        object-fit: cover !important;
+        display: block !important;
+      }
+
+      .dropdown-avatar-circle {
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: 50% !important;
+        object-fit: cover !important;
+        display: block !important;
+      }
+    </style>
   </head>
   <body>
     <!-- ======== sidebar-nav start =========== -->
@@ -200,17 +233,30 @@
                 <span id="clock" class="me-3 fw-bold d-none d-md-inline" style="margin-top: 11px;">
                   {{ isset($serverTime) ? $serverTime : '' }}
                 </span>
+                @php
+                  $currentUser = auth()->user();
+                  $displayName = 'Admin';
+                  if ($currentUser && !empty($currentUser->name)) {
+                    $displayName = $currentUser->name;
+                  }
+
+                  $letters = strtoupper(substr(preg_replace('/\s+/', '', $displayName), 0, 2));
+                  $avatarUrl = 'https://ui-avatars.com/api/?name=' . urlencode($letters) . '&background=0086c1&color=ffffff&size=128';
+                  if ($currentUser && !empty($currentUser->profile_picture)) {
+                    $avatarUrl = asset('storage/profile/' . $currentUser->profile_picture);
+                  }
+                @endphp
                 <div class="profile-box ml-15 dropdown">
                   <button class="dropdown-toggle bg-transparent border-0" type="button" id="profile"
                           data-bs-toggle="dropdown" aria-expanded="false">
                     <div class="profile-info">
                       <div class="info">
                         <div class="image">
-                          <img src="data:image/svg+xml,%3csvg%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3ccircle%20cx='16'%20cy='16'%20r='16'%20fill='url(%23avatarGradient)'/%3e%3cg%20fill='white'%20opacity='0.9'%3e%3ccircle%20cx='16'%20cy='12'%20r='5'/%3e%3cpath%20d='M16%2018c-5.5%200-10%202.5-10%207v1h20v-1c0-4.5-4.5-7-10-7z'/%3e%3c/g%3e%3ccircle%20cx='16'%20cy='16'%20r='15.5'%20fill='none'%20stroke='rgba(255,255,255,0.2)'%20stroke-width='1'/%3e%3cdefs%3e%3clinearGradient%20id='avatarGradient'%20x1='0%25'%20y1='0%25'%20x2='100%25'%20y2='100%25'%3e%3cstop%20offset='0%25'%20style='stop-color:%236b7280;stop-opacity:1'%20/%3e%3cstop%20offset='100%25'%20style='stop-color:%234b5563;stop-opacity:1'%20/%3e%3c/linearGradient%3e%3c/defs%3e%3c/svg%3e"
-                               alt="User Avatar" class="img-fluid rounded-circle" />
+                          <img src="{{ $avatarUrl }}"
+                             alt="User Avatar" class="profile-avatar-circle" />
                         </div>
                         <div>
-                          <h6 class="fw-500">Admin</h6>
+                          <h6 class="fw-500">{{ $displayName }}</h6>
                         </div>
                       </div>
                     </div>
@@ -219,22 +265,16 @@
                     <li>
                       <div class="author-info flex items-center !p-1">
                         <div class="image">
-                          <img src="assets/images/profile/profile-image.png" alt="image">
+                          <img src="{{ $avatarUrl }}" alt="image" class="dropdown-avatar-circle">
                         </div>
                         <div class="content">
-                          <h4 class="text-sm">Admin</h4>
-                          <a class="text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white text-xs">Email@gmail.com</a>
+                          <h4 class="text-sm">{{ $displayName }}</h4>
+                          <a class="text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white text-xs">{{ $currentUser?->email ?? '-' }}</a>
                         </div>
                       </div>
                     </li>
-                    <li class="divider"></li>
                     <li>
-                      <a href="#0" class="dropdown-item">
-                        <i class="lni lni-user"></i> View Profile
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#0" class="dropdown-item">
+                      <a href="{{ route('setting.index') }}" class="dropdown-item">
                         <i class="lni lni-cog"></i> Settings
                       </a>
                     </li>
