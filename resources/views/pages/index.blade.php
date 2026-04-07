@@ -204,6 +204,20 @@
               <span class="text">Notifikasi</span>
             </a>
           </li>
+
+          <li class="nav-item {{ Route::is('laporkan.index') ? 'active' : '' }}">
+          <a href="{{ route('laporkan.index') }}" class="{{ Route::is('laporkan.index') ? 'active' : '' }}">
+              <span class="icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M14 2H7C5.89543 2 5 2.89543 5 4V20C5 21.1046 5.89543 22 7 22H17C18.1046 22 19 21.1046 19 20V7L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M14 2V7H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M9 12H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M9 16H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span class="text">Laporkan</span>
+            </a>
+          </li>
         </ul>
       </nav>
     </aside>

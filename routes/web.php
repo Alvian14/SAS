@@ -11,7 +11,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HistoryDailyController;
 use App\Http\Controllers\AttendanceHistoryController;
+use App\Http\Controllers\LaporkanController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ReportController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -210,3 +212,8 @@ Route::post('/pages/setting/setting', [AuthController::class, 'updateSetting'])
 Route::post('/pages/setting/delete-profile-picture', [AuthController::class, 'deleteProfilePicture'])
     ->middleware('auth')
     ->name('setting.photo.delete');
+
+
+Route::get('/pages/laporkan/laporkan', [ReportController::class, 'index'])
+    ->middleware('auth')
+    ->name('laporkan.index');

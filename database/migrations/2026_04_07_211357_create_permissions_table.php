@@ -13,8 +13,6 @@ return new class extends Migration
     {
         Schema::create('permissions', function (Blueprint $table) {
             $table->id();
-            $table->integer('period_start')->nullable();
-            $table->integer('period_end')->nullable();
             $table->enum('reason', ['sakit', 'izin', 'dispen', 'lainnya']);
             $table->text('information')->nullable(true);
             $table->string('evidence');
@@ -27,7 +25,7 @@ return new class extends Migration
             $table->foreignId('id_student')->constrained('students')->onDelete('cascade');
 
             // relation for approval by admin or teacher.
-            $table->foreignId('approved_by')->constrained('users')->nullOnDelete();
+            $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
 
             // timestamp
             $table->timestamps();
