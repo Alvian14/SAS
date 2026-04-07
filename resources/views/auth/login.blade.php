@@ -82,6 +82,16 @@
       filter: brightness(1.2);
       opacity: 0.8;
     }
+    .forgot-password-link {
+      color: #0086C1;
+      font-size: 0.9rem;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .forgot-password-link:hover {
+      color: #006a95;
+      text-decoration: underline;
+    }
 
   </style>
 </head>
@@ -123,6 +133,13 @@
             <i class="bi bi-lock"></i>
           </span>
           <input type="password" name="password" class="form-control border-start-0" placeholder="Password" required id="passwordInput" oninput="this.setCustomValidity('')">
+        </div>
+
+        @php
+          $forgotPasswordUrl = Route::has('password.request') ? route('password.request') : url('/forgot-password');
+        @endphp
+        <div class="text-end mb-2">
+          <a href="{{ $forgotPasswordUrl }}" class="forgot-password-link">Lupa Password?</a>
         </div>
 
         <button  type="submit" class="mt-4 btn btn-login w-100 py-2">Get Started</button>
