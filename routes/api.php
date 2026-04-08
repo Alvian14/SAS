@@ -25,6 +25,7 @@ Route::get('/classes/{id}/schedule/{dayindex}', [ClassController::class, 'schedu
 // firebase notification test
 Route::post('/fcm/send-token', [NotificationController::class, 'sendToToken']);
 Route::post('/fcm/send-topic', [NotificationController::class, 'sendToTopic']);
+Route::post('/fcm/send-topic-template', [NotificationController::class, 'sendTopicTemplateExample']);
 
 // protected routes, need authentication
 Route::middleware(['auth:sanctum'])->group(function () {

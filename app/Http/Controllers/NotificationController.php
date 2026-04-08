@@ -2,13 +2,65 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\NotificationType;
 use App\Models\Classes;
 use App\Models\Notification;
 use App\Services\FirebaseMessagingService;
+use App\Services\NotificationHelperService;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+    
+    //* Dokumentasi Penggunaan Template Message untuk fitur Notifikasi
+        //* Contoh penggunaan template untuk kirim ke topic kelas
+    // $template = $this->notificationHelper->templateTugasKelas(
+    //     'kelas_10_TKJ_1',
+    //     'Tugas Baru: Matematika',
+    //     'Tugas matematika untuk minggu ini sudah tersedia. Silakan cek aplikasi untuk detailnya.',
+    // );
+    // $result = $this->notificationHelper->send($template);
+
+        // * Contoh penggunaan template untuk kirim ke semua siswa (pengumuman umum)
+    // $template = $this->notificationHelper->templatePengumuman(
+    //     'Libur Sekolah',
+    //     'Sekolah akan libur pada tanggal 25 Desember 2024 hingga 1 Januari 2025. Selamat berlibur!',
+    // );
+    // $result = $this->notificationHelper->send($template);
+
+        // * Contoh penggunaan template untuk kirim ke satu device (token)
+    // $template = $this->notificationHelper->tokenTemplate(
+    //     'fcm_token_device',
+    //     'Pengumuman Pribadi',
+    //     'Ini adalah pengumuman khusus untuk Anda. Harap cek aplikasi untuk detailnya.',
+    // );
+    // $result = $this->notificationHelper->send($template);
+
+    
+    //* Dokumentasi Penggunaan Data NotficationCreateTemplate untuk menyimpan ke database
+
+    // $payloadAll = $this->notificationHelper->createTemplateForAll(
+    // 'Info Umum',
+    // 'Sekolah libur besok',
+    // NotificationType::AnnouncementGeneral,
+    // auth()->id(),
+    // );
+
+    // $payloadClass = $this->notificationHelper->createTemplateForClass(
+    //     10,
+    //     'Tugas Baru',
+    //     'Kerjakan latihan halaman 12',
+    //     NotificationType::Assignment,
+    //     auth()->id(),
+    // );
+
+    // $payloadStudent = $this->notificationHelper->createTemplateForStudent(
+    //     25,
+    //     'Catatan Personal',
+    //     'Harap hubungi wali kelas',
+    //     NotificationType::PersonalNote,
+    //     auth()->id(),
+    // );
 
    public function index()
     {
@@ -17,10 +69,12 @@ class NotificationController extends Controller
     }
 
     protected FirebaseMessagingService $fcm;
+    protected NotificationHelperService $notificationHelper;
 
-    public function __construct(FirebaseMessagingService $fcm)
+    public function __construct(FirebaseMessagingService $fcm, NotificationHelperService $notificationHelper)
     {
         $this->fcm = $fcm;
+        $this->notificationHelper = $notificationHelper;
     }
 
     // Test kirim ke satu token
@@ -50,6 +104,68 @@ class NotificationController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    // Contoh penggunaan template notifikasi untuk target topic kelas
+    public function sendTopicTemplateExample(Request $request)
+    {
+        try {
+
+            $template = $this->notificationHelper->templateAssignmentForClass(
+                $request->input('topic', 'kelas_10_TKJ_1'),
+                $request->input('title', 'Tugas Baru: Matematika'),
+                $request->input('body', 'Tugas matematika untuk minggu ini silahkan kerjakan buku praktikum halaman 12-15'),
+            );
+
+            $result = $this->notificationHelper->send($template);
+
+            $createTemplate = $this->notificationHelper->createTemplateForClass(
+                1, // class_id, for testing only
+                $template->title,
+                $template->body,
+                NotificationType::Assignment,
+                1, // sender_id, bisa diganti dengan auth()->id() jika sudah ada sistem autentikasi
+            );
+
+            // store to database
+            Notification::create($createTemplate->toArray());
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Topic template notification sent successfully',
+                'template' => $template->toArray(),
+                'create_template' => $createTemplate->toArray(),
+                'result' => $result,
+            ]);
+
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to send topic template notification',
+                'message' => $th->getMessage(),
+            ], 500);
+        }
+    }
+
+    // notes untuk alvian:
+    // $template = $this->notificationHelper->templatePermissionApproval(
+    //     $request->input('userid'), // receiver_id, contoh: user id siswa yang izin nya disetujui
+    //     // $request->input('title', 'Tugas Baru: Matematika'),
+    // );
+
+
+    // $result = $this->notificationHelper->send($template);
+
+    // $createTemplate = $this->notificationHelper->createTemplateForStudent(
+    //     $request->input('userid'), // receiver_id, contoh: user id siswa yang izin nya disetujui
+    //     $template->title,
+    //     $template->body,
+    //     NotificationType::PersonalNote,
+    //     1, // sender_id, bisa diganti dengan auth()->id() jika sudah ada sistem autentikasi
+    //     );
+
+    // // store to database
+    // Notification::create($createTemplate->toArray());
+
 
     // universal send (kirim ke semua student device, untuk pengumuman umum seperti libur, maintenance, dll)
     public function sendToAll(Request $request)
@@ -129,4 +245,5 @@ class NotificationController extends Controller
         }
 
         }
+
 }
