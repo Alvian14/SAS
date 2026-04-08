@@ -21,6 +21,12 @@ class ClassController extends Controller
         return view('pages.kelas.kelas_mapel', compact('classes'));
     }
 
+    public function kelas_laporkan()
+    {
+        $classes = Classes::all();
+        return view('pages.kelas.kelas_laporkan', compact('classes'));
+    }
+
     // Proses tambah kelas
     public function store(Request $request)
     {

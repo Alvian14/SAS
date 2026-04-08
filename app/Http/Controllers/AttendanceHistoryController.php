@@ -15,7 +15,7 @@ class AttendanceHistoryController extends Controller
         $absensi = AttendanceHistory::with(['student', 'class'])
             ->where('id_class', $classId)
             ->get();
-
+    
         // Ambil semua siswa di kelas
         $allStudents = Student::where('id_class', $classId)->get();
         // Ambil id siswa yang sudah absen
