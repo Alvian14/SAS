@@ -86,11 +86,11 @@ class NotificationHelperService
         );
     }
 
-    public function templateAssignmentForClass(string $classTopic, string $judul, string $isi, array $data = []): NotificationTemplate
+    public function templateAssignmentForClass(string $classTopic, string $judul = null, string $isi, array $data = []): NotificationTemplate
     {
         return $this->topicTemplate(
             $classTopic,
-            $judul,
+            $judul ?? 'Tugas Baru',
             $isi,
             array_merge([
                 'type' => 'assignment',

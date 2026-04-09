@@ -194,45 +194,91 @@ class NotificationController extends Controller
 
             $userId = $user->id;
 
+            $request->validate([
+                'class_id' => 'required|integer',
+                'type' => 'nullable|string',
+                'title' => 'nullable|string',
+                'body' => 'nullable|string',
+                'data' => 'nullable',
+            ]);
+
+            $type = $request->input('type', 'announcement'); // default ke announcement
+
             $classId = $request->input('class_id'); // contoh: '123'
-            $title = $request->input('title', 'Judul Notifikasi');
-            $body  = $request->input('body', 'Isi notifikasi');
+            $title = $request->input('title', null);
+            $body  = $request->input('body', null);
             $data = $request->input('data', []);
 
             // get fcm topic from database based on class_id
-            $topic = Classes::find($classId)->fcm_topic;
+            $class = Classes::find($classId);
+            if (!$class) {
+                return response()->json(['error' => 'Class not found'], 404);
+            }
 
+            $topic = $class->fcm_topic;
             if (!$topic) {
-                return response()->json(['error' => 'Class not found or no FCM topic assigned'], 404);
+                return response()->json(['error' => 'No FCM topic assigned to this class'], 404);
             }
 
-            // save to database
-            $response = Notification::create([
-                'title' => $title,
-                'body' => $body,
-                'type' => 'class_notification',
-                'send_to' => $topic,
-                'sender_id' => $userId,
-                'receiver_id' => null, // bisa diisi jika ingin target user tertentu
-                'class_id' => $classId,
-            ]);
+            $template = null;
 
-            if (!$response) {
-                return response()->json(['error' => 'Failed to save notification to database'], 500);
+            switch ($type) {
+                case 'assignment':
+                    $t = $title;
+                    $b = $body  ?? 'Ada tugas baru untuk kelas ini. Silakan cek aplikasi untuk detail.';
+                    $template = $this->notificationHelper->templateAssignmentForClass(
+                        $topic,
+                        $t,
+                        $b,
+                        $data,
+                    );
+                    break;
+
+                case 'class_cancelled':
+                    // contoh template untuk pengumuman kelas dibatalkan
+                    $t = $title ?? 'Kelas Dibatalkan';
+                    $b = $body ?? '(pengirim tidak memberikan detail alasan pembatalan)';
+                    $template = $this->notificationHelper->templateClassCancelled(
+                        $b
+                    );
+                    break;
+
+                default:
+                    // default ke template pengumuman umum untuk kelas
+                    $t = $title ?? 'Pengumuman Kelas';
+                    $b = $body  ?? 'Ada pengumuman untuk kelas ini.';
+                    $template = $this->notificationHelper->templateAnnouncementForClass(
+                        $topic,
+                        $t,
+                        $b,
+                        array_merge($data, ['type' => 'announcement_for_class']),
+                    );
+                    break;
             }
 
-            // send as notification to devices subscribed to the class topic
-            $this->fcm->sendToTopic($topic, $title, $body, $data);
+            if (!$template) {
+                return response()->json(['error' => 'Failed to create notification template'], 500);
+            }
+
+            $resultMessaging = $this->notificationHelper->send($template);
+
+            $createTemplate = $this->notificationHelper->createTemplateForClass(
+                $classId,
+                $template->title,
+                $template->body,
+                $type,
+                $userId,
+            );
+
+            // store to database
+            Notification::create($createTemplate->toArray());
 
             return response()->json([
                 'success' => true,
                 'message' => 'Notification sent to class topic successfully',
                 'data' => [
-                    'class_id' => $classId,
-                    'sender_id' => $userId,
-                    'topic' => $topic,
-                    'title' => $title,
-                    'body' => $body,
+                    'messaging' => $resultMessaging,
+                    'create_template' => $createTemplate->toArray(),
                 ]
             ]);
 
