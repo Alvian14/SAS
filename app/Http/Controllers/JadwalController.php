@@ -11,6 +11,7 @@ use App\Models\Teacher;
 use App\Models\AcademicPeriod;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Crypt;
 
 class JadwalController extends Controller
 {
@@ -62,10 +63,11 @@ class JadwalController extends Controller
         $code = $request->input('code') ?: $autoCode;
 
         // Hash code sebelum simpan ke database
-        $hashedCode = md5($code);
+        $hashedCode = Crypt::encryptString($code);
 
         Schedule::create([
-            'day_of_week' => $validated['day_of_week'],
+            // make day of week to lowercase
+            'day_of_week' => strtolower($validated['day_of_week']),
             'period_start' => $validated['period_start'],
             'period_end' => $validated['period_end'],
             'start_time' => $validated['start_time'],
@@ -102,11 +104,11 @@ class JadwalController extends Controller
         $end_time = sprintf('%02d:00', $endHour);
 
         // Hash code sebelum update ke database
-        $hashedCode = md5($validated['code']);
+        $hashedCode = Crypt::encryptString($validated['code']);
 
         $jadwal = Schedule::findOrFail($id);
         $jadwal->update([
-            'day_of_week' => $validated['day_of_week'],
+            'day_of_week' => strtolower($validated['day_of_week']),
             'period_start' => $validated['period_start'],
             'period_end' => $validated['period_end'],
             'start_time' => $validated['start_time'],
