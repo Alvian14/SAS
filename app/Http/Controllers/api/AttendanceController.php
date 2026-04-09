@@ -2,23 +2,41 @@
 
 namespace App\Http\Controllers\api;
 
+use App\Enums\NotificationType;
 use App\Http\Controllers\Controller;
+use App\Jobs\WriteAttendanceJob;
 use App\Models\AttendanceHistory;
 use App\Models\AttendanceHistoryDaily;
+use App\Models\Notification;
 use App\Models\Permission;
 use App\Models\Schedule;
+use App\Models\Student;
+use App\Services\FirebaseMessagingService;
+use App\Services\NotificationHelperService;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Contracts\Cache\LockTimeoutException;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use App\Jobs\WriteAttendanceJob;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class AttendanceController extends Controller
 
 {
+    protected FirebaseMessagingService $fcm;
+    protected NotificationHelperService $notificationHelper;
     public $distanceMaximumTolerance = 100000; // in meters
+
+    public $latOfAttendance = -7.7811912;
+    public $lonOfAttendance = 112.0315286;
+
+
+    public function __construct(FirebaseMessagingService $fcm, NotificationHelperService $notificationHelper)
+    {
+        $this->fcm = $fcm;
+        $this->notificationHelper = $notificationHelper;
+    }
 
     public function qrAttendance(Request $request) {
 
@@ -80,8 +98,16 @@ class AttendanceController extends Controller
             error_log($distance);
 
             // request time
-            $now = Carbon::parse('2026-02-16 08:35:00', timezone: 'Asia/Jakarta');
-            // $now = Carbon::now('Asia/Jakarta');
+            // Jika client mengirimkan `date` (format ISO atau yang bisa di-parse oleh Carbon),
+            // gunakan itu sebagai waktu sekarang untuk keperluan testing/override.
+            if ($request->filled('date')) {
+                $now = Carbon::parse($request->input('date'), 'Asia/Jakarta');
+            } else {
+                // $now = Carbon::now('Asia/Jakarta');
+                // testing using date: 1 April 2026 07:15 WIB (should be valid for schedule 7-8)
+                $now = Carbon::parse('Asia/Jakarta');
+            }
+
             $dayOfWeek = strtolower($now->locale('id')->dayName); // example: "senin"
             
             // schedule search (compare with qrcode) => class of student and schedule search
@@ -588,6 +614,150 @@ class AttendanceController extends Controller
                 'message' => 'Validation failed',
                 'errors' => $e->errors(),
             ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // permission accept for teacher only
+    public function permissionAccept(Request $request)
+    {
+        try {
+            // check bearer token and get user
+            $user = $request->user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            }
+
+            $permissionId = $request->input('permission_id');
+
+            if (!$permissionId) {
+                return response()->json(['success' => false, 'message' => 'Permission ID is required'], 422);
+            }
+
+            // find permission by id
+            $permission = Permission::find($permissionId);
+            if (!$permission) {
+                return response()->json(['success' => false, 'message' => 'Permission not found'], 404);
+            }
+
+            // permission must be processed only, if already accepted or rejected, cannot be processed again.
+            if ($permission->status === 'diterima') {
+                return response()->json(['success' => false, 'message' => 'Permission already accepted'], 422);
+            }
+            if ($permission->status === 'ditolak') {
+                return response()->json(['success' => false, 'message' => 'Permission already rejected'], 422);
+            }
+
+            $student = Student::find($permission->id_student);
+            if (!$student) {
+                return response()->json(['success' => false, 'message' => 'Student not found'], 404);
+            }
+
+            DB::transaction(function () use ($permission, $user, $request, $student) {
+                // update status to accepted
+                $permission->status = 'diterima';
+                $permission->approved_by = $user->id; // set approved by teacher id
+                $permission->feedback = $request->input('feedback', null); // optional feedback message from teacher
+                $permission->save();
+
+                // * create attendance record history to related date (only fill with schedule that has active academic period, and match with date permission).
+                $permissionReason = $permission->reason; // contoh: 'sakit', 'izin', 'dispen', 'lainnya'
+                if ($permissionReason === 'lainnya') {
+                    $permissionReason = 'izin';
+                }
+
+                $permissionDate = Carbon::parse($permission->date_permission)->startOfDay();
+                $permissionTimePeriod = (int) $permission->time_period;
+                $createdSchoolDays = 0;
+                $currentDate = $permissionDate->copy();
+
+                // Count time_period as school days; weekend days are skipped and replaced by the next weekday.
+                while ($createdSchoolDays < $permissionTimePeriod) {
+                    if ($currentDate->isWeekend()) {
+                        $currentDate->addDay();
+                        continue;
+                    }
+
+                    $dayName = strtolower($currentDate->locale('id')->dayName);
+                    $dayIndex = $currentDate->dayOfWeekIso; // 1..7
+
+                    // search related schedule with day_of_week same and active academic period
+                    $schedules = Schedule::query()
+                        ->where('id_class', $student->id_class)
+                        ->whereHas('academicPeriods', function ($q) {
+                            $q->where('is_active', 1);
+                        })
+                        ->where(function ($q) use ($dayName, $dayIndex) {
+                            $q->where('day_of_week', $dayName)
+                                ->orWhere('day_of_week', (string) $dayIndex);
+                        })
+                        ->get();
+
+                    foreach ($schedules as $schedule) {
+                        AttendanceHistory::updateOrCreate(
+                            [
+                                'id_schedule' => $schedule->id,
+                                'id_student' => $student->id,
+                                'attendance_date' => $currentDate->toDateString(),
+                            ],
+                            [
+                                'id_class' => $schedule->id_class,
+                                'period_number' => $schedule->period_start,
+                                'coordinate' => "$this->latOfAttendance, $this->lonOfAttendance",
+                                'status' => $permissionReason,
+                            ]
+                        );
+                    }
+
+                    $createdSchoolDays++;
+                    $currentDate->addDay();
+                }
+            });
+
+            // * notification zone: send notification to student related to the permission that has been accepted
+            $userStudent = $student->user;
+            if (!$userStudent) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User student not found',
+                ], 404);
+            }
+
+            $fcmToken = $userStudent->device_token;
+            
+            $template = $this->notificationHelper->templatePermissionApproval(
+                $fcmToken
+            );
+
+            $notificationResult = $this->notificationHelper->send($template);
+
+            $createTemplate = $this->notificationHelper->createTemplateForStudent(
+                (int) $userStudent->id,
+                $template->title,
+                $template->body,
+                NotificationType::Permission,
+                // user id of teacher, convert to int.
+                (int) $user->id
+            );
+
+            Notification::create($createTemplate->toArray());
+
+            // * end of notification zone
+
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Izin diterima untuk siswa ' . $student->name,
+                'data' => [
+                    'permission' => $permission,
+                    'notification_result' => $notificationResult,
+                ],
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
