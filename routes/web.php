@@ -13,6 +13,7 @@ use App\Http\Controllers\HistoryDailyController;
 use App\Http\Controllers\AttendanceHistoryController;
 use App\Http\Controllers\LaporkanController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ReportController;
 
 Route::get('/', function () {
@@ -217,3 +218,17 @@ Route::post('/pages/setting/delete-profile-picture', [AuthController::class, 'de
 Route::get('/pages/laporkan/laporkan', [ReportController::class, 'index'])
     ->middleware('auth')
     ->name('laporkan.index');
+
+Route::get('/pages/perizinan/perizinan', [PermissionController::class, 'index'])
+    ->middleware('auth')
+    ->name('perizinan.index');
+
+Route::post('/permissions/{id}/approve', [PermissionController::class, 'permissionAccept'])
+    ->middleware('auth')
+    ->name('permissions.approve');
+
+Route::post('/permissions/{id}/reject', [PermissionController::class, 'permissionReject'])
+    ->middleware('auth')
+    ->name('permissions.reject');
+
+
