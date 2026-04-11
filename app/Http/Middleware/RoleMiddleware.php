@@ -15,7 +15,17 @@ class RoleMiddleware
      */
     public function handle(Request $request, Closure $next, $role): Response
     {
-        if ($request->user()->role !== $role) {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated',
+                'errors' => 'Authentication required',
+            ], 401);
+        }
+
+        if ($user->role !== $role) {
             return response()->json([
                 'success' => false,
                 'message' => 'you cannot continue this request cause role mismatch',
