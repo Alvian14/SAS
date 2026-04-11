@@ -42,7 +42,7 @@ class AttendanceController extends Controller
 
 
     /// check academic period active or not.
-        
+
         try {
             // request input validation
             $request->validate([
@@ -52,7 +52,7 @@ class AttendanceController extends Controller
                 'latitude'   => 'required|numeric',
                 'longitude'  => 'required|numeric',
             ]);
-            
+
             // request data variable
             // $idStudent = $request->id_student;
             // $idClass   = $request->id_class;
@@ -73,7 +73,7 @@ class AttendanceController extends Controller
             $idStudent = $student->id;
             $idClass   = $request->id_class;
             $rawCode   = $request->qrcode;
-        
+
             // Coordinate Location from device client
             $lat = $request->latitude;
             $lon = $request->longitude;
@@ -109,7 +109,7 @@ class AttendanceController extends Controller
             }
 
             $dayOfWeek = strtolower($now->locale('id')->dayName); // example: "senin"
-            
+
             // schedule search (compare with qrcode) => class of student and schedule search
             $schedule = Schedule::query()
                 ->where('id_class', $idClass)
@@ -118,25 +118,25 @@ class AttendanceController extends Controller
                     $q->where('is_active', 1);
                 })
                 ->first();
-            
+
             if (!$schedule) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Jadwal tidak ditemukan / QR tidak valid'], 404);
             }
-            
+
             // day validation
             if ($schedule->day_of_week !== $dayOfWeek) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Absensi tidak sesuai dengan jadwal'], 422);
             }
-            
+
             // period validation using configuration that has been set
             $periods = config('periods.periods'); // period mapping
             $currentTime = $now->format('H:i');
             $currentPeriod = null;
-            
+
             $validPeriod = false;
             foreach (range($schedule->period_start, $schedule->period_end) as $p) {
                 if (
@@ -149,7 +149,7 @@ class AttendanceController extends Controller
                     break;
                 }
             }
-            
+
             if (!$validPeriod) {
                 return response()->json([
                     'success' => false,
@@ -235,8 +235,8 @@ class AttendanceController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
-        
-    
+
+
     }
 
     // get attendance report from eloquent AttendanceHistoryDaily from face recognition attendance
@@ -261,7 +261,7 @@ class AttendanceController extends Controller
                 ->whereDate('created_at', $date)
                 ->get()
                 ->first();
-            
+
             // if record is empty, return message no attendance record for that date
             if (!$attendanceRecords) {
                 return response()->json([
@@ -291,7 +291,7 @@ class AttendanceController extends Controller
             ], 500);
         }
     }
-    
+
     // get attendance report based on schedule, student, and date.
     // expected result: List Schedule [schedule + attendance status (hadir, izin, sakit, alpa), if in schedule hasnt attendance record just return attendance status: null]
     // get parameter: id_class, date, id_student (from token)
@@ -364,8 +364,8 @@ class AttendanceController extends Controller
         }
     }
 
-    // get attendance report history all student in once class filtered by class, and date now. 
-    // expected result: List Schedule [schedule + all user in class + attendance status (hadir, izin, sakit, alpa), if in schedule hasnt attendance record, dont display the student in that schedule] 
+    // get attendance report history all student in once class filtered by class, and date now.
+    // expected result: List Schedule [schedule + all user in class + attendance status (hadir, izin, sakit, alpa), if in schedule hasnt attendance record, dont display the student in that schedule]
     public function reportClass(Request $request)
     {
         try {
@@ -438,7 +438,7 @@ class AttendanceController extends Controller
         }
     }
 
-    // post permission from student using data 
+    // post permission from student using data
     public function createPermission(Request $request)
     {
         try {
@@ -448,7 +448,7 @@ class AttendanceController extends Controller
                 'evidence' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
                 'date_permission' => 'required|date',
                 // count days
-                'time_period' => 'required|integer|min:1|max:10', 
+                'time_period' => 'required|integer|min:1|max:10',
             ]);
 
             $user = $request->user();
@@ -521,7 +521,7 @@ class AttendanceController extends Controller
                 ->where('id_student', $student->id)
                 ->whereBetween('date_permission', [$startDate, $endDate])
                 ->get();
-            
+
             if ($permissions->isEmpty()) {
                 return response()->json([
                     'success' => true,
@@ -550,7 +550,7 @@ class AttendanceController extends Controller
             ], 500);
         }
     }
-    
+
     // get attendance in schedule per day by class id. (teacher only)
     public function reportClassById(Request $request, $classId, $date)
     {
@@ -808,7 +808,7 @@ class AttendanceController extends Controller
             }
 
             $fcmToken = $userStudent->device_token;
-            
+
             $template = $this->notificationHelper->templatePermissionApproval(
                 $fcmToken
             );
