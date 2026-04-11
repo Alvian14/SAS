@@ -5,7 +5,7 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "serve:app": "php artisan serve --host=172.16.100.236 --port=8000",
+        "serve:app": "php artisan serve --host=192.168.1.4 --port=8000",
         "queue:work": "php artisan queue:work redis --sleep=1 --tries=3 --timeout=60",
         "start": "concurrently --names \"server,worker\" -c \"bgBlue.bold,bgMagenta.bold\" \"npm:serve:app\" \"npm:queue:work\""
     },
