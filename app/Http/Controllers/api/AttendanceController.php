@@ -555,7 +555,6 @@ class AttendanceController extends Controller
     public function reportClassById(Request $request, $classId, $date)
     {
         try {
-
             // check bearer token and get user
             $user = $request->user();
             if (!$user) {
@@ -566,40 +565,14 @@ class AttendanceController extends Controller
             $dayName = strtolower(Carbon::parse($date)->locale('id')->dayName);
             $dayIndex = Carbon::parse($date)->dayOfWeekIso; // 1..7
 
-            // schedules for class on that day and active academic period
-            $schedules = Schedule::query()
-                ->where('id_class', $classId)
-                ->whereHas('academicPeriods', function ($q) {
-                    $q->where('is_active', 1);
-                })
-                ->where(function ($q) use ($dayName, $dayIndex) {
-                    $q->where('day_of_week', $dayName)
-                      ->orWhere('day_of_week', (string) $dayIndex);
-                })
-                ->with(['subject', 'teacher', 'class'])
-                ->orderBy('period_start')
-                ->get();
+            $students = $this->getStudentsForClass((int) $classId);
+            $schedules = $this->getActiveSchedulesForClassByDate((int) $classId, $dayName, $dayIndex);
 
             $data = [];
             foreach ($schedules as $sch) {
-                // fetch all attendance records for the schedule and date (include student + user for display)
-                $attendances = AttendanceHistory::query()
-                    ->where('id_schedule', $sch->id)
-                    ->where('attendance_date', $date)
-                    ->with(['student.user'])
-                    ->get();
-
-                $items = [];
-                foreach ($attendances as $att) {
-                    $items[] = [
-                        'attendance' => $att,
-                        'status' => $att->status,
-                    ];
-                }
-
                 $data[] = [
                     'schedule' => $sch,
-                    'attendances' => $items,
+                    'attendances' => $this->buildAttendanceItemsForSchedule($sch, $date, $students),
                 ];
             }
 
@@ -614,6 +587,112 @@ class AttendanceController extends Controller
                 'message' => 'Validation failed',
                 'errors' => $e->errors(),
             ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, \App\Models\Student>
+     */
+    private function getStudentsForClass(int $classId)
+    {
+        return Student::query()
+            ->where('id_class', $classId)
+            ->with('user')
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, \App\Models\Schedule>
+     */
+    private function getActiveSchedulesForClassByDate(int $classId, string $dayName, int $dayIndex)
+    {
+        return Schedule::query()
+            ->where('id_class', $classId)
+            ->whereHas('academicPeriods', function ($q) {
+                $q->where('is_active', 1);
+            })
+            ->where(function ($q) use ($dayName, $dayIndex) {
+                $q->where('day_of_week', $dayName)
+                    ->orWhere('day_of_week', (string) $dayIndex);
+            })
+            ->with(['subject', 'teacher', 'class'])
+            ->orderBy('period_start')
+            ->get();
+    }
+
+    /**
+     * @param \App\Models\Schedule $schedule
+     * @param string $date
+     * @param \Illuminate\Support\Collection<int, \App\Models\Student> $students
+     * @return array<int, array{attendance: \App\Models\AttendanceHistory, status: mixed}>
+     */
+    private function buildAttendanceItemsForSchedule($schedule, string $date, $students): array
+    {
+        $attendances = AttendanceHistory::query()
+            ->where('id_schedule', $schedule->id)
+            ->where('attendance_date', $date)
+            ->with(['student.user'])
+            ->get();
+
+        $attendanceByStudent = $attendances->keyBy('id_student');
+        $items = [];
+
+        foreach ($students as $student) {
+            $attendance = $attendanceByStudent->get($student->id);
+
+            if (!$attendance) {
+                $attendance = new AttendanceHistory([
+                    'period_number' => $schedule->period_start,
+                    'status' => 'null',
+                    'coordinate' => null,
+                    'attendance_date' => $date,
+                    'id_student' => $student->id,
+                    'id_schedule' => $schedule->id,
+                    'id_class' => $schedule->id_class,
+                ]);
+                $attendance->setRelation('student', $student);
+            }
+
+            $items[] = [
+                'attendance' => $attendance,
+                'status' => $attendance->status,
+            ];
+        }
+
+        return $items;
+    }
+
+    // permission get by class id. (teacher only)
+    public function permissionReportByClass(Request $request, $classId)
+    {
+        try {
+            // check bearer token and get user
+            $user = $request->user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            }
+
+            $permissions = Permission::query()
+                ->whereHas('student', function ($q) use ($classId) {
+                    $q->where('id_class', $classId);
+                })
+                ->with(['student.user'])
+                ->orderBy('date_permission', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Permission report for class fetched',
+                'data' => $permissions,
+            ], 200);
+            
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

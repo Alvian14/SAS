@@ -73,9 +73,14 @@ Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
 
     // attendance record, permission...
     Route::get('/teacher/attendance/class/{classId}/{date}', [AttendanceController::class, 'reportClassById']);
-    Route::post('/teacher/attendance/permission/accept', [AttendanceController::class, 'permissionAccept']);
 
+
+    //* permission zone //
+    Route::post('/teacher/attendance/permission/accept', [AttendanceController::class, 'permissionAccept']);
+    Route::get('/teacher/attendance/permission/report/{classId}', [AttendanceController::class, 'permissionReportByClass']);
+    //* permission zone END //
+    
     // announcement
-    Route::post('/fcm/send-announcement', [NotificationController::class, 'sendToClassTopic']);
+    Route::post('/fcm/send-announcement', [ClassController::class, 'sendAnnouncementToClass']);
 
 });
