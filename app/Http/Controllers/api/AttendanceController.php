@@ -9,6 +9,7 @@ use App\Models\AttendanceHistory;
 use App\Models\AttendanceHistoryDaily;
 use App\Models\Notification;
 use App\Models\Permission;
+use App\Models\Report;
 use App\Models\Schedule;
 use App\Models\Student;
 use App\Services\FirebaseMessagingService;
@@ -844,6 +845,169 @@ class AttendanceController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+
+    public function permissionReject(Request $request)
+    {
+        try {
+            // check bearer token and get user
+            $user = $request->user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            }
+
+            $permissionId = $request->input('permission_id');
+
+            if (!$permissionId) {
+                return response()->json(['success' => false, 'message' => 'Permission ID is required'], 422);
+            }
+
+            // find permission by id
+            $permission = Permission::find($permissionId);
+            if (!$permission) {
+                return response()->json(['success' => false, 'message' => 'Permission not found'], 404);
+            }
+
+            // permission must be processed only, if already accepted or rejected, cannot be processed again.
+            if ($permission->status === 'diterima') {
+                return response()->json(['success' => false, 'message' => 'Permission already accepted'], 422);
+            }
+            if ($permission->status === 'ditolak') {
+                return response()->json(['success' => false, 'message' => 'Permission already rejected'], 422);
+            }
+
+            $student = Student::find($permission->id_student);
+            if (!$student) {
+                return response()->json(['success' => false, 'message' => 'Student not found'], 404);
+            }
+
+            DB::transaction(function () use ($permission, $user, $request) {
+
+                // update status to rejected
+                $permission->status = 'ditolak';
+                $permission->approved_by = $user->id; // set approved by teacher id
+                $permission->feedback = $request->input('feedback', null); // optional feedback message from teacher
+                $permission->save();
+            
+            });
+
+            /// send notification while saving to database notification.
+
+            $fcmToken = $student->user->device_token;
+
+            $template = $this->notificationHelper->templatePermissionRejection(
+                $fcmToken,
+                $request->input('feedback', null) // optional custom message from teacher feedback
+            );
+
+            $notificationResult = $this->notificationHelper->send($template);
+
+            $createTemplate = $this->notificationHelper->createTemplateForStudent(
+                (int) $student->user->id,
+                $template->title,
+                $template->body,
+                NotificationType::Permission,
+                // user id of teacher, convert to int.
+                (int) $user->id
+            );
+
+            Notification::create($createTemplate->toArray());
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Izin ditolak untuk siswa ' . $student->name,
+                'data' => [
+                    'permission' => $permission,
+                    'notification_result' => $notificationResult,
+                ],
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function reportDisrepancyStudentAttendanceByHistoryId(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        // input validate
+        $request->validate([
+            'attendance_history_id' => 'required|integer',
+            'disrepancy_type' => 'nullable|string|in:terlambat,hp_tidak_tersedia,izin,pulang_awal,alasan_lain',
+            'description' => 'nullable|string',
+        ]);
+
+        $attendanceHistoryId = $request->input('attendance_history_id');
+
+        $attendanceHistory = AttendanceHistory::query()
+            ->where('id', $attendanceHistoryId)
+            ->with(['schedule'])
+            ->first();
+
+        if (!$attendanceHistory) {
+            return response()->json(['success' => false, 'message' => 'Attendance history not found'], 404);
+        }
+
+        /// logic disrepancy here.
+        DB::transaction(function () use ($request, $attendanceHistory) {
+            $attendanceHistory->status = 'invalid';
+            $attendanceHistory->save();
+
+            // create report discrepancy
+            $report = new Report();
+            $report->id_attendance_history = $attendanceHistory->id;
+            $report->id_student = $attendanceHistory->id_student;
+            $report->id_class = $attendanceHistory->id_class;
+            $report->student_name = $attendanceHistory->student->name ?? 'Unknown Student';
+            $report->reported_by = $request->user()->id;
+            $report->disrepancy_type = $request->input('disrepancy_type', 'alasan_lain'); // default to 'alasan_lain' if not provided
+            $report->description = $request->input('description', null);
+            $report->marked_as_resolved = false;
+            $report->attendance_date = $attendanceHistory->attendance_date;
+            $report->save();
+
+        });
+
+        /// notification zone for report disrepancy, send notification to teacher related to the schedule of attendance history that has been reported.
+        $userStudent = $attendanceHistory->student->user;
+        $fcmToken = $userStudent->device_token;
+
+        $template = $this->notificationHelper->templateAttendanceViolation(
+            $fcmToken,
+            $request->input('description', null) // optional custom message from student about the disrepancy
+        );
+
+        $notificationResult = $this->notificationHelper->send($template);
+
+        $createTemplate = $this->notificationHelper->createTemplateForStudent(
+            (int) $userStudent->id,
+            $template->title,
+            $template->body,
+            NotificationType::AttendanceViolation,
+            // user id of system or admin, convert to int. (for example: 0)
+            (int) $user->id
+        );
+
+        Notification::create($createTemplate->toArray());
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'report' => Report::query()->where('id_attendance_history', $attendanceHistory->id)->first(),
+                'notification_result' => $notificationResult,
+            ]
+        ], 200);
+
     }
 
 }
