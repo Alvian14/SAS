@@ -48,17 +48,115 @@
         gap: 8px;
         transition: all 0.2s;
     }
+    .print-only { display: none; }
+    .print-title {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        margin-bottom: 4px;
+    }
+    .print-subtitle {
+        font-size: 13px;
+        color: #5b6470;
+        margin-bottom: 12px;
+    }
+    .print-meta {
+        width: 100%;
+        max-width: 520px;
+        margin: 0 auto;
+        border: 1px solid #d7deea;
+        border-radius: 10px;
+        background: #f8faff;
+        padding: 10px 14px;
+    }
+    .print-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 5px 0;
+        border-bottom: 1px dashed #dbe3f2;
+        font-size: 13px;
+    }
+    .print-row:last-child {
+        border-bottom: none;
+    }
+    .print-label {
+        color: #4b5563;
+        font-weight: 600;
+    }
+    .print-value {
+        color: #0f172a;
+        font-weight: 600;
+        text-align: right;
+    }
     .btn-action:hover { transform: translateY(-2px); }
     @media print {
+        @page {
+            size: auto;
+            margin: 12mm;
+        }
         body * { visibility: hidden !important; }
-        #qrCode, #qrCode canvas {
+        #print-info,
+        #print-info *,
+        .qr-canvas-wrap,
+        .qr-canvas-wrap *,
+        #qrCode,
+        #qrCode canvas {
             visibility: visible !important;
-            position: absolute !important;
-            left: 50% !important; top: 50% !important;
-            transform: translate(-50%, -50%) !important;
-            width: 8cm !important; height: 8cm !important;
-            margin: 0 !important; background: white !important;
+        }
+        .qr-header,
+        .mb-3,
+        .no-print,
+        #copy-success {
+            display: none !important;
+        }
+        .qr-card,
+        .qr-body {
+            background: #fff !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
+        .qr-body {
+            padding: 0 !important;
+            text-align: center !important;
+        }
+        #print-info {
             display: block !important;
+            position: static !important;
+            transform: none !important;
+            width: 100% !important;
+            max-width: 620px !important;
+            margin: 0 auto 14px auto !important;
+            text-align: center !important;
+            color: #000 !important;
+            font-size: 14px !important;
+            line-height: 1.4 !important;
+        }
+        .d-flex.justify-content-center.mb-4 {
+            display: block !important;
+            margin: 0 !important;
+        }
+        .qr-canvas-wrap {
+            display: inline-block !important;
+            border: 1px solid #d7deea !important;
+            box-shadow: none !important;
+            padding: 10px !important;
+            background: #fff !important;
+        }
+        #qrCode {
+            position: static !important;
+            transform: none !important;
+            margin: 0 !important;
+            background: white !important;
+            display: block !important;
+        }
+        #qrCode canvas {
+            width: 8.5cm !important;
+            height: 8.5cm !important;
+            display: block !important;
+        }
+        .print-meta {
+            background: #fff !important;
         }
     }
 </style>
@@ -73,6 +171,33 @@
                     <p class="mb-0 opacity-75">Scan QR untuk absensi mata pelajaran</p>
                 </div>
                 <div class="qr-body text-center">
+                    <div id="print-info" class="print-only">
+                        <div class="print-title">QR Code Absensi</div>
+                        <div class="print-subtitle">Silakan scan QR di bawah untuk melakukan absensi</div>
+                        <div class="print-meta">
+                            <div class="print-row">
+                                <span class="print-label">Mapel</span>
+                                <span class="print-value">{{ $jadwal->subject->name ?? '-' }}</span>
+                            </div>
+                            <div class="print-row">
+                                <span class="print-label">Guru</span>
+                                <span class="print-value">{{ $jadwal->teacher->name ?? '-' }}</span>
+                            </div>
+                            <div class="print-row">
+                                <span class="print-label">Kelas</span>
+                                <span class="print-value">{{ $jadwal->class->name ?? '-' }}</span>
+                            </div>
+                            <div class="print-row">
+                                <span class="print-label">Hari</span>
+                                <span class="print-value">{{ $jadwal->day_of_week ?? '-' }}</span>
+                            </div>
+                            <div class="print-row">
+                                <span class="print-label">Jam</span>
+                                <span class="print-value">{{ $jadwal->start_time ?? '-' }} - {{ $jadwal->end_time ?? '-' }}</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Info Jadwal -->
                     <div class="mb-3">
                         <span class="info-badge"><i class="fas fa-book"></i> {{ $jadwal->subject->name ?? '-' }}</span>
@@ -121,7 +246,7 @@
         var qr = new QRious({
             element: document.createElement('canvas'),
             value: @json($jadwal->code),
-            size: 220,
+            size: 300,
         });
         document.getElementById('qrCode').appendChild(qr.element);
 
