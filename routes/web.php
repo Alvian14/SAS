@@ -194,6 +194,10 @@ Route::get('/pages/absensi/absensi_mapel/{classId}', [AttendanceHistoryControlle
 Route::post('/absensi-mapel/edit-status/{id}', [AttendanceHistoryController::class, 'editStatus'])
     ->name('absensi_mapel.edit_status');
 
+Route::get('/absensi-mapel/export-excel/{classId}', [AttendanceHistoryController::class, 'exportExcel'])
+    ->middleware('auth')
+    ->name('absensi_mapel.export_excel');
+
 
 
 // ============================ end absensi ====================
@@ -230,5 +234,3 @@ Route::post('/permissions/{id}/approve', [PermissionController::class, 'permissi
 Route::post('/permissions/{id}/reject', [PermissionController::class, 'permissionReject'])
     ->middleware('auth')
     ->name('permissions.reject');
-
-
