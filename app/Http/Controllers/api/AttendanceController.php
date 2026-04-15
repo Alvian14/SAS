@@ -958,6 +958,11 @@ class AttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'Attendance history not found'], 404);
         }
 
+        // cek status attendance history if already 'invalid', cannot report disrepancy again.
+        if ($attendanceHistory->status === 'invalid') {
+            return response()->json(['success' => false, 'message' => 'Attendance history already reported as invalid'], 422);
+        }
+
         /// logic disrepancy here.
         DB::transaction(function () use ($request, $attendanceHistory) {
             $attendanceHistory->status = 'invalid';
