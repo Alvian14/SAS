@@ -4,7 +4,6 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/dataTables.bootstrap5.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css">
 <style>
     .table-custom-header th {
         background: linear-gradient(90deg, #365CF5 0%, #6a8ffd 100%) !important;
@@ -181,7 +180,11 @@
                 @endif
             </h5>
             <div class="d-flex gap-2 flex-column flex-md-row w-100 w-md-auto justify-content-md-end mt-2 mt-md-0">
-                <div id="export-container"></div>
+                <form id="exportForm" method="GET" style="display:inline;">
+                    <button type="submit" class="btn btn-success btn-sm" title="Export ke Excel menggunakan PhpSpreadsheet">
+                        <i class="fas fa-file-excel me-1"></i> Export Excel
+                    </button>
+                </form>
                 <button class="btn btn-edit-siswa btn-sm" style="font-size:14px;padding:7px 14px;" id="btn-edit-siswa" type="button">
                     <i class="fas fa-edit"></i> Edit
                 </button>
@@ -323,14 +326,6 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.colVis.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         $(document).ready(function () {
@@ -343,127 +338,8 @@
                     emptyTable: "Tidak ada data absensi harian.",
                     paginate: { first:"Awal", last:"Akhir", next:"Berikutnya", previous:"Sebelumnya" }
                 },
-                pageLength: 10,
-                dom: 'Bfrtip',
-                buttons: [
-                    {
-                        extend: 'excelHtml5',
-                        text: '<i class="fas fa-file-excel me-1"></i> Excel',
-                        className: 'btn btn-success btn-sm',
-                        title: null,
-                        filename: function () {
-                            const kelas = "{{ isset($kelas) ? $kelas->name : 'Semua Kelas' }}";
-                            const now = new Date();
-                            const pad = (n) => String(n).padStart(2, '0');
-                            const ts = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-                            return `Rekap_Absensi_Harian_${kelas.replace(/\s+/g, '_')}_${ts}`;
-                        },
-                        exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5],
-                            format: {
-                                body: function (data, row, column, node) {
-                                    if (column === 1) {
-                                        const img = node ? node.querySelector('img') : null;
-                                        return img ? img.getAttribute('src') : '';
-                                    }
-
-                                    const text = (data || '')
-                                        .toString()
-                                        .replace(/<\s*br\s*\/?\s*>/gi, ' ')
-                                        .replace(/<[^>]*>/g, '')
-                                        .replace(/\s+/g, ' ')
-                                        .trim();
-                                    return text;
-                                }
-                            }
-                        },
-                        customize: function (xlsx) {
-                            const sheet = xlsx.xl.worksheets['sheet1.xml'];
-                            const $sheet = $(sheet);
-
-                            // Geser semua row turun 2 baris untuk tempat judul + subtitle
-                            $sheet.find('row').each(function () {
-                                const r = parseInt($(this).attr('r'), 10);
-                                $(this).attr('r', r + 2);
-                                $(this).find('c').each(function () {
-                                    const cellRef = $(this).attr('r');
-                                    const col = cellRef.replace(/[0-9]/g, '');
-                                    const row = parseInt(cellRef.replace(/[^0-9]/g, ''), 10);
-                                    $(this).attr('r', col + (row + 2));
-                                });
-                            });
-
-                            // Update dimension
-                            const dimension = $sheet.find('dimension');
-                            const ref = dimension.attr('ref');
-                            if (ref) {
-                                const parts = ref.split(':');
-                                if (parts.length === 2) {
-                                    const end = parts[1];
-                                    const endCol = end.replace(/[0-9]/g, '');
-                                    const endRow = parseInt(end.replace(/[^0-9]/g, ''), 10);
-                                    dimension.attr('ref', `A1:${endCol}${endRow + 2}`);
-                                }
-                            }
-
-                            const kelas = "{{ isset($kelas) ? $kelas->name : 'Semua Kelas' }}";
-                            const titleText = `REKAP ABSENSI HARIAN - ${kelas}`;
-                            const subtitleText = `Diekspor pada: ${new Date().toLocaleString('id-ID')}`;
-
-                            const sheetData = $sheet.find('sheetData');
-                            const titleRow = `
-                                <row r="1" ht="24" customHeight="1">
-                                  <c r="A1" t="inlineStr"><is><t>${titleText}</t></is></c>
-                                </row>`;
-                            const subtitleRow = `
-                                <row r="2" ht="18" customHeight="1">
-                                  <c r="A2" t="inlineStr"><is><t>${subtitleText}</t></is></c>
-                                </row>`;
-                            sheetData.prepend(subtitleRow);
-                            sheetData.prepend(titleRow);
-
-                            // Merge A1:F1 dan A2:F2
-                            let mergeCells = $sheet.find('mergeCells');
-                            if (mergeCells.length === 0) {
-                                $sheet.find('worksheet').append('<mergeCells count="0"/>');
-                                mergeCells = $sheet.find('mergeCells');
-                            }
-                            mergeCells.append('<mergeCell ref="A1:F1"/>');
-                            mergeCells.append('<mergeCell ref="A2:F2"/>');
-                            mergeCells.attr('count', mergeCells.find('mergeCell').length);
-
-                            // Freeze 3 baris atas
-                            let sheetViews = $sheet.find('sheetViews');
-                            if (sheetViews.length === 0) {
-                                $sheet.find('worksheet').prepend('<sheetViews><sheetView workbookViewId="0"/></sheetViews>');
-                                sheetViews = $sheet.find('sheetViews');
-                            }
-                            const sheetView = sheetViews.find('sheetView').first();
-                            sheetView.find('pane').remove();
-                            sheetView.prepend('<pane ySplit="3" topLeftCell="A4" activePane="bottomLeft" state="frozen"/>');
-
-                            // Lebar kolom
-                            let cols = $sheet.find('cols');
-                            if (cols.length === 0) {
-                                $sheet.find('worksheet').prepend('<cols></cols>');
-                                cols = $sheet.find('cols');
-                            }
-                            cols.empty();
-                            cols.append('<col min="1" max="1" width="6" customWidth="1"/>');
-                            cols.append('<col min="2" max="2" width="35" customWidth="1"/>');
-                            cols.append('<col min="3" max="3" width="28" customWidth="1"/>');
-                            cols.append('<col min="4" max="4" width="16" customWidth="1"/>');
-                            cols.append('<col min="5" max="5" width="16" customWidth="1"/>');
-                            cols.append('<col min="6" max="6" width="22" customWidth="1"/>');
-                        }
-                    },
-                    { extend:'pdfHtml5',   text:'<i class="fas fa-file-pdf me-1"></i> PDF',   className:'btn btn-danger btn-sm' },
-                    { extend:'csvHtml5',   text:'<i class="fas fa-file-csv me-1"></i> CSV',   className:'btn btn-info btn-sm' },
-                    { extend:'print',      text:'<i class="fas fa-print me-1"></i> Print',    className:'btn btn-primary btn-sm' }
-                ]
+                pageLength: 10
             });
-
-            table.buttons().container().appendTo('#export-container');
 
             $('#select-all').on('click', function () {
                 $('.row-checkbox').prop('checked', this.checked);
@@ -526,6 +402,26 @@
             $('#filter-tahun').on('change', function () {
                 let tahun = $(this).val();
                 table.column(5).search(tahun ? '^' + tahun : '', true, false).draw();
+            });
+
+            // Handle export form
+            $('#exportForm').on('submit', function(e) {
+                e.preventDefault();
+
+                const classId = "{{ $kelas->id ?? 0 }}";
+                const tanggal = $('#filter-tanggal').val() || '';
+                const bulan = $('#filter-bulan').val() || '';
+                const tahun = $('#filter-tahun').val() || '';
+
+                // Build query string
+                let params = new URLSearchParams();
+                if (tanggal) params.append('tanggal', tanggal);
+                if (bulan) params.append('bulan', bulan);
+                if (tahun) params.append('tahun', tahun);
+
+                // Redirect to export endpoint
+                const exportUrl = `/absensi-harian/export-excel/${classId}?${params.toString()}`;
+                window.location.href = exportUrl;
             });
         });
     </script>

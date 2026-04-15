@@ -4,7 +4,6 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/dataTables.bootstrap5.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css">
 <style>
     .table-custom-header th {
         background: linear-gradient(90deg, #365CF5 0%, #6a8ffd 100%) !important;
@@ -109,13 +108,46 @@
                 @endif
             </h5>
             <div class="d-flex gap-2 flex-column flex-md-row w-100 w-md-auto justify-content-md-end mt-2 mt-md-0">
-                <div id="export-container"></div>
+                <button class="btn btn-success btn-sm" id="btn-export-excel" type="button" title="Export ke Excel">
+                    <i class="fas fa-file-excel me-1"></i> Export Excel
+                </button>
                 <button class="btn btn-edit-siswa btn-sm" style="font-size:14px;padding:7px 14px;" id="btn-edit-siswa" type="button">
                     <i class="fas fa-edit"></i> Edit
                 </button>
             </div>
         </div>
         <div class="card-body px-4 py-3">
+            <!-- Info Display -->
+            <div class="row mb-4 p-3 bg-light rounded-3" style="border-left: 4px solid #365CF5; background: linear-gradient(135deg, #f8f9fa 0%, #e3eafd 100%);">
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-book text-primary" style="font-size: 1.2rem;"></i>
+                        <div>
+                            <span class="text-muted d-block" style="font-size: 0.75rem; font-weight: 600;">Pelajaran</span>
+                            <span class="fw-bold text-dark" style="font-size: 1rem;">-</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-calendar-alt text-primary" style="font-size: 1.2rem;"></i>
+                        <div>
+                            <span class="text-muted d-block" style="font-size: 0.75rem; font-weight: 600;">Bulan/Tahun</span>
+                            <span class="fw-bold text-dark" id="info-bulan-tahun" style="font-size: 1rem;">{{ now()->timezone('Asia/Jakarta')->format('F Y') }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-chalkboard-user text-primary" style="font-size: 1.2rem;"></i>
+                        <div>
+                            <span class="text-muted d-block" style="font-size: 0.75rem; font-weight: 600;">Kelas</span>
+                            <span class="fw-bold text-dark" style="font-size: 1rem;">{{ $kelas->name ?? '-' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Filter -->
             <div class="row mb-4 g-2">
                 <div class="col-md-4">
@@ -149,11 +181,11 @@
                     <thead class="table-custom-header">
                         <tr>
                             <th class="text-center" style="width:40px;"><input type="checkbox" id="select-all" /></th>
+                            <th style="width:50px;">No</th>
                             <th>Nama Siswa</th>
-                            <th>Kelas</th>
-                            <th>Status</th>
-                            <th>Koordinat</th>
-                            <th>Waktu</th>
+                            <th>NISN</th>
+                            <th>Jam Pertemuan</th>
+                            <th>Keterangan</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -162,13 +194,16 @@
                             @foreach($absensi as $item)
                             <tr data-id="{{ $item->id }}">
                                 <td class="text-center"><input type="checkbox" class="row-checkbox" /></td>
+                                <td class="text-center fw-bold">{{ $rownum }}</td>
                                 <td>
                                     <span class="fw-semibold text-dark d-block">{{ $item->student->name ?? '-' }}</span>
-                                    <span class="text-muted" style="font-size:0.8rem;">NISN: {{ $item->student->nisn ?? '-' }}</span>
                                 </td>
                                 <td>
+                                    <span class="fw-semibold">{{ $item->student->nisn ?? '-' }}</span>
+                                </td>
+                                <td class="text-center">
                                     <span class="badge rounded-pill px-3 py-2" style="background:#e3eafd;color:#365CF5;font-weight:600;">
-                                        {{ $item->class->name ?? '-' }}
+                                        {{ $item->created_at ? $item->created_at->format('H:i') : '-' }}
                                     </span>
                                 </td>
                                 <td>
@@ -192,22 +227,11 @@
                                         <span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#e0e7ff;color:#6366f1;font-size:0.9em;">
                                             <i class="fas fa-user-shield me-1"></i> Dispen
                                         </span>
-                                    @elseif($item->status == 'invalid')
-                                        <span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#f3f4f6;color:#6b7280;font-size:0.9em;">
-                                            <i class="fas fa-question-circle me-1"></i> Invalid
-                                        </span>
                                     @else
                                         <span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#f3f4f6;color:#6b7280;font-size:0.9em;">
                                             {{ ucfirst($item->status) }}
                                         </span>
                                     @endif
-                                </td>
-                                <td class="text-center">{{ $item->coordinate ?? '-' }}</td>
-                                <td>
-                                    <span class="fw-semibold text-primary">
-                                        <i class="fas fa-clock me-1"></i>
-                                        {{ $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('d M Y, H:i') : '-' }}
-                                    </span>
                                 </td>
                             </tr>
                             @php $rownum++; @endphp
@@ -217,23 +241,21 @@
                             @foreach($belumAbsen as $siswa)
                             <tr data-id="{{ $siswa->id }}">
                                 <td class="text-center"><input type="checkbox" class="row-checkbox" disabled /></td>
+                                <td class="text-center fw-bold">{{ $rownum }}</td>
                                 <td>
                                     <span class="fw-semibold text-dark d-block">{{ $siswa->name }}</span>
-                                    <span class="text-muted" style="font-size:0.8rem;">NISN: {{ $siswa->nisn }}</span>
                                 </td>
                                 <td>
-                                    <span class="badge rounded-pill px-3 py-2" style="background:#f3f4f6;color:#6b7280;font-weight:600;">
-                                        {{ $kelas->name ?? '-' }}
-                                    </span>
+                                    <span class="fw-semibold">{{ $siswa->nisn }}</span>
                                 </td>
+                                <td class="text-center">-</td>
                                 <td>
                                     <span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#fff3cd;color:#b45309;font-size:0.9em;">
                                         <i class="fas fa-minus-circle me-1"></i> Belum Absen
                                     </span>
                                 </td>
-                                <td class="text-center">-</td>
-                                <td>-</td>
                             </tr>
+                            @php $rownum++; @endphp
                             @endforeach
                         @endif
                     </tbody>
@@ -245,14 +267,7 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.colVis.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         $(document).ready(function () {
             var table = $('#example').DataTable({
@@ -263,20 +278,36 @@
                     emptyTable: "Tidak ada data absensi mapel.",
                     paginate: { first:"Awal", last:"Akhir", next:"Berikutnya", previous:"Sebelumnya" }
                 },
-                pageLength: 10,
-                dom: 'Bfrtip',
-                buttons: [
-                    { extend:'excelHtml5', text:'<i class="fas fa-file-excel me-1"></i> Excel', className:'btn btn-success btn-sm' },
-                    { extend:'pdfHtml5',   text:'<i class="fas fa-file-pdf me-1"></i> PDF',   className:'btn btn-danger btn-sm' },
-                    { extend:'csvHtml5',   text:'<i class="fas fa-file-csv me-1"></i> CSV',   className:'btn btn-info btn-sm' },
-                    { extend:'print',      text:'<i class="fas fa-print me-1"></i> Print',    className:'btn btn-primary btn-sm' }
-                ]
+                pageLength: 10
             });
-
-            table.buttons().container().appendTo('#export-container');
 
             $('#select-all').on('click', function () {
                 $('.row-checkbox').prop('checked', this.checked);
+            });
+
+            // Handle export button - show modal
+            $('#btn-export-excel').on('click', function () {
+                $('#modalExportFilter').modal('show');
+            });
+
+            // Handle export form submission
+            $('#formExportFilter').on('submit', function (e) {
+                e.preventDefault();
+                const classId = "{{ $kelas->id ?? 0 }}";
+                const bulan = $('#export-bulan').val();
+                const tahun = $('#export-tahun').val();
+
+                if (!bulan || !tahun) {
+                    alert('Pilih bulan dan tahun terlebih dahulu.');
+                    return;
+                }
+
+                // Build URL and redirect
+                const exportUrl = `/absensi-mapel/export-excel/${classId}?bulan=${bulan}&tahun=${tahun}`;
+                window.location.href = exportUrl;
+
+                // Close modal
+                $('#modalExportFilter').modal('hide');
             });
 
             $('#btn-edit-siswa').on('click', function () {
@@ -292,8 +323,8 @@
                 // Ambil data dari baris terpilih
                 const row = checked.closest('tr');
                 const id = row.data('id');
-                const nama = row.find('.fw-semibold.text-dark').text().trim();
-                let status = row.find('td:nth-child(4) .badge').text().trim().toLowerCase();
+                const nama = row.find('td:nth-child(3)').text().trim();
+                let status = row.find('td:nth-child(6) .badge').text().trim().toLowerCase();
                 // Normalisasi status
                 if (status.includes('belum')) status = 'belum';
                 else if (status.includes('hadir')) status = 'hadir';
@@ -301,7 +332,7 @@
                 else if (status.includes('sakit')) status = 'sakit';
                 else if (status.includes('alpha')) status = 'alpha';
                 else if (status.includes('dispen')) status = 'dispen';
-                else if (status.includes('invalid')) status = 'invalid';
+
                 $('#edit-id').val(id);
                 $('#edit-nama').val(nama);
                 $('#edit-status').val(status);
@@ -331,6 +362,56 @@
         });
     </script>
 
+    <!-- Modal Export Filter -->
+    <div class="modal fade" id="modalExportFilter" tabindex="-1" aria-labelledby="modalExportFilterLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="modalExportFilterLabel">
+                        <i class="fas fa-file-excel me-2"></i> Export Absensi Mapel
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formExportFilter">
+                    <div class="modal-body">
+                        <p class="text-muted mb-3">Pilih bulan dan tahun untuk export data absensi mapel</p>
+                        <div class="mb-3">
+                            <label for="export-bulan" class="form-label">Bulan</label>
+                            <select class="form-select" id="export-bulan" name="bulan" required>
+                                <option value="">-- Pilih Bulan --</option>
+                                @php
+                                    $bulanIndo = ['01'=>'Januari','02'=>'Februari','03'=>'Maret','04'=>'April','05'=>'Mei','06'=>'Juni','07'=>'Juli','08'=>'Agustus','09'=>'September','10'=>'Oktober','11'=>'November','12'=>'Desember'];
+                                    $currentMonth = now()->timezone('Asia/Jakarta')->format('m');
+                                @endphp
+                                @foreach($bulanIndo as $num => $nama)
+                                    <option value="{{ $num }}" @selected($num === $currentMonth)>{{ $nama }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="export-tahun" class="form-label">Tahun</label>
+                            <select class="form-select" id="export-tahun" name="tahun" required>
+                                <option value="">-- Pilih Tahun --</option>
+                                @php
+                                    $currentYear = now()->timezone('Asia/Jakarta')->format('Y');
+                                @endphp
+                                @for($y = date('Y')-5; $y <= date('Y')+1; $y++)
+                                    <option value="{{ $y }}" @selected($y == $currentYear)>{{ $y }}</option>
+                                @endfor
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-download me-1"></i> Export Excel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Edit Status -->
     <div class="modal fade" id="modalEditStatus" tabindex="-1" aria-labelledby="modalEditStatusLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -354,7 +435,6 @@
                                 <option value="sakit">Sakit</option>
                                 <option value="alpha">Alpha</option>
                                 <option value="dispen">Dispen</option>
-                                <option value="invalid">Invalid</option>
                                 <option value="belum">Belum Absen</option>
                             </select>
                         </div>

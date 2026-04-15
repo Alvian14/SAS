@@ -141,7 +141,15 @@
                             <td>{{ $item->feedback ?? '-' }}</td>
                             <td>{{ $item->date_permission }}</td>
                             <td>{{ $item->time_period }}</td>
-                            <td>{{ $item->approver->name ?? $item->approved_by ?? '-' }}</td>
+                            <td>
+                                @if(!empty($item->approver->name))
+                                    {{ $item->approver->name }}
+                                @elseif(isset($item->approved_by) && $item->approved_by !== null && $item->approved_by !== '')
+                                    {{ is_numeric($item->approved_by) ? 'Admin' : $item->approved_by }}
+                                @else
+                                    -
+                                @endif
+                            </td>
                             <td>
                                 @if($item->status === 'proses')
                                     <div class="d-flex gap-2">
