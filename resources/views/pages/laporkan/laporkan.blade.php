@@ -108,7 +108,7 @@
                             <th>Kelas</th>
                             <th>Pelapor</th>
                             <th>Status</th>
-                            <th>ID Absensi</th>
+                            <th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -116,22 +116,56 @@
                         <tr>
                             <td>{{ $item->student_name }}</td>
                             <td>{{ $item->attendance_date }}</td>
-                            <td>{{ $item->disrepancy_type ?? '-' }}</td>
+                            <td>
+                                @switch($item->disrepancy_type)
+                                    @case('terlambat')
+                                        <span class="badge bg-warning text-dark">Terlambat</span>
+                                        @break
+                                    @case('hp_tidak_tersedia')
+                                        <span class="badge bg-danger">HP Tidak Tersedia</span>
+                                        @break
+                                    @case('izin')
+                                        <span class="badge bg-info">Izin</span>
+                                        @break
+                                    @case('pulang_awal')
+                                        <span class="badge bg-secondary">Pulang Awal</span>
+                                        @break
+                                    @case('alasan_lain')
+                                        <span class="badge bg-secondary">Alasan Lain</span>
+                                        @break
+                                    @default
+                                        <span class="badge bg-light text-dark">-</span>
+                                @endswitch
+                            </td>
                             <td>{{ $item->description ?? '-' }}</td>
                             <td>
                                 <span class="badge rounded-pill px-3 py-2" style="background:#f0fdf4;color:#15803d;font-weight:600;">
-                                    {{ $item->id_class }}
+                                    {{ $item->class->name ?? 'Unknown' }}
                                 </span>
                             </td>
-                            <td>{{ $item->reported_by }}</td>
+                            <td>{{ $item->reporter->role ?? 'Unknown' }}</td>
                             <td>
                                 @if($item->marked_as_resolved)
-                                    <span class="badge bg-success">Selesai</span>
+                                    <span class="badge bg-success">Telah Selesai</span>
                                 @else
                                     <span class="badge bg-warning text-dark">Belum Selesai</span>
                                 @endif
                             </td>
-                             <td>{{ $item->id_attendance_history }}</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="dropdownStatus{{ $item->id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-edit"></i> Update
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownStatus{{ $item->id }}">
+                                        <li><a class="dropdown-item"  onclick="event.preventDefault(); updateReportStatus({{ $item->id }}, 'hadir')">Hadir</a></li>
+                                        <li><a class="dropdown-item"  onclick="event.preventDefault(); updateReportStatus({{ $item->id }}, 'izin')">Izin</a></li>
+                                        <li><a class="dropdown-item"  onclick="event.preventDefault(); updateReportStatus({{ $item->id }}, 'sakit')">Sakit</a></li>
+                                        <li><a class="dropdown-item"  onclick="event.preventDefault(); updateReportStatus({{ $item->id }}, 'alpha')">Alpha</a></li>
+                                        <li><a class="dropdown-item"  onclick="event.preventDefault(); updateReportStatus({{ $item->id }}, 'dispen')">Dispen</a></li>
+                                        <li><a class="dropdown-item"  onclick="event.preventDefault(); updateReportStatus({{ $item->id }}, 'invalid')">Invalid</a></li>
+                                    </ul>
+                                </div>
+                            </td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -156,6 +190,34 @@
                 pageLength: 10
             });
         });
+
+        function updateReportStatus(reportId, status) {
+            if (confirm('Apakah Anda yakin ingin mengubah status menjadi ' + status + '?')) {
+                const actionCell = document.querySelector(`#dropdownStatus${reportId}`).closest('td');
+
+                // Kemudian submit form
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ route("report.updateStatus", ":id") }}'.replace(':id', reportId);
+
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = csrfToken;
+                form.appendChild(csrfInput);
+
+                const statusInput = document.createElement('input');
+                statusInput.type = 'hidden';
+                statusInput.name = 'status';
+                statusInput.value = status;
+                form.appendChild(statusInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
     </script>
 @endsection
 
