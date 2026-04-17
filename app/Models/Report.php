@@ -39,4 +39,6 @@ class Report extends Model
 	{
 		return $this->belongsTo(Classes::class, 'id_class');
 	}
+
+
 }

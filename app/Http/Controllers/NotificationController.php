@@ -8,10 +8,13 @@ use App\Models\Notification;
 use App\Services\FirebaseMessagingService;
 use App\Services\NotificationHelperService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class NotificationController extends Controller
 {
-    
+
     //* Dokumentasi Penggunaan Template Message untuk fitur Notifikasi
         //* Contoh penggunaan template untuk kirim ke topic kelas
     // $template = $this->notificationHelper->templateTugasKelas(
@@ -36,7 +39,7 @@ class NotificationController extends Controller
     // );
     // $result = $this->notificationHelper->send($template);
 
-    
+
     //* Dokumentasi Penggunaan Data NotficationCreateTemplate untuk menyimpan ke database
 
     // $payloadAll = $this->notificationHelper->createTemplateForAll(
@@ -291,5 +294,56 @@ class NotificationController extends Controller
         }
 
         }
+
+
+//         public function sendWa()
+// {
+//     $adminPhone = '6281559769075';
+
+//     // Ambil semua data notifikasi
+//     $notifications = Notification::latest()->take(1)->get();
+
+//     foreach ($notifications as $notif) {
+//         try {
+//             Http::withHeaders([
+//                 'Authorization' => 'n8wkFAyiDVZQNs6Vydwt',
+//             ])->post('https://api.fonnte.com/send', [
+//                 'phone' => $adminPhone,
+//                 'message' =>
+//                     "🔔 NOTIFIKASI BARU\n\n" .
+//                     "Judul: {$notif->title}\n" .
+//                     "Pesan: {$notif->body}",
+//             ]);
+//         } catch (\Exception $e) {
+//             Log::error($e->getMessage());
+//         }
+//     }
+
+//     return response()->json([
+//         'message' => 'Notifikasi berhasil dikirim'
+//     ]);
+// }
+
+// public function store(Request $request)
+// {
+//     Notification::create([
+//         'title' => $request->title,
+//         'body' => $request->body,
+//         'sender_id' => Auth::id()
+//     ]);
+
+//     return back()->with('success', 'Notifikasi dibuat');
+// }
+public function store(Request $request)
+    {
+        Notification::create([
+            'title' => 'Test',
+            'body' => 'Test body',
+            'sender_id' => Auth::id()
+        ]);
+
+        return back()->with('success', 'Notifikasi dibuat');
+    }
+
 
 }
