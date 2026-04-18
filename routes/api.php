@@ -18,9 +18,12 @@ Route::post('/register', [UserController::class, 'register']);
 
 // global route for public access
 Route::get('/classes', [ClassController::class, 'index']);
-// get schedules for a specific class (only active academic period schedules)
-Route::get('/classes/{id}/schedule', [ClassController::class, 'schedule']);
-Route::get('/classes/{id}/schedule/{dayindex}', [ClassController::class, 'scheduleByDay']);
+
+// get class by id, for public access because no data that is sensitive.
+Route::get('/classes/{id}', [ClassController::class, 'show']);
+
+// academic period fetch
+Route::get('/academic-periods/active', [ScheduleController::class, 'fetchAcademicPeriodActive']);
 
 // firebase notification test
 Route::post('/fcm/send-token', [NotificationController::class, 'sendToToken']);
@@ -32,6 +35,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/attendance-daily/report', [AttendanceController::class, 'dailyAttendanceReport']);
     Route::post('/store-fcm', [UserController::class, 'storeFcmToken']);
     Route::post('/get-topic-from-class/{classId}', [UserController::class, 'getTopicFromClass']);
+    // get schedule for a specific class
+    Route::get('/classes/{id}/schedule', [ClassController::class, 'schedule']);
+    Route::get('/classes/{id}/schedule/{dayindex}', [ClassController::class, 'scheduleByDay']);
 });
 
 // route login pakai Sanctum
@@ -49,6 +55,9 @@ Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
     Route::get('/attendance/report/class', [AttendanceController::class, 'reportClass']);
     Route::get('/attendance/permission/report', [AttendanceController::class, 'permissionReport']);
     Route::post('/attendance/permission', [AttendanceController::class, 'createPermission']);
+
+    // notification
+    Route::get('/student/notifications', [UserController::class, 'getStudentNotifications']);
     
 });
 
@@ -72,7 +81,10 @@ Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
     Route::get('/info/class/{id}', [ClassController::class, 'studentClassInformation']);
 
     // attendance record, permission...
+    // attendance by schedule.
     Route::get('/teacher/attendance/class/{classId}/{date}', [AttendanceController::class, 'reportClassById']);
+    // attendance daily
+    Route::get('/teacher/attendance/daily/class', [AttendanceController::class, 'reportDailyAttendance']);
 
     // report disrepancy
     Route::post('/teacher/attendance/disrepancy/report', [AttendanceController::class, 'reportDisrepancyStudentAttendanceByHistoryId']);
