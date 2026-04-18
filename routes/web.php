@@ -15,6 +15,8 @@ use App\Http\Controllers\LaporkanController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ReportController;
+use Illuminate\Routing\RouteUrlGenerator;
+use Illuminate\Support\Facades\Http;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -223,6 +225,10 @@ Route::get('/pages/laporkan/laporkan', [ReportController::class, 'index'])
     ->middleware('auth')
     ->name('laporkan.index');
 
+Route::post('/report/{id}/update-status', [ReportController::class, 'updateStatus'])
+    ->middleware('auth')
+    ->name('report.updateStatus');
+
 Route::get('/pages/perizinan/perizinan', [PermissionController::class, 'index'])
     ->middleware('auth')
     ->name('perizinan.index');
@@ -234,3 +240,21 @@ Route::post('/permissions/{id}/approve', [PermissionController::class, 'permissi
 Route::post('/permissions/{id}/reject', [PermissionController::class, 'permissionReject'])
     ->middleware('auth')
     ->name('permissions.reject');
+
+
+Route::get('/send-wa', [NotificationController::class, 'sendWa'])
+    ->name('send.wa');
+
+
+// Route::get('send-wa', function () {
+//     $response = Http::withHeaders([
+//         'Authorization' => 'n8wkFAyiDVZQNs6Vydwt',
+//     ])->post('https://api.fonnte.com/send', [
+//         'phone' => '+6281559769075',
+//         'message' => 'Hello, this is a test message from Fonnte API!',
+//     ]);
+
+//     dd(json_decode($response, true));
+// });
+
+

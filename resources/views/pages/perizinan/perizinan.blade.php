@@ -157,10 +157,7 @@
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Setujui pengajuan ini?')">Approve</button>
                                         </form>
-                                        <form action="{{ url('permissions/' . $item->id . '/reject') }}" method="POST">
-                                            @csrf
-                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tolak pengajuan ini?')">Tolak</button>
-                                        </form>
+                                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal" data-permission-id="{{ $item->id }}" data-student-name="{{ $item->student->name ?? $item->id_student }}">Tolak</button>
                                     </div>
                                 @else
                                     <span class="text-muted">-</span>
@@ -174,10 +171,66 @@
         </div>
     </div>
 
+    <!-- Reject Modal with Feedback -->
+    <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0">
+                <div class="modal-header bg-danger text-white border-0">
+                    <h5 class="modal-title" id="rejectModalLabel">
+                        <i class="fas fa-times-circle me-2"></i> Tolak Pengajuan Izin
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="rejectForm" action="" method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        <p class="mb-3">
+                            <strong>Siswa:</strong> <span id="studentNameDisplay"></span>
+                        </p>
+                        <div class="mb-3">
+                            <label for="feedbackInput" class="form-label">Feedback (Alasan Penolakan)</label>
+                            <textarea
+                                class="form-control"
+                                id="feedbackInput"
+                                name="feedback"
+                                rows="4"
+                                placeholder="Masukkan alasan penolakan (opsional)"
+                                style="border: 1px solid #dee2e6; border-radius: 8px;"
+                            ></textarea>
+                            <small class="text-muted d-block mt-2">Feedback ini akan dikirimkan ke siswa melalui notifikasi.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i> Batal
+                        </button>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-check me-1"></i> Tolak Pengajuan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/dataTables.bootstrap5.min.js"></script>
     <script>
+        // Handle reject modal
+        const rejectModal = document.getElementById('rejectModal');
+        if (rejectModal) {
+            rejectModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const permissionId = button.getAttribute('data-permission-id');
+                const studentName = button.getAttribute('data-student-name');
+
+                document.getElementById('studentNameDisplay').textContent = studentName;
+                document.getElementById('rejectForm').action = '/permissions/' + permissionId + '/reject';
+                document.getElementById('feedbackInput').value = '';
+            });
+        }
+
         $(document).ready(function () {
             if (!$('#example').length) {
                 return;

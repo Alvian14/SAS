@@ -163,30 +163,82 @@ class PermissionController extends Controller
     public function permissionReject(Request $request, int $id): RedirectResponse
     {
         try {
+            // session-auth user for web controller
             $user = $request->user();
             if (!$user) {
                 return redirect()->back()->with('error', 'Unauthorized');
             }
 
+            // find permission by id
             $permission = Permission::find($id);
             if (!$permission) {
                 return redirect()->back()->with('error', 'Data perizinan tidak ditemukan');
             }
 
+            // permission must be processed only, if already accepted or rejected, cannot be processed again.
             if ($permission->status === 'diterima') {
-                return redirect()->back()->with('warning', 'Perizinan sudah diterima, tidak bisa ditolak');
+                return redirect()->back()->with('warning', 'Perizinan sudah diterima sebelumnya');
             }
-
             if ($permission->status === 'ditolak') {
                 return redirect()->back()->with('warning', 'Perizinan sudah ditolak sebelumnya');
             }
 
-            $permission->status = 'ditolak';
-            $permission->approved_by = $user->id;
-            $permission->feedback = $request->input('feedback', $permission->feedback);
-            $permission->save();
+            $student = Student::find($permission->id_student);
+            if (!$student) {
+                return redirect()->back()->with('error', 'Data siswa tidak ditemukan');
+            }
 
-            return redirect()->back()->with('success', 'Perizinan berhasil ditolak');
+            DB::transaction(function () use ($permission, $user, $request) {
+
+                // update status to rejected
+                $permission->status = 'ditolak';
+                $permission->approved_by = $user->id; // set approved by teacher id
+                $permission->feedback = $request->input('feedback', null); // optional feedback message from teacher
+                $permission->save();
+
+            });
+
+            // notification zone: send notification to related student after permission rejected
+
+            $userStudent = $student->user;
+            if (!$userStudent) {
+                return redirect()->back()->with('error', 'User siswa tidak ditemukan untuk notifikasi');
+            }
+
+            $fcmToken = $userStudent->device_token;
+
+            // Push notification is optional; database notification must still be created.
+            if (!empty($fcmToken)) {
+                try {
+                    $template = $this->notificationHelper->templatePermissionRejection(
+                        $fcmToken,
+                        $request->input('feedback', null) // optional custom message from teacher feedback
+                    );
+                    $this->notificationHelper->send($template);
+                    $title = $template->title;
+                    $body = $template->body;
+                } catch (\Throwable $th) {
+                    // Ignore push errors so rejection flow and DB notification keep working.
+                    $title = 'Perizinan Ditolak';
+                    $body = 'Permohonan izin Anda telah ditolak.';
+                }
+            } else {
+                $title = 'Perizinan Ditolak';
+                $body = 'Permohonan izin Anda telah ditolak.';
+            }
+
+            $createTemplate = $this->notificationHelper->createTemplateForStudent(
+                (int) $userStudent->id,
+                $title,
+                $body,
+                NotificationType::Permission,
+                (int) $user->id
+            );
+
+            Notification::create($createTemplate->toArray());
+
+            return redirect()->back()->with('success', 'Izin ditolak untuk siswa ' . $student->name);
+
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }

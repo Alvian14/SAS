@@ -761,7 +761,7 @@ class AttendanceController extends Controller
                 'message' => 'Permission report for class fetched',
                 'data' => $permissions,
             ], 200);
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -957,7 +957,7 @@ class AttendanceController extends Controller
                 $permission->approved_by = $user->id; // set approved by teacher id
                 $permission->feedback = $request->input('feedback', null); // optional feedback message from teacher
                 $permission->save();
-            
+
             });
 
             /// send notification while saving to database notification.
