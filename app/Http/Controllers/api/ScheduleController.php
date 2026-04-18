@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AcademicPeriod;
 use App\Models\Schedule;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\PersonalAccessToken;
 
 class ScheduleController extends Controller
@@ -136,6 +137,20 @@ class ScheduleController extends Controller
             ], 200);
         } catch (\Throwable $th) {
             Log::error('scheduleByClass error', ['exception' => $th]);
+            return response()->json(['success' => false, 'message' => 'Server Error', 'error' => $th->getMessage()], 500);
+        }
+    }
+
+    public function fetchAcademicPeriodActive()
+    {
+        try {
+            $activePeriod = AcademicPeriod::where('is_active', 1)->first();
+            if (!$activePeriod) {
+                return response()->json(['success' => false, 'message' => 'No active academic period found'], 404);
+            }
+            return response()->json(['success' => true, 'data' => $activePeriod], 200);
+        } catch (\Throwable $th) {
+            Log::error('fetchAcademicPeriodActive error', ['exception' => $th]);
             return response()->json(['success' => false, 'message' => 'Server Error', 'error' => $th->getMessage()], 500);
         }
     }
