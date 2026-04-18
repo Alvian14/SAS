@@ -161,9 +161,9 @@ class NotificationHelperService
         );
     }
 
-    public function templateClassCancelled($message): NotificationTemplate{
+    public function templateClassCancelled($classTopic, $message): NotificationTemplate{
         return $this->topicTemplate(
-            'student_notifications',
+            $classTopic,
             'Kelas Dibatalkan',
             $message,
             [

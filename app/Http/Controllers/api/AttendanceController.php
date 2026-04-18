@@ -597,6 +597,65 @@ class AttendanceController extends Controller
         }
     }
 
+    // daily report attendance for teacher side.
+    public function reportDailyAttendance(Request $request)
+    {
+        try{
+            // check bearer token and get user
+            $user = $request->user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            }
+
+            // get input request $classId, $date
+            $request->validate([
+                'id_class' => 'required|integer',
+                'date' => 'required|date',
+            ]);
+
+            $classId = $request->input('id_class');
+            $date = $request->input('date');
+            $historyReport = AttendanceHistoryDaily::query()
+                ->where('id_class', $classId)
+                // where active period
+                ->whereHas('class.schedules.academicPeriods', function ($q) {
+                    $q->where('is_active', 1);
+                })
+                ->whereDate('created_at', $date)
+                ->with(['class', 'student'])
+                ->get();
+
+
+            if (!$historyReport) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No attendance history for this class and date',
+                    'data' => null,
+                ], 200);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Daily attendance report for class fetched',
+                'data' => $historyReport,
+            ], 200);
+
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     /**
      * @return \Illuminate\Support\Collection<int, \App\Models\Student>
      */
@@ -680,10 +739,19 @@ class AttendanceController extends Controller
                 return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
             }
 
+            $request->validate([
+                'start_date' => 'required|string',
+                'end_date' => 'required|string|after_or_equal:start_date',
+            ]);
+            
+            $startDate = $request->input('start_date');
+            $endDate = $request->input('end_date');
+
             $permissions = Permission::query()
                 ->whereHas('student', function ($q) use ($classId) {
                     $q->where('id_class', $classId);
                 })
+                ->whereBetween('date_permission', [$startDate, $endDate])
                 ->with(['student.user'])
                 ->orderBy('date_permission', 'desc')
                 ->get();

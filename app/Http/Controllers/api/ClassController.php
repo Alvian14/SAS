@@ -194,6 +194,7 @@ class ClassController extends Controller
                     $t = $title ?? 'Kelas Dibatalkan';
                     $b = $body ?? '(pengirim tidak memberikan detail alasan pembatalan)';
                     $template = $this->notificationHelper->templateClassCancelled(
+                        $topic,
                         $b
                     );
                     break;

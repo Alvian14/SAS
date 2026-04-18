@@ -225,4 +225,48 @@ class UserController extends Controller
         return $topicSubscribe;
     }
 
+    // get student notification list data from notification table.
+    // note filter: user_id = auth user id, or his class id.
+    public function getStudentNotifications(Request $request)
+    {
+        $user = $request->user();
+        
+        $student = $user->student;
+        
+        if (!$user || !$student) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        // validate query parameters
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date',
+        ]);
+
+        $classId = $user->student->id_class;
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        // filter by class id and date range
+        $notifications = DB::table('notifications')
+            ->where(function ($query) use ($user, $classId) {
+                $query->where('receiver_id', $user->id)
+                      ->orWhere('class_id', $classId)
+                      ->orWhere(function ($q) {
+                          $q->whereNull('receiver_id')
+                            ->whereNull('class_id');
+                      });
+            })
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+            
+        return response()->json([
+            'success' => true,
+            'message' => 'Notifications fetched successfully',
+            'data' => $notifications,
+        ], 200);
+    }
+
 }
