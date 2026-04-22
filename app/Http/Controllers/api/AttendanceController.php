@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\WriteAttendanceJob;
 use App\Models\AttendanceHistory;
 use App\Models\AttendanceHistoryDaily;
+use App\Models\Classes;
 use App\Models\Notification;
 use App\Models\Permission;
 use App\Models\Report;
@@ -106,6 +107,7 @@ class AttendanceController extends Controller
             } else {
                 // $now = Carbon::now('Asia/Jakarta');
                 // testing using date: 1 April 2026 07:15 WIB (should be valid for schedule 7-8)
+                // $now = Carbon::parse('2026-04-20 08:32:00', 'Asia/Jakarta');
                 $now = Carbon::parse('Asia/Jakarta');
             }
 
@@ -520,7 +522,8 @@ class AttendanceController extends Controller
 
             $permissions = Permission::query()
                 ->where('id_student', $student->id)
-                ->whereBetween('date_permission', [$startDate, $endDate])
+                ->whereDate('created_at', '>=', $startDate)
+                ->whereDate('created_at', '<=', $endDate)
                 ->get();
 
             if ($permissions->isEmpty()) {
@@ -574,6 +577,8 @@ class AttendanceController extends Controller
                 $data[] = [
                     'schedule' => $sch,
                     'attendances' => $this->buildAttendanceItemsForSchedule($sch, $date, $students),
+                    // fallback to oz ex: 2026-04-22T00:00:00Z, 
+                    'date_attendance' => Carbon::parse($date)->toDateString(),
                 ];
             }
 
@@ -614,10 +619,20 @@ class AttendanceController extends Controller
             ]);
 
             $classId = $request->input('id_class');
-            $date = $request->input('date');
+            $date = Carbon::parse($request->input('date'))->toDateString();
+
+            // Get class info
+            $class = Classes::find($classId);
+
+            // Get all students in the class
+            $students = Student::query()
+                ->where('id_class', $classId)
+                ->orderBy('name')
+                ->get();
+
+            // Get all attendance records for this class and date
             $historyReport = AttendanceHistoryDaily::query()
                 ->where('id_class', $classId)
-                // where active period
                 ->whereHas('class.schedules.academicPeriods', function ($q) {
                     $q->where('is_active', 1);
                 })
@@ -625,8 +640,26 @@ class AttendanceController extends Controller
                 ->with(['class', 'student'])
                 ->get();
 
+            // Create a map of attendance records by student id
+            $attendanceByStudent = $historyReport->keyBy('id_student');
 
-            if (!$historyReport) {
+            // Add missing students with status 'none'
+            foreach ($students as $student) {
+                if (!$attendanceByStudent->has($student->id)) {
+                    $newRecord = new AttendanceHistoryDaily();
+                    $newRecord->id_student = $student->id;
+                    $newRecord->id_class = $classId;
+                    $newRecord->status = 'none';
+                    $newRecord->picture = null;
+                    $newRecord->created_at = $date;
+                    $newRecord->setRelation('student', $student);
+                    $newRecord->setRelation('class', $class);
+                    
+                    $historyReport->push($newRecord);
+                }
+            }
+
+            if ($historyReport->isEmpty()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'No attendance history for this class and date',
@@ -751,9 +784,10 @@ class AttendanceController extends Controller
                 ->whereHas('student', function ($q) use ($classId) {
                     $q->where('id_class', $classId);
                 })
-                ->whereBetween('date_permission', [$startDate, $endDate])
+                ->whereDate('created_at', '>=', $startDate)
+                ->whereDate('created_at', '<=', $endDate)
                 ->with(['student.user'])
-                ->orderBy('date_permission', 'desc')
+                ->orderBy('created_at', 'desc')
                 ->get();
 
             return response()->json([
@@ -862,6 +896,19 @@ class AttendanceController extends Controller
                         );
                     }
 
+                    // update attendancehistorydaily to 'izin'
+                    AttendanceHistoryDaily::updateOrCreate(
+                        [
+                            'id_student' => $student->id,
+                            'id_class' => $student->id_class,
+                            'created_at' => $currentDate->toDateString(),
+                        ],
+                        [
+                            'status' => 'izin',
+                            'picture' => '',
+                        ]
+                    );
+
                     $createdSchoolDays++;
                     $currentDate->addDay();
                 }
@@ -882,7 +929,16 @@ class AttendanceController extends Controller
                 $fcmToken
             );
 
-            $notificationResult = $this->notificationHelper->send($template);
+            try {
+                $notificationResult = $this->notificationHelper->send($template);
+            } catch (\Exception $e) {
+                Log::error('Failed to send attendance violation notification', ['exception' => $e]);
+                $notificationResult = [
+                    'success' => false,
+                    'message' => 'Failed to send notification',
+                    'error' => $e->getMessage(),
+                ];
+            }
 
             $createTemplate = $this->notificationHelper->createTemplateForStudent(
                 (int) $userStudent->id,
@@ -969,7 +1025,16 @@ class AttendanceController extends Controller
                 $request->input('feedback', null) // optional custom message from teacher feedback
             );
 
-            $notificationResult = $this->notificationHelper->send($template);
+            try {
+                $notificationResult = $this->notificationHelper->send($template);
+            } catch (\Exception $e) {
+                Log::error('Failed to send attendance violation notification', ['exception' => $e]);
+                $notificationResult = [
+                    'success' => false,
+                    'message' => 'Failed to send notification',
+                    'error' => $e->getMessage(),
+                ];
+            }
 
             $createTemplate = $this->notificationHelper->createTemplateForStudent(
                 (int) $student->user->id,
@@ -1060,7 +1125,17 @@ class AttendanceController extends Controller
             $request->input('description', null) // optional custom message from student about the disrepancy
         );
 
-        $notificationResult = $this->notificationHelper->send($template);
+        // use try catch to handle notification sending error, but still return success response for reporting disrepancy, because the main process of reporting disrepancy has been done in database transaction.
+        try {
+            $notificationResult = $this->notificationHelper->send($template);
+        } catch (\Exception $e) {
+            Log::error('Failed to send attendance violation notification', ['exception' => $e]);
+            $notificationResult = [
+                'success' => false,
+                'message' => 'Failed to send notification',
+                'error' => $e->getMessage(),
+            ];
+        }
 
         $createTemplate = $this->notificationHelper->createTemplateForStudent(
             (int) $userStudent->id,

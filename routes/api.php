@@ -47,6 +47,9 @@ Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user()->load('teacher', 'student');
     });
+
+    // update profile picture
+    Route::post('/user/profile-picture', [UserController::class, 'updateProfilePhoto']);
     
     // attendance record, permission, report, etc...
     Route::get('/testfeedback', [UserController::class, 'feedback']);

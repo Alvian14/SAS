@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -267,6 +268,51 @@ class UserController extends Controller
             'message' => 'Notifications fetched successfully',
             'data' => $notifications,
         ], 200);
+    }
+
+    // update profile user, for all (teacher, student, admin)
+    public function updateProfilePhoto(Request $request)
+    {
+        
+        // auth check
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        // input file check using request validation
+        // nullable|file|mimes:jpg,jpeg,png|max:2048',
+        $request->validate([
+            'profile_picture' => 'required|file|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        try {
+            $file = $request->file('profile_picture');
+
+            // store to storage:disk public, with unique name
+            $fileName = 'profile_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            
+            Storage::disk('public')->putFileAs('profile_pictures', $file, $fileName);
+            
+            // update user profile picture path
+            $user->update(['profile_picture' => $fileName]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile picture updated successfully',
+                'data' => [
+                    'profile_picture_url' => asset('storage/profile_pictures/' . $fileName),
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update profile picture',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+
+
     }
 
 }
