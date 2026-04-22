@@ -264,7 +264,16 @@ class NotificationController extends Controller
                 return response()->json(['error' => 'Failed to create notification template'], 500);
             }
 
-            $resultMessaging = $this->notificationHelper->send($template);
+            try {
+                $resultMessaging = $this->notificationHelper->send($template);
+            } catch (\Exception $e) {
+                Log::error('Failed to send attendance violation notification', ['exception' => $e]);
+                $resultMessaging = [
+                    'success' => false,
+                    'message' => 'Failed to send notification',
+                    'error' => $e->getMessage(),
+                ];
+            }
 
             $createTemplate = $this->notificationHelper->createTemplateForClass(
                 $classId,
