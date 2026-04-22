@@ -306,7 +306,7 @@
                         data-class="{{ $notification->class->name ?? '-' }}">
 
                         <div class="notif-actions">
-                            <form action="#" method="POST" style="margin: 0;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus notifikasi ini?');">
+                            <form action="{{ route('notifikasi.destroy', $notification->id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus notifikasi ini?');">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn-delete-notif" title="Hapus Notifikasi" onclick="event.stopPropagation();">

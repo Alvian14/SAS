@@ -208,6 +208,10 @@ Route::get('/pages/notifikasi/notifikasi', [NotificationController::class, 'inde
     ->middleware('auth')
     ->name('notifikasi.index');
 
+Route::delete('/pages/notifikasi/{id}', [NotificationController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('notifikasi.destroy');
+
 Route::get('/pages/setting/setting', [AuthController::class, 'showSetting'])
     ->middleware('auth')
     ->name('setting.index');

@@ -221,6 +221,7 @@ class AuthController extends Controller
                 'id_class' => 'required|integer',
                 'entry_year' => 'required|integer',
                 'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'pictures' => 'nullable|string',
             ]);
 
             // Proses upload gambar jika ada
@@ -229,6 +230,37 @@ class AuthController extends Controller
                 $image = $request->file('profile_picture');
                 $imageName = $image->hashName();
                 $image->move(public_path('storage/student/'), $imageName);
+            }
+
+            // Proses 3 foto webcam
+            $picturesNames = [];
+            if ($request->filled('pictures')) {
+                $photosData = $request->pictures;
+                $photoArray = explode('|||', $photosData); // Split dengan |||
+
+                $photoPath = public_path('storage/photo-webcam');
+                if (!is_dir($photoPath)) {
+                    mkdir($photoPath, 0755, true);
+                }
+
+                foreach ($photoArray as $index => $photo) {
+                    if (!empty($photo)) {
+                        $imageData = $photo;
+
+                        if (strpos($imageData, ',') !== false) {
+                            list($type, $imageData) = explode(',', $imageData);
+                            $imageData = base64_decode($imageData);
+                        } else {
+                            $imageData = base64_decode($imageData);
+                        }
+
+                        if ($imageData !== false) {
+                            $picturesName = 'webcam_' . time() . '_' . ($index + 1) . '_' . uniqid() . '.png';
+                            file_put_contents($photoPath . '/' . $picturesName, $imageData);
+                            $picturesNames[] = $picturesName;
+                        }
+                    }
+                }
             }
 
             $user = User::create([
@@ -244,7 +276,7 @@ class AuthController extends Controller
                 'nisn' => $request->nisn,
                 'id_class' => $request->id_class,
                 'entry_year' => $request->entry_year,
-                'picture' => $imageName,
+                'pictures' => !empty($picturesNames) ? implode(',', $picturesNames) : null,
             ]);
 
             // Redirect kembali ke identitas siswa dengan pesan sukses
@@ -268,6 +300,20 @@ class AuthController extends Controller
     public function destroyStudent($id)
     {
         $student = Student::findOrFail($id);
+
+        // Hapus semua foto webcam jika ada
+        if ($student->pictures) {
+            $photos = explode(',', $student->pictures);
+            foreach ($photos as $photo) {
+                if (!empty($photo)) {
+                    $photoPath = public_path('storage/photo-webcam/' . $photo);
+                    if (file_exists($photoPath)) {
+                        @unlink($photoPath);
+                    }
+                }
+            }
+        }
+
         // Hapus user terkait (akan otomatis hapus student jika foreign key cascade)
         if ($student->user) {
             $student->user->delete();
@@ -299,6 +345,8 @@ class AuthController extends Controller
                 'id_class' => 'required|integer',
                 'entry_year' => 'required|integer',
                 'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'pictures_edit' => 'nullable|string',
+                'delete_webcam_photo' => 'nullable|string',
             ]);
 
             $user->email = $request->email;
@@ -321,6 +369,71 @@ class AuthController extends Controller
             $student->nisn = $request->nisn;
             $student->id_class = $request->id_class;
             $student->entry_year = $request->entry_year;
+
+            // Handle hapus foto webcam lama
+            if ($request->filled('delete_webcam_photo') && $request->delete_webcam_photo == '1') {
+                if ($student->pictures) {
+                    $photos = explode(',', $student->pictures);
+                    foreach ($photos as $photo) {
+                        if (!empty($photo)) {
+                            $photoPath = public_path('storage/photo-webcam/' . $photo);
+                            if (file_exists($photoPath)) {
+                                @unlink($photoPath);
+                            }
+                        }
+                    }
+                }
+                $student->pictures = null;
+            }
+
+            // Handle tambah foto webcam baru dari edit (3 foto)
+            if ($request->filled('pictures_edit')) {
+                $photosData = $request->pictures_edit;
+                $photoArray = explode('|||', $photosData); // Split dengan |||
+
+                // Hapus foto lama dulu sebelum menyimpan yang baru
+                if ($student->pictures) {
+                    $oldPhotos = explode(',', $student->pictures);
+                    foreach ($oldPhotos as $photo) {
+                        if (!empty($photo)) {
+                            $photoPath = public_path('storage/photo-webcam/' . $photo);
+                            if (file_exists($photoPath)) {
+                                @unlink($photoPath);
+                            }
+                        }
+                    }
+                }
+
+                $picturesNames = [];
+                $photoPath = public_path('storage/photo-webcam');
+                if (!is_dir($photoPath)) {
+                    mkdir($photoPath, 0755, true);
+                }
+
+                foreach ($photoArray as $index => $photo) {
+                    if (!empty($photo)) {
+                        $imageData = $photo;
+
+                        if (strpos($imageData, ',') !== false) {
+                            list($type, $imageData) = explode(',', $imageData);
+                            $imageData = base64_decode($imageData);
+                        } else {
+                            $imageData = base64_decode($imageData);
+                        }
+
+                        if ($imageData !== false) {
+                            $picturesName = 'webcam_' . time() . '_' . ($index + 1) . '_' . uniqid() . '.png';
+                            file_put_contents($photoPath . '/' . $picturesName, $imageData);
+                            $picturesNames[] = $picturesName;
+                        }
+                    }
+                }
+
+                if (!empty($picturesNames)) {
+                    $student->pictures = implode(',', $picturesNames);
+                }
+            }
+
             $student->save();
 
             return redirect()->route('akun.indentitas_siswa')->with('success', 'Data siswa berhasil diupdate.');

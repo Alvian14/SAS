@@ -344,7 +344,7 @@ class NotificationController extends Controller
 
 //     return back()->with('success', 'Notifikasi dibuat');
 // }
-public function store(Request $request)
+    public function store(Request $request)
     {
         Notification::create([
             'title' => 'Test',
@@ -355,5 +355,28 @@ public function store(Request $request)
         return back()->with('success', 'Notifikasi dibuat');
     }
 
+    public function destroy(int $id)
+    {
+        try {
+            // Auth user
+            $user = request()->user();
+            if (!$user) {
+                return redirect()->back()->with('error', 'Unauthorized');
+            }
+
+            // Find notification by id
+            $notification = Notification::find($id);
+            if (!$notification) {
+                return redirect()->back()->with('error', 'Notifikasi tidak ditemukan');
+            }
+
+            // Delete notification
+            $notification->delete();
+
+            return redirect()->back()->with('success', 'Notifikasi berhasil dihapus');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
 
 }
