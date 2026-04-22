@@ -220,26 +220,22 @@
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <label class="form-label fw-semibold text-dark">Periode</label>
-                                <select name="id_academic_periods" id="edit_id_academic_periods" class="form-control border-2">
-                                    <option value="">Pilih Periode</option>
-                                    @if(isset($periodes))
-                                        @foreach($periodes as $prd)
-                                            <option value="{{ $prd->id }}">{{ $prd->name }} ({{ $prd->start_date }} - {{ $prd->end_date }})</option>
-                                        @endforeach
-                                    @endif
-                                </select>
+                                <input type="hidden" name="id_academic_periods" id="edit_id_academic_periods">
+                                <div class="form-control border-2 bg-light" style="display: flex; align-items: center;">
+                                    <span class="fw-semibold text-dark" id="edit_periode_display">-</span>
+                                </div>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label fw-semibold text-dark">Hari</label>
                                 <select name="day_of_week" id="edit_day_of_week" class="form-control border-2" required>
                                     <option value="">Pilih Hari</option>
-                                    <option value="Senin">Senin</option>
-                                    <option value="Selasa">Selasa</option>
-                                    <option value="Rabu">Rabu</option>
-                                    <option value="Kamis">Kamis</option>
-                                    <option value="Jumat">Jumat</option>
-                                    <option value="Sabtu">Sabtu</option>
-                                    <option value="Minggu">Minggu</option>
+                                    <option value="senin">Senin</option>
+                                    <option value="selasa">Selasa</option>
+                                    <option value="rabu">Rabu</option>
+                                    <option value="kamis">Kamis</option>
+                                    <option value="jumat">Jumat</option>
+                                    <option value="sabtu">Sabtu</option>
+                                    <option value="minggu">Minggu</option>
                                 </select>
                             </div>
                             <div class="col-md-4">
@@ -292,7 +288,7 @@
                                 <select name="id_teacher" id="edit_id_teacher" class="form-control border-2" required>
                                     <option value="">Pilih Guru</option>
                                     @foreach($guru as $gr)
-                                        <option value="{{ $gr->id }}">{{ $gr->name }}</option>
+                                        <option value="{{ $gr->id }}" data-subjects="{{ json_encode($gr->subject_ids) }}">{{ $gr->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -329,16 +325,10 @@
                                 <label class="form-label fw-semibold text-dark">
                                     Periode
                                 </label>
-                                <select name="id_academic_periods" class="form-control border-2">
-                                    <option value="">Pilih Periode</option>
-                                    @if(isset($periodes))
-                                        @foreach($periodes as $prd)
-                                            <option value="{{ $prd->id }}" @if(isset($periode_aktif) && $periode_aktif->id == $prd->id) selected @endif>
-                                                {{ $prd->name }} ({{ $prd->start_date }} - {{ $prd->end_date }})
-                                            </option>
-                                        @endforeach
-                                    @endif
-                                </select>
+                                <input type="hidden" name="id_academic_periods" value="{{ $periode_aktif->id ?? '' }}">
+                                <div class="form-control border-2 bg-light" style="display: flex; align-items: center;">
+                                    <span class="fw-semibold text-dark">{{ $periode_aktif->name ?? '-' }}</span>
+                                </div>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label fw-semibold text-dark">
@@ -346,12 +336,12 @@
                                 </label>
                                 <select name="day_of_week" class="form-control border-2" required>
                                     <option value="">Pilih Hari</option>
-                                    <option value="Senin">Senin</option>
-                                    <option value="Selasa">Selasa</option>
-                                    <option value="Rabu">Rabu</option>
-                                    <option value="Kamis">Kamis</option>
-                                    <option value="Jumat">Jumat</option>
-                                    <option value="Sabtu">Sabtu</option>
+                                    <option value="senin">Senin</option>
+                                    <option value="selasa">Selasa</option>
+                                    <option value="rabu">Rabu</option>
+                                    <option value="kamis">Kamis</option>
+                                    <option value="jumat">Jumat</option>
+                                    <option value="sabtu">Sabtu</option>
                                 </select>
                             </div>
                             <div class="col-md-4">
@@ -417,10 +407,10 @@
                                 <label class="form-label fw-semibold text-dark">
                                     Guru
                                 </label>
-                                <select name="id_teacher" class="form-control border-2" required>
+                                <select name="id_teacher" id="tambah_id_teacher" class="form-control border-2" required>
                                     <option value="">Pilih Guru</option>
                                     @foreach($guru as $gr)
-                                        <option value="{{ $gr->id }}">{{ $gr->name }}</option>
+                                        <option value="{{ $gr->id }}" data-subjects="{{ json_encode($gr->subject_ids) }}">{{ $gr->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -533,13 +523,25 @@
                     $('#edit_id_class').val(cb.data('id_class'));
                     $('#edit_id_subject').val(cb.data('id_subject'));
                     $('#edit_id_teacher').val(cb.data('id_teacher'));
-                    $('#edit_id_academic_periods').val(cb.data('id_academic_periods'));
+                    const periodeAktifId = cb.data('id_academic_periods');
+                    const periodeAktifName = getPeriodeNameById(periodeAktifId);
+                    $('#edit_id_academic_periods').val(periodeAktifId);
+                    $('#edit_periode_display').text(periodeAktifName);
+                    // Filter guru berdasarkan mapel yang dipilih
+                    filterGuru(cb.data('id_subject'), 'edit_id_teacher');
                     // Set action form
                     $('#formEditJadwal').attr('action', '/pages/jadwal/jadwal/' + cb.data('id'));
                     // Buka modal edit
                     $('#modalEditJadwal').modal('show');
                 }
             });
+
+            // Function untuk mendapatkan nama periode berdasarkan ID
+            function getPeriodeNameById(periodeId) {
+                const periodes = @json($periodes ?? []);
+                const periode = periodes.find(p => p.id == periodeId);
+                return periode ? `${periode.name}` : '-';
+            }
 
             // ========== Tambahan untuk Modal Edit ==========
             function updateEditStartTime() {
@@ -566,6 +568,36 @@
         });
 
          const PERIODS = @json(config('periods.periods'));
+
+        // Filter guru berdasarkan mapel yang dipilih
+        function filterGuru(mapelId, guruSelectId) {
+            const guruSelect = $(`#${guruSelectId}`);
+            const options = guruSelect.find('option');
+
+            if (!mapelId) {
+                // Jika tidak ada mapel yang dipilih, sembunyikan semua guru
+                options.each(function() {
+                    if ($(this).val() !== '') {
+                        $(this).hide();
+                    }
+                });
+                guruSelect.val('');
+            } else {
+                // Filter guru yang mengampu mapel ini
+                options.each(function() {
+                    if ($(this).val() === '') {
+                        $(this).show();
+                    } else {
+                        const subjects = JSON.parse($(this).attr('data-subjects') || '[]');
+                        if (subjects.includes(parseInt(mapelId))) {
+                            $(this).show();
+                        } else {
+                            $(this).hide();
+                        }
+                    }
+                });
+            }
+        }
 
         // standalone functions for Tambah (add) modal
         function updateAddStartTime() {
@@ -598,6 +630,19 @@
         $(function(){
             $('#tambah_period_start').on('input change', updateAddStartTime);
             $('#tambah_period_end').on('input change', updateAddEndTime);
+
+            // Inisialisasi: sembunyikan guru sampai mapel dipilih
+            filterGuru('', 'tambah_id_teacher');
+
+            // Event untuk modal Tambah - filter guru berdasarkan mapel
+            $('#formTambahJadwal').find('select[name="id_subject"]').on('change', function() {
+                filterGuru($(this).val(), 'tambah_id_teacher');
+            });
+
+            // Event untuk modal Edit - filter guru berdasarkan mapel
+            $('#formEditJadwal').find('select[name="id_subject"]').on('change', function() {
+                filterGuru($(this).val(), 'edit_id_teacher');
+            });
         });
     </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
