@@ -19,7 +19,17 @@ class JadwalController extends Controller
     {
            $kelas = Classes::all();
            $mapel = Subject::all();
-           $guru = Teacher::all();
+
+           // Join teachers dengan subjects berdasarkan kolom subject (code)
+           $guru = Teacher::all()->map(function($teacher) {
+               // Cari subject berdasarkan code yang ada di kolom subject teacher
+               // Gunakan array_map('trim', ...) untuk menghilangkan spasi sebelum/sesudah koma
+               $subjectCodes = array_map('trim', explode(',', $teacher->subject));
+               $subjects = Subject::whereIn('code', $subjectCodes)->pluck('id')->toArray();
+               $teacher->subject_ids = $subjects;
+               return $teacher;
+           });
+
            $periodes = AcademicPeriod::orderBy('start_date', 'desc')->get();
            $periode_aktif = AcademicPeriod::where('is_active', true)->first();
            $jadwal = Schedule::with(['class', 'subject', 'teacher'])->get();
@@ -103,11 +113,41 @@ class JadwalController extends Controller
         $start_time = sprintf('%02d:00', $startHour);
         $end_time = sprintf('%02d:00', $endHour);
 
-        // Hash code sebelum update ke database
-        $hashedCode = Crypt::encryptString($validated['code']);
+        // Ambil schedule lama untuk cek perubahan dan avoid double encryption
+        $jadwalLama = Schedule::findOrFail($id);
 
-        $jadwal = Schedule::findOrFail($id);
-        $jadwal->update([
+        // Cek apakah ada perubahan di field-field yang mempengaruhi code
+        $codeChanged = false;
+        if ($jadwalLama->day_of_week != strtolower($validated['day_of_week']) ||
+            $jadwalLama->period_start != $validated['period_start'] ||
+            $jadwalLama->period_end != $validated['period_end'] ||
+            $jadwalLama->id_subject != $validated['id_subject'] ||
+            $jadwalLama->id_class != $validated['id_class'] ||
+            $jadwalLama->id_academic_periods != $validated['id_academic_periods']) {
+            $codeChanged = true;
+        }
+
+        // Generate code baru jika ada perubahan, atau gunakan code lama
+        if ($codeChanged) {
+            // Generate code baru
+            $class = Classes::find($validated['id_class']);
+            $subject = Subject::find($validated['id_subject']);
+            $period = $validated['id_academic_periods'] ?? '';
+            $token = (string) random_int(1000, 9999);
+
+            $day = strtoupper(substr($validated['day_of_week'], 0, 3));
+            $className = $class ? $class->name : '';
+            $subjectCode = $subject ? $subject->code : '';
+            $periodCode = $period ?: '0';
+
+            $autoCode = "{$className}-{$day}-{$validated['period_start']}-{$validated['period_end']}-{$subjectCode}-{$periodCode}-{$token}";
+            $hashedCode = Crypt::encryptString($autoCode);
+        } else {
+            // Gunakan code lama tanpa encrypt ulang (avoid double encryption)
+            $hashedCode = $jadwalLama->code;
+        }
+
+        $jadwalLama->update([
             'day_of_week' => strtolower($validated['day_of_week']),
             'period_start' => $validated['period_start'],
             'period_end' => $validated['period_end'],
@@ -139,7 +179,7 @@ class JadwalController extends Controller
 
     public function showQr($id)
     {
-        $jadwal = \App\Models\Schedule::findOrFail($id);
+        $jadwal = Schedule::findOrFail($id);
         return view('pages.jadwal.qr', compact('jadwal'));
     }
 }
