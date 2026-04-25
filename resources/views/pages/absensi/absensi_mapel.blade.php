@@ -191,8 +191,8 @@
                     <tbody>
                         @php $rownum = 1; @endphp
                         @if(isset($absensi) && count($absensi))
-                            @foreach($absensi as $item)
-                            <tr data-id="{{ $item->id }}">
+                            @foreach($absensi as $idx => $item)
+                            <tr data-absensi-index="{{ $idx }}">
                                 <td class="text-center"><input type="checkbox" class="row-checkbox" /></td>
                                 <td class="text-center fw-bold">{{ $rownum }}</td>
                                 <td>
@@ -238,9 +238,9 @@
                             @endforeach
                         @endif
                         @if(isset($belumAbsen) && count($belumAbsen))
-                            @foreach($belumAbsen as $siswa)
-                            <tr data-id="{{ $siswa->id }}">
-                                <td class="text-center"><input type="checkbox" class="row-checkbox" disabled /></td>
+                            @foreach($belumAbsen as $idx => $siswa)
+                            <tr data-absensi-index="new_{{ $idx }}">
+                                <td class="text-center"><input type="checkbox" class="row-checkbox" /></td>
                                 <td class="text-center fw-bold">{{ $rownum }}</td>
                                 <td>
                                     <span class="fw-semibold text-dark d-block">{{ $siswa->name }}</span>
@@ -310,52 +310,88 @@
                 $('#modalExportFilter').modal('hide');
             });
 
+            // Inisialisasi modal Bootstrap
+            var modalEditStatus = new bootstrap.Modal(document.getElementById('modalEditStatus'));
+
             $('#btn-edit-siswa').on('click', function () {
                 const checked = $('.row-checkbox:checked');
                 if (checked.length === 0) {
                     alert('Pilih data yang ingin diedit.');
-                    return;
-                }
-                if (checked.length > 1) {
+                } else if (checked.length > 1) {
                     alert('Pilih hanya satu data untuk diedit.');
-                    return;
-                }
-                // Ambil data dari baris terpilih
-                const row = checked.closest('tr');
-                const id = row.data('id');
-                const nama = row.find('td:nth-child(3)').text().trim();
-                let status = row.find('td:nth-child(6) .badge').text().trim().toLowerCase();
-                // Normalisasi status
-                if (status.includes('belum')) status = 'belum';
-                else if (status.includes('hadir')) status = 'hadir';
-                else if (status.includes('izin')) status = 'izin';
-                else if (status.includes('sakit')) status = 'sakit';
-                else if (status.includes('alpha')) status = 'alpha';
-                else if (status.includes('dispen')) status = 'dispen';
+                } else {
+                    const row = checked.closest('tr');
+                    const absensiIndex = row.data('absensi-index');
 
-                $('#edit-id').val(id);
-                $('#edit-nama').val(nama);
-                $('#edit-status').val(status);
-                $('#modalEditStatus').modal('show');
+                    let absensiId, status, studentId, classId, nama;
+
+                    // Cek apakah ini record baru (belum absen) atau existing
+                    if (typeof absensiIndex === 'string' && absensiIndex.startsWith('new_')) {
+                        // Data dari belumAbsen
+                        const belumAbsenList = @json($belumAbsen);
+                        const belumAbsenIdx = parseInt(absensiIndex.split('_')[1]);
+                        const siswaData = belumAbsenList[belumAbsenIdx];
+
+                        absensiId = 'null';
+                        status = 'belum';
+                        studentId = siswaData?.id;
+                        classId = "{{ $kelas->id }}";
+                        nama = siswaData?.name;
+                    } else {
+                        // Data dari absensi
+                        const absensiList = @json($absensi);
+                        const absensiData = absensiList[absensiIndex];
+
+                        absensiId = absensiData?.id;
+                        status = absensiData?.status;
+                        studentId = absensiData?.student?.id;
+                        classId = absensiData?.class?.id;
+                        nama = absensiData?.student?.name;
+                    }
+
+                    // Set values ke hidden inputs
+                    $('#editAbsensiId').val(absensiId);
+                    $('#editStudentId').val(studentId);
+                    $('#editClassId').val(classId);
+                    $('#editStatus').val(status);
+
+                    modalEditStatus.show();
+                }
             });
 
             $('#formEditStatus').on('submit', function (e) {
                 e.preventDefault();
-                const id = $('#edit-id').val();
-                const status = $('#edit-status').val();
+                const id = $('#editAbsensiId').val();
+                const status = $('#editStatus').val();
+                const studentId = $('#editStudentId').val();
+                const classId = $('#editClassId').val();
+
+                // Siapkan data
+                let data = {
+                    status: status,
+                    _token: '{{ csrf_token() }}'
+                };
+
+                // Jika create baru (id adalah 'null'), tambahkan id_student dan id_class
+                if (id === 'null') {
+                    data.id_student = studentId;
+                    data.id_class = classId;
+                }
+
                 $.ajax({
-                    url: '/absensi-mapel/edit-status/' + id,
-                    method: 'POST',
-                    data: {
-                        status: status,
-                        _token: '{{ csrf_token() }}'
-                    },
+                    url: "{{ url('/absensi-mapel/edit-status') }}/" + id,
+                    type: "POST",
+                    data: data,
                     success: function (res) {
-                        $('#modalEditStatus').modal('hide');
-                        location.reload();
+                        if (res.success) {
+                            modalEditStatus.hide();
+                            location.reload();
+                        } else {
+                            alert('Gagal mengupdate status.');
+                        }
                     },
-                    error: function (xhr) {
-                        alert(xhr.responseJSON?.message || 'Terjadi kesalahan.');
+                    error: function () {
+                        alert('Terjadi kesalahan.');
                     }
                 });
             });
@@ -422,14 +458,12 @@
                 </div>
                 <form id="formEditStatus">
                     <div class="modal-body">
-                        <input type="hidden" id="edit-id" name="id">
+                        <input type="hidden" id="editAbsensiId" name="id">
+                        <input type="hidden" id="editStudentId" name="id_student">
+                        <input type="hidden" id="editClassId" name="id_class">
                         <div class="mb-3">
-                            <label for="edit-nama" class="form-label">Nama Siswa</label>
-                            <input type="text" class="form-control" id="edit-nama" name="nama" readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label for="edit-status" class="form-label">Status</label>
-                            <select class="form-select" id="edit-status" name="status" required>
+                            <label for="editStatus" class="form-label">Status</label>
+                            <select class="form-select" id="editStatus" name="status" required>
                                 <option value="hadir">Hadir</option>
                                 <option value="izin">Izin</option>
                                 <option value="sakit">Sakit</option>
