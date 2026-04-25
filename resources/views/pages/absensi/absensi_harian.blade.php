@@ -304,13 +304,15 @@
             </div>
             <div class="modal-body">
               <input type="hidden" id="editAbsensiId" name="id">
+              <input type="hidden" id="editStudentId" name="id_student">
+              <input type="hidden" id="editClassId" name="id_class">
               <div class="mb-3">
                 <label for="editStatus" class="form-label">Status</label>
                 <select class="form-select" id="editStatus" name="status" required>
                   <option value="in progress">In Progress</option>
                   <option value="tepat_waktu">Tepat Waktu</option>
                   <option value="terlambat">Terlambat</option>
-                  <option value="Izin">Izin</option>
+                  <option value="izin">Izin</option>
                 </select>
               </div>
             </div>
@@ -361,8 +363,15 @@
                     const absensiData = absensiList[absensiIndex];
                     const absensiId = absensiData?.id;
                     const status = absensiData?.status;
-                    $('#editAbsensiId').val(absensiId);
+                    const studentId = absensiData?.student?.id;
+                    const classId = absensiData?.class?.id;
+
+                    // Set values ke hidden inputs
+                    $('#editAbsensiId').val(absensiId || 'null');
+                    $('#editStudentId').val(studentId);
+                    $('#editClassId').val(classId);
                     $('#editStatus').val(status);
+
                     modalEditStatus.show(); // Tampilkan modal
                 }
             });
@@ -371,13 +380,25 @@
                 e.preventDefault();
                 const id = $('#editAbsensiId').val();
                 const status = $('#editStatus').val();
+                const studentId = $('#editStudentId').val();
+                const classId = $('#editClassId').val();
+
+                // Siapkan data
+                let data = {
+                    status: status,
+                    _token: "{{ csrf_token() }}"
+                };
+
+                // Jika create baru (id adalah 'null'), tambahkan id_student dan id_class
+                if (id === 'null') {
+                    data.id_student = studentId;
+                    data.id_class = classId;
+                }
+
                 $.ajax({
-                    url: "{{ url('/absensi-harian/edit-status') }}/" + id, // gunakan url() agar sesuai dengan route
+                    url: "{{ url('/absensi-harian/edit-status') }}/" + id,
                     type: "POST",
-                    data: {
-                        status: status,
-                        _token: "{{ csrf_token() }}"
-                    },
+                    data: data,
                     success: function(res) {
                         if(res.success) {
                             modalEditStatus.hide();
@@ -392,16 +413,72 @@
                 });
             });
 
+            // Custom filter untuk tanggal
             $('#filter-tanggal').on('change', function () {
-                table.column(5).search($(this).val()).draw();
+                let selectedDate = $(this).val(); // format: YYYY-MM-DD
+                if (selectedDate) {
+                    let parts = selectedDate.split('-');
+                    let day = parts[2];
+                    let month = parts[1];
+                    let year = parts[0];
+
+                    // Konversi bulan ke nama bulan
+                    let bulanNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    let monthName = bulanNames[parseInt(month)];
+
+                    // Format pencarian: "DD Mon YYYY"
+                    let searchStr = day + ' ' + monthName + ' ' + year;
+                    table.column(5).search(searchStr).draw();
+                } else {
+                    table.column(5).search('').draw();
+                }
             });
+
+            // Custom filter untuk bulan
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                let bulan = $('#filter-bulan').val();
+                let tahun = $('#filter-tahun').val();
+
+                if (!bulan && !tahun) return true;
+
+                let waktuText = data[5]; // Kolom Waktu (index 5)
+
+                if (!waktuText) return false;
+
+                // Parse format: "22 Apr 2026, 22:19"
+                let bulanNames = {
+                    'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+                    'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
+                    'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+                };
+
+                let dateMatch = waktuText.match(/(\d{1,2})\s+(\w{3})\s+(\d{4})/);
+                if (!dateMatch) return false;
+
+                let day = dateMatch[1];
+                let monthName = dateMatch[2];
+                let year = dateMatch[3];
+                let monthNum = bulanNames[monthName];
+
+                let match = true;
+
+                if (bulan) {
+                    match = match && (monthNum === bulan);
+                }
+
+                if (tahun) {
+                    match = match && (year === tahun);
+                }
+
+                return match;
+            });
+
             $('#filter-bulan').on('change', function () {
-                let bulan = $(this).val();
-                table.column(5).search(bulan ? '-' + bulan + '-' : '').draw();
+                table.draw();
             });
+
             $('#filter-tahun').on('change', function () {
-                let tahun = $(this).val();
-                table.column(5).search(tahun ? '^' + tahun : '', true, false).draw();
+                table.draw();
             });
 
             // Handle export form
