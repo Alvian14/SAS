@@ -305,45 +305,6 @@ class NotificationController extends Controller
 
         }
 
-
-//         public function sendWa()
-// {
-//     $adminPhone = '6281559769075';
-
-//     // Ambil semua data notifikasi
-//     $notifications = Notification::latest()->take(1)->get();
-
-//     foreach ($notifications as $notif) {
-//         try {
-//             Http::withHeaders([
-//                 'Authorization' => 'n8wkFAyiDVZQNs6Vydwt',
-//             ])->post('https://api.fonnte.com/send', [
-//                 'phone' => $adminPhone,
-//                 'message' =>
-//                     "🔔 NOTIFIKASI BARU\n\n" .
-//                     "Judul: {$notif->title}\n" .
-//                     "Pesan: {$notif->body}",
-//             ]);
-//         } catch (\Exception $e) {
-//             Log::error($e->getMessage());
-//         }
-//     }
-
-//     return response()->json([
-//         'message' => 'Notifikasi berhasil dikirim'
-//     ]);
-// }
-
-// public function store(Request $request)
-// {
-//     Notification::create([
-//         'title' => $request->title,
-//         'body' => $request->body,
-//         'sender_id' => Auth::id()
-//     ]);
-
-//     return back()->with('success', 'Notifikasi dibuat');
-// }
     public function store(Request $request)
     {
         Notification::create([

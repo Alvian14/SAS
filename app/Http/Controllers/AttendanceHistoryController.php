@@ -37,33 +37,39 @@ class AttendanceHistoryController extends Controller
 
     public function editStatus(Request $request, $id)
     {
-        $absensi = AttendanceHistory::find($id);
-        $siswa = Student::find($id);
+        $request->validate([
+            'status' => 'required|string'
+        ]);
 
-        // Jika data absensi ditemukan, update status
-        if ($absensi) {
+        // Jika $id adalah 'null', artinya create baru (belum ada di database)
+        if ($id === 'null') {
             $request->validate([
-                'status' => 'required|string'
+                'id_student' => 'required|exists:students,id',
+                'id_class' => 'required|exists:clases,id',
             ]);
+
+            try {
+                AttendanceHistory::create([
+                    'id_student' => $request->id_student,
+                    'id_class' => $request->id_class,
+                    'status' => $request->status,
+                    'period_number' => 1,
+                    'coordinate' => null,
+                    'id_schedule' => null,
+                ]);
+
+                return response()->json(['success' => true, 'message' => 'Data absensi berhasil ditambahkan.']);
+            } catch (\Exception $e) {
+                return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
+            }
+        } else {
+            // Update existing
+            $absensi = AttendanceHistory::findOrFail($id);
             $absensi->status = $request->status;
             $absensi->save();
+
             return response()->json(['success' => true, 'message' => 'Status absensi berhasil diupdate.']);
         }
-
-        // Jika data absensi tidak ditemukan, cek apakah $id adalah id siswa yang belum absen
-        if ($siswa) {
-            // Buat data absensi baru untuk siswa ini
-            $newAbsensi = new AttendanceHistory();
-            $newAbsensi->id_student = $siswa->id;
-            $newAbsensi->id_class = $siswa->id_class;
-            $newAbsensi->status = $request->status;
-            $newAbsensi->created_at = now();
-            $newAbsensi->updated_at = now();
-            $newAbsensi->save();
-            return response()->json(['success' => true, 'message' => 'Status absensi berhasil ditambahkan.']);
-        }
-
-        return response()->json(['success' => false, 'message' => 'Data tidak ditemukan.'], 404);
     }
 
     /**

@@ -51,14 +51,33 @@ class HistoryDailyController extends Controller
 
     public function editStatus(Request $request, $id)
     {
-        $absensi = AttendanceHistoryDaily::findOrFail($id);
         $request->validate([
             'status' => 'required|string'
         ]);
-        $absensi->status = $request->status;
-        $absensi->save();
 
-        return response()->json(['success' => true, 'message' => 'Status absensi berhasil diupdate.']);
+        // Jika $id adalah 'null', artinya create baru (belum ada di database)
+        if ($id === 'null') {
+            $request->validate([
+                'id_student' => 'required|exists:students,id',
+                'id_class' => 'required|exists:clases,id',
+            ]);
+
+            AttendanceHistoryDaily::create([
+                'id_student' => $request->id_student,
+                'id_class' => $request->id_class,
+                'status' => $request->status,
+                'picture' => $request->picture ?? '',
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Data absensi berhasil ditambahkan.']);
+        } else {
+            // Update existing
+            $absensi = AttendanceHistoryDaily::findOrFail($id);
+            $absensi->status = $request->status;
+            $absensi->save();
+
+            return response()->json(['success' => true, 'message' => 'Status absensi berhasil diupdate.']);
+        }
     }
 
     public function exportExcel($classId, Request $request)
