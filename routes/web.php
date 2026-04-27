@@ -193,6 +193,10 @@ Route::get('/pages/absensi/absensi_mapel/{classId}', [AttendanceHistoryControlle
     ->middleware('auth')
     ->name('absensi.absensi_mapel');
 
+Route::get('/absensi-mapel/get-by-mapel/{classId}/{subjectId}', [AttendanceHistoryController::class, 'getAbsensiByMapel'])
+    ->middleware('auth')
+    ->name('absensi_mapel.get_by_mapel');
+
 Route::post('/absensi-mapel/edit-status/{id}', [AttendanceHistoryController::class, 'editStatus'])
     ->name('absensi_mapel.edit_status');
 
