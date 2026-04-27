@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Classes;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -246,7 +247,7 @@ class UserController extends Controller
 
         $classId = $user->student->id_class;
         $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
+        $endDate = Carbon::parse($request->input('end_date'))->endOfDay();
 
         // filter by class id and date range
         $notifications = DB::table('notifications')
@@ -258,6 +259,7 @@ class UserController extends Controller
                             ->whereNull('class_id');
                       });
             })
+
             ->whereBetween('created_at', [$startDate, $endDate])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -267,6 +269,39 @@ class UserController extends Controller
             'success' => true,
             'message' => 'Notifications fetched successfully',
             'data' => $notifications,
+        ], 200);
+    }
+
+    // get activity teacher history from notification table with related sender_id with the user.
+    public function getTeacherActivity(Request $request)
+    {
+        $user = $request->user();
+        
+        if (!$user || !$user->teacher) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        // validate query parameters
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date',
+        ]);
+
+        $startDate = $request->input('start_date');
+        $endDate = Carbon::parse($request->input('end_date'))->endOfDay();
+
+        // filter by sender_id and date range
+        $activities = DB::table('notifications')
+            ->where('sender_id', $user->id)
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+            
+        return response()->json([
+            'success' => true,
+            'message' => 'Activities fetched successfully',
+            'data' => $activities,
         ], 200);
     }
 
@@ -280,6 +315,14 @@ class UserController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
         }
 
+        // check user role for separated storage path, for example: profile_pictures/teacher, profile_pictures/student, etc.
+        $rolePath = match ($user->role) {
+            'teacher' => 'teacher',
+            'student' => 'student',
+            'admin' => 'admin',
+            default => 'others',
+        };
+
         // input file check using request validation
         // nullable|file|mimes:jpg,jpeg,png|max:2048',
         $request->validate([
@@ -292,7 +335,7 @@ class UserController extends Controller
             // store to storage:disk public, with unique name
             $fileName = 'profile_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
             
-            Storage::disk('public')->putFileAs('profile_pictures', $file, $fileName);
+            Storage::disk('public')->putFileAs('profile_pictures/' . $rolePath, $file, $fileName);
             
             // update user profile picture path
             $user->update(['profile_picture' => $fileName]);
@@ -301,7 +344,8 @@ class UserController extends Controller
                 'success' => true,
                 'message' => 'Profile picture updated successfully',
                 'data' => [
-                    'profile_picture_url' => asset('storage/profile_pictures/' . $fileName),
+                    'profile_picture' => $fileName,
+                    'profile_picture_url' => asset('storage/profile_pictures/' . $rolePath . '/' . $fileName),
                 ]
             ], 200);
         } catch (\Exception $e) {
