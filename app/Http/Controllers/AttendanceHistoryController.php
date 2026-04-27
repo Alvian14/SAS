@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\AttendanceHistory;
 use App\Models\Classes;
+use App\Models\Schedule;
 use App\Models\Student;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -17,22 +18,68 @@ class AttendanceHistoryController extends Controller
     public function absensiMapel($classId)
     {
         $kelas = Classes::findOrFail($classId);
-        $absensi = AttendanceHistory::with(['student', 'class'])
-            ->where('id_class', $classId)
-            ->get();
 
         // Ambil semua siswa di kelas
         $allStudents = Student::where('id_class', $classId)->get();
-        // Ambil id siswa yang sudah absen
-        $sudahAbsenIds = $absensi->pluck('id_student')->unique();
-        // Siswa yang belum absen
-        $belumAbsen = $allStudents->whereNotIn('id', $sudahAbsenIds);
+
+        // Ambil daftar mapel dari jadwal kelas
+        $mapelList = Schedule::with('subject')
+            ->where('id_class', $classId)
+            ->distinct('id_subject')
+            ->get()
+            ->map(function($schedule) {
+                return $schedule->subject;
+            })
+            ->unique('id')
+            ->sortBy('name')
+            ->values();
 
         return view('pages.absensi.absensi_mapel', [
-            'absensi' => $absensi,
+            'absensi' => collect(), // Initially empty
             'kelas'   => $kelas,
-            'belumAbsen' => $belumAbsen,
+            'belumAbsen' => $allStudents,
+            'mapelList' => $mapelList,
+            'allStudents' => $allStudents,
         ]);
+    }
+
+    public function getAbsensiByMapel($classId, $subjectId)
+    {
+        try {
+            // Get schedules untuk subject ini di kelas ini
+            $scheduleIds = Schedule::where('id_class', $classId)
+                ->where('id_subject', $subjectId)
+                ->pluck('id')
+                ->toArray();
+
+            // Get attendance history berdasarkan schedule ids
+            $absensi = collect();
+            if (!empty($scheduleIds)) {
+                $absensi = AttendanceHistory::with(['student', 'class'])
+                    ->whereIn('id_schedule', $scheduleIds)
+                    ->get();
+            }
+
+            // Get all students
+            $allStudents = Student::where('id_class', $classId)->get();
+
+            // Ambil id siswa yang sudah absen untuk mapel ini
+            $sudahAbsenIds = $absensi->pluck('id_student')->unique();
+
+            // Siswa yang belum absen untuk mapel ini
+            $belumAbsen = $allStudents->whereNotIn('id', $sudahAbsenIds)->values();
+
+            return response()->json([
+                'success' => true,
+                'absensi' => $absensi,
+                'belumAbsen' => $belumAbsen,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function editStatus(Request $request, $id)
@@ -49,13 +96,19 @@ class AttendanceHistoryController extends Controller
             ]);
 
             try {
+                // Get the first schedule for this subject and class
+                $mapelId = $request->get('id_subject');
+                $schedule = Schedule::where('id_class', $request->id_class)
+                    ->where('id_subject', $mapelId)
+                    ->first();
+
                 AttendanceHistory::create([
                     'id_student' => $request->id_student,
                     'id_class' => $request->id_class,
                     'status' => $request->status,
                     'period_number' => 1,
                     'coordinate' => null,
-                    'id_schedule' => null,
+                    'id_schedule' => $schedule?->id,
                 ]);
 
                 return response()->json(['success' => true, 'message' => 'Data absensi berhasil ditambahkan.']);

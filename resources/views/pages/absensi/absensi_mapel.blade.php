@@ -124,7 +124,7 @@
                         <i class="fas fa-book text-primary" style="font-size: 1.2rem;"></i>
                         <div>
                             <span class="text-muted d-block" style="font-size: 0.75rem; font-weight: 600;">Pelajaran</span>
-                            <span class="fw-bold text-dark" style="font-size: 1rem;">-</span>
+                            <span class="fw-bold text-dark" id="info-pelajaran" style="font-size: 1rem;">-</span>
                         </div>
                     </div>
                 </div>
@@ -150,11 +150,22 @@
 
             <!-- Filter -->
             <div class="row mb-4 g-2">
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <div class="filter-label"><i class="fas fa-book me-1"></i> Pelajaran</div>
+                    <select id="filter-mapel" class="form-select rounded-3 shadow-sm">
+                        <option value="">-- Pilih Pelajaran --</option>
+                        @if(isset($mapelList) && count($mapelList))
+                            @foreach($mapelList as $mapel)
+                                <option value="{{ $mapel->id }}">{{ $mapel->name }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+                <div class="col-md-3">
                     <div class="filter-label"><i class="fas fa-calendar me-1"></i> Tanggal</div>
                     <input type="date" id="filter-tanggal" class="form-control rounded-3 shadow-sm">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="filter-label"><i class="fas fa-calendar-alt me-1"></i> Bulan</div>
                     <select id="filter-bulan" class="form-select rounded-3 shadow-sm">
                         <option value="">-- Pilih Bulan --</option>
@@ -166,7 +177,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="filter-label"><i class="fas fa-calendar-week me-1"></i> Tahun</div>
                     <select id="filter-tahun" class="form-select rounded-3 shadow-sm">
                         <option value="">-- Pilih Tahun --</option>
@@ -185,10 +196,12 @@
                             <th>Nama Siswa</th>
                             <th>NISN</th>
                             <th>Jam Pertemuan</th>
+                            <th>Tanggal Absensi</th>
+                            <th>Coordinate</th>
                             <th>Keterangan</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="table-body" style="display: none;">
                         @php $rownum = 1; @endphp
                         @if(isset($absensi) && count($absensi))
                             @foreach($absensi as $idx => $item)
@@ -201,10 +214,26 @@
                                 <td>
                                     <span class="fw-semibold">{{ $item->student->nisn ?? '-' }}</span>
                                 </td>
-                                <td class="text-center">
+                                 <td class="text-center">
                                     <span class="badge rounded-pill px-3 py-2" style="background:#e3eafd;color:#365CF5;font-weight:600;">
                                         {{ $item->created_at ? $item->created_at->format('H:i') : '-' }}
                                     </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge rounded-pill px-3 py-2" style="background:#e3eafd;color:#365CF5;font-weight:600;">
+                                        {{ $item->created_at ? $item->created_at->format('d/m/Y') : '-' }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    @if($item->coordinate)
+                                        <a href="https://www.google.com/maps?q={{ $item->coordinate }}" target="_blank" class="text-decoration-none" title="Buka di Google Maps">
+                                            <span class="fw-semibold" style="font-size:0.85rem; color:#365CF5; cursor:pointer;">
+                                                <i class="fas fa-map-marker-alt me-1"></i>{{ $item->coordinate }}
+                                            </span>
+                                        </a>
+                                    @else
+                                        <span class="fw-semibold text-muted" style="font-size:0.85rem;">-</span>
+                                    @endif
                                 </td>
                                 <td>
                                     @if($item->status == 'hadir')
@@ -249,6 +278,8 @@
                                     <span class="fw-semibold">{{ $siswa->nisn }}</span>
                                 </td>
                                 <td class="text-center">-</td>
+                                <td class="text-center">-</td>
+                                <td class="text-center">-</td>
                                 <td>
                                     <span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#fff3cd;color:#b45309;font-size:0.9em;">
                                         <i class="fas fa-minus-circle me-1"></i> Belum Absen
@@ -260,6 +291,9 @@
                         @endif
                     </tbody>
                 </table>
+                <div id="empty-message" class="alert alert-info text-center p-4" role="alert">
+                    <i class="fas fa-info-circle me-2"></i> Silahkan pilih pelajaran terlebih dahulu untuk menampilkan data absensi
+                </div>
             </div>
         </div>
     </div>
@@ -270,19 +304,140 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         $(document).ready(function () {
-            var table = $('#example').DataTable({
-                lengthChange: false,
-                language: {
-                    search: "Cari:",
-                    info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-                    emptyTable: "Tidak ada data absensi mapel.",
-                    paginate: { first:"Awal", last:"Akhir", next:"Berikutnya", previous:"Sebelumnya" }
-                },
-                pageLength: 10
-            });
+            var table;
+            var currentMapelId = null; // Track currently selected mapel
+
+            // Hide table body awalnya
+            $('#table-body').hide();
+            $('#empty-message').show();
 
             $('#select-all').on('click', function () {
                 $('.row-checkbox').prop('checked', this.checked);
+            });
+
+            // Handle filter mapel
+            $('#filter-mapel').on('change', function() {
+                const mapelText = $(this).find('option:selected').text();
+                const mapelId = $(this).val();
+                const classId = "{{ $kelas->id }}";
+                currentMapelId = mapelId; // Store current mapel id
+
+                if (mapelId === '') {
+                    $('#info-pelajaran').text('-');
+                    $('#table-body').hide();
+                    $('#empty-message').show();
+                    // Destroy DataTable jika ada
+                    if ($.fn.DataTable.isDataTable('#example')) {
+                        $('#example').DataTable().destroy();
+                    }
+                } else {
+                    $('#info-pelajaran').text(mapelText);
+
+                    // Fetch absensi data berdasarkan mapel
+                    $.ajax({
+                        url: "{{ url('/absensi-mapel/get-by-mapel') }}/" + classId + "/" + mapelId,
+                        type: "GET",
+                        dataType: "json",
+                        success: function(response) {
+                            // Update hidden data dengan response
+                            window.currentAbsensi = response.absensi;
+                            window.currentBelumAbsen = response.belumAbsen;
+
+                            // Clear tbody
+                            $('#table-body').html('');
+
+                            let rownum = 1;
+
+                            // Add existing absensi rows
+                            if (response.absensi && response.absensi.length > 0) {
+                                response.absensi.forEach(function(item, idx) {
+                                    let statusBadge = '';
+                                    if (item.status === 'hadir') {
+                                        statusBadge = '<span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#dcfce7;color:#16a34a;font-size:0.9em;"><i class="fas fa-check-circle me-1"></i> Hadir</span>';
+                                    } else if (item.status === 'izin') {
+                                        statusBadge = '<span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#fef9c3;color:#eab308;font-size:0.9em;"><i class="fas fa-envelope me-1"></i> Izin</span>';
+                                    } else if (item.status === 'sakit') {
+                                        statusBadge = '<span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#f0fdf4;color:#22c55e;font-size:0.9em;"><i class="fas fa-medkit me-1"></i> Sakit</span>';
+                                    } else if (item.status === 'alpha') {
+                                        statusBadge = '<span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#fee2e2;color:#dc2626;font-size:0.9em;"><i class="fas fa-times-circle me-1"></i> Alpha</span>';
+                                    } else if (item.status === 'dispen') {
+                                        statusBadge = '<span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#e0e7ff;color:#6366f1;font-size:0.9em;"><i class="fas fa-user-shield me-1"></i> Dispen</span>';
+                                    } else {
+                                        statusBadge = '<span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#f3f4f6;color:#6b7280;font-size:0.9em;">' + (item.status.charAt(0).toUpperCase() + item.status.slice(1)) + '</span>';
+                                    }
+
+                                    const attendanceDate = item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}) : '-';
+                                    const attendanceTime = item.created_at ? new Date(item.created_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'}) : '-';
+
+                                    let coordinateCell = '';
+                                    if (item.coordinate) {
+                                        coordinateCell = `<a href="https://www.google.com/maps?q=${item.coordinate}" target="_blank" class="text-decoration-none" title="Buka di Google Maps"><span class="fw-semibold" style="font-size:0.85rem; color:#365CF5; cursor:pointer;"><i class="fas fa-map-marker-alt me-1"></i>${item.coordinate}</span></a>`;
+                                    } else {
+                                        coordinateCell = `<span class="fw-semibold text-muted" style="font-size:0.85rem;">-</span>`;
+                                    }
+
+                                    const row = `
+                                        <tr data-absensi-index="${idx}">
+                                            <td class="text-center"><input type="checkbox" class="row-checkbox" /></td>
+                                            <td class="text-center fw-bold">${rownum}</td>
+                                            <td><span class="fw-semibold text-dark d-block">${item.student.name || '-'}</span></td>
+                                            <td><span class="fw-semibold">${item.student.nisn || '-'}</span></td>
+                                            <td class="text-center"><span class="badge rounded-pill px-3 py-2" style="background:#e3eafd;color:#365CF5;font-weight:600;">${attendanceDate}</span></td>
+                                            <td class="text-center"><span class="badge rounded-pill px-3 py-2" style="background:#e3eafd;color:#365CF5;font-weight:600;">${attendanceTime}</span></td>
+                                            <td class="text-center">${coordinateCell}</td>
+                                            <td>${statusBadge}</td>
+                                        </tr>
+                                    `;
+                                    $('#table-body').append(row);
+                                    rownum++;
+                                });
+                            }
+
+                            // Add belum absen rows
+                            if (response.belumAbsen && response.belumAbsen.length > 0) {
+                                response.belumAbsen.forEach(function(siswa, idx) {
+                                    const row = `
+                                        <tr data-absensi-index="new_${idx}">
+                                            <td class="text-center"><input type="checkbox" class="row-checkbox" /></td>
+                                            <td class="text-center fw-bold">${rownum}</td>
+                                            <td><span class="fw-semibold text-dark d-block">${siswa.name}</span></td>
+                                            <td><span class="fw-semibold">${siswa.nisn}</span></td>
+                                            <td class="text-center">-</td>
+                                            <td class="text-center">-</td>
+                                            <td class="text-center">-</td>
+                                            <td><span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#fff3cd;color:#b45309;font-size:0.9em;"><i class="fas fa-minus-circle me-1"></i> Belum Absen</span></td>
+                                        </tr>
+                                    `;
+                                    $('#table-body').append(row);
+                                    rownum++;
+                                });
+                            }
+
+                            $('#table-body').show();
+                            $('#empty-message').hide();
+
+                            // Reinitialize DataTable
+                            if ($.fn.DataTable.isDataTable('#example')) {
+                                $('#example').DataTable().destroy();
+                            }
+                            table = $('#example').DataTable({
+                                lengthChange: false,
+                                language: {
+                                    search: "Cari:",
+                                    info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                                    emptyTable: "Tidak ada data absensi mapel.",
+                                    paginate: { first:"Awal", last:"Akhir", next:"Berikutnya", previous:"Sebelumnya" }
+                                },
+                                pageLength: 10
+                            });
+                        },
+                        error: function() {
+                            alert('Gagal mengambil data absensi.');
+                            $('#table-body').hide();
+                            $('#empty-message').show();
+                        }
+                    });
+                }
             });
 
             // Handle export button - show modal
@@ -328,7 +483,7 @@
                     // Cek apakah ini record baru (belum absen) atau existing
                     if (typeof absensiIndex === 'string' && absensiIndex.startsWith('new_')) {
                         // Data dari belumAbsen
-                        const belumAbsenList = @json($belumAbsen);
+                        const belumAbsenList = window.currentBelumAbsen;
                         const belumAbsenIdx = parseInt(absensiIndex.split('_')[1]);
                         const siswaData = belumAbsenList[belumAbsenIdx];
 
@@ -339,7 +494,7 @@
                         nama = siswaData?.name;
                     } else {
                         // Data dari absensi
-                        const absensiList = @json($absensi);
+                        const absensiList = window.currentAbsensi;
                         const absensiData = absensiList[absensiIndex];
 
                         absensiId = absensiData?.id;
@@ -353,6 +508,7 @@
                     $('#editAbsensiId').val(absensiId);
                     $('#editStudentId').val(studentId);
                     $('#editClassId').val(classId);
+                    $('#editMapelId').val(currentMapelId);
                     $('#editStatus').val(status);
 
                     modalEditStatus.show();
@@ -365,6 +521,7 @@
                 const status = $('#editStatus').val();
                 const studentId = $('#editStudentId').val();
                 const classId = $('#editClassId').val();
+                const mapelId = $('#editMapelId').val();
 
                 // Siapkan data
                 let data = {
@@ -372,10 +529,11 @@
                     _token: '{{ csrf_token() }}'
                 };
 
-                // Jika create baru (id adalah 'null'), tambahkan id_student dan id_class
+                // Jika create baru (id adalah 'null'), tambahkan id_student, id_class, dan id_subject
                 if (id === 'null') {
                     data.id_student = studentId;
                     data.id_class = classId;
+                    data.id_subject = mapelId;
                 }
 
                 $.ajax({
@@ -461,6 +619,7 @@
                         <input type="hidden" id="editAbsensiId" name="id">
                         <input type="hidden" id="editStudentId" name="id_student">
                         <input type="hidden" id="editClassId" name="id_class">
+                        <input type="hidden" id="editMapelId" name="id_subject">
                         <div class="mb-3">
                             <label for="editStatus" class="form-label">Status</label>
                             <select class="form-select" id="editStatus" name="status" required>
