@@ -31,6 +31,7 @@ Route::post('/register/student', [AuthController::class, 'registerStudent'])->na
 Route::post('/register/teacher', [AuthController::class, 'registerTeacher'])->name('register.teacher.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+// Routes untuk forgot-password flow
 Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])
     ->middleware('guest')
     ->name('password.request');
@@ -39,13 +40,22 @@ Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])
     ->middleware('guest')
     ->name('password.email');
 
+Route::get('/verify-token', [AuthController::class, 'showVerifyToken'])
+    ->middleware('guest')
+    ->name('password.verify.form');
+
+Route::post('/verify-token', [AuthController::class, 'verifyToken'])
+    ->middleware('guest')
+    ->name('password.verify.token');
+
 Route::get('/confirm-password', [AuthController::class, 'showConfirmPassword'])
     ->middleware('guest')
     ->name('password.confirm.form');
 
-Route::post('/reset-password', [AuthController::class, 'updatePassword'])
+Route::post('/confirm-password', [AuthController::class, 'updatePassword'])
     ->middleware('guest')
-    ->name('password.update');
+    ->name('password.confirm.update');
+
 
 // middleware auth
 Route::get('/pages/dashboard/dashboard', [DashboardController::class, 'index'])

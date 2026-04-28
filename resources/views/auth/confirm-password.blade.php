@@ -91,10 +91,9 @@
 				</div>
 			@endif
 
-			<form method="POST" action="{{ route('password.update') }}">
+			<form method="POST" action="{{ route('password.confirm.update') }}">
 				@csrf
-				<input type="hidden" name="token" value="{{ old('token', request('token')) }}">
-				<input type="hidden" name="email" value="{{ old('email', request('email')) }}">
+				<input type="hidden" name="email" value="{{ $email }}">
 
 				<div class="mb-3 input-group">
 					<span class="input-group-text bg-white border-end-0">

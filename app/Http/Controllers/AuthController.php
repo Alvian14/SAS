@@ -7,10 +7,13 @@ use App\Models\Student;
 use App\Models\Classes;
 use App\Models\Teacher;
 use App\Models\Subject;
+use App\Mail\SendResetPasswordLink;
 use Faker\Provider\Image as ProviderImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use Intervention\Image\Facades\Image;
@@ -51,6 +54,92 @@ class AuthController extends Controller
         return view('auth.forgot-password');
     }
 
+    public function sendResetLink(Request $request)
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        // Cek apakah email terdaftar
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return back()->withErrors(['email' => 'Email tidak ditemukan.'])->withInput($request->only('email'));
+        }
+
+        // Generate token random
+        $token = \Illuminate\Support\Str::random(60);
+
+        // Simpan token ke database dengan hashing
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $request->email],
+            [
+                'token' => Hash::make($token),
+                'created_at' => now(),
+            ]
+        );
+
+        // Kirim email dengan link reset password dan token
+        try {
+            Mail::to($request->email)->send(new SendResetPasswordLink($request->email, $token));
+        } catch (\Exception $e) {
+            return back()->withErrors(['email' => 'Gagal mengirim email. Silakan coba lagi.'])->withInput($request->only('email'));
+        }
+
+        return redirect()->route('password.verify.form', [
+            'email' => $request->email,
+        ])->with('status', 'Email reset password telah dikirim. Silakan cek email Anda untuk token. Token berlaku selama 60 menit.');
+    }
+
+    public function showVerifyToken(Request $request)
+    {
+        if (!$request->filled('email')) {
+            return redirect()->route('password.request');
+        }
+
+        // Cek apakah ada token untuk email ini yang masih berlaku
+        $resetToken = DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->where('created_at', '>=', now()->subMinutes(60))
+            ->first();
+
+        if (!$resetToken) {
+            return redirect()->route('password.request')
+                ->withErrors(['email' => 'Token tidak ditemukan atau sudah kadaluarsa.']);
+        }
+
+        $email = $request->email;
+        return view('auth.verify-token', compact('email'));
+    }
+
+    public function verifyToken(Request $request)
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+            'token' => ['required', 'string'],
+        ]);
+
+        // Cek token di database
+        $resetToken = DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->where('created_at', '>=', now()->subMinutes(60))
+            ->first();
+
+        if (!$resetToken) {
+            return back()->withErrors(['email' => 'Token tidak ditemukan atau sudah kadaluarsa.']);
+        }
+
+        // Verifikasi token
+        if (!Hash::check($request->token, $resetToken->token)) {
+            return back()->withErrors(['token' => 'Token tidak sesuai.'])->withInput();
+        }
+
+        // Token valid, arahkan ke form confirm password
+        return redirect()->route('password.confirm.form', [
+            'email' => $request->email,
+        ])->with('status', 'Token terverifikasi. Silakan masukkan password baru.');
+    }
+
     public function showConfirmPassword(Request $request)
     {
         if (!$request->filled('email')) {
@@ -58,35 +147,8 @@ class AuthController extends Controller
                 ->withErrors(['email' => 'Link konfirmasi password tidak valid.']);
         }
 
-        return view('auth.confirm-password');
-    }
-
-    private function getRegisteredAdminByEmail(string $email): ?User
-    {
-        return User::where('email', $email)
-            ->where('role', 'admin')
-            ->first();
-    }
-
-    public function sendResetLink(Request $request)
-    {
-        $request->validate([
-            'email' => ['required', 'email'],
-        ]);
-
-        $adminUser = $this->getRegisteredAdminByEmail($request->email);
-
-        if ($adminUser) {
-            return redirect()->route('password.confirm.form', [
-                'email' => $adminUser->email,
-            ])->with('status', 'Email admin terverifikasi. Silakan ganti password baru.');
-        }
-
-        $status = Password::sendResetLink($request->only('email'));
-
-        return $status === Password::RESET_LINK_SENT
-            ? back()->with('status', __($status))
-            : back()->withErrors(['email' => __($status)])->withInput($request->only('email'));
+        $email = $request->email;
+        return view('auth.confirm-password', compact('email'));
     }
 
     public function updatePassword(Request $request)
@@ -94,20 +156,44 @@ class AuthController extends Controller
         $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'confirmed', 'min:8'],
+        ], [
+            'password.confirmed' => 'Konfirmasi password tidak sesuai.',
+            'password.min' => 'Password minimal 8 karakter.',
         ]);
 
-        $adminUser = $this->getRegisteredAdminByEmail($request->email);
+        // Cek user
+        $user = User::where('email', $request->email)->first();
 
-        if (!$adminUser) {
-            return back()->withErrors([
-                'email' => ['Email tersebut bukan akun admin.'],
-            ]);
+        if (!$user) {
+            return back()->withErrors(['email' => 'Email tidak ditemukan.']);
         }
 
-        $adminUser->password = Hash::make($request->password);
-        $adminUser->save();
+        // Jika user adalah admin (forgot password langsung ke confirm password)
+        $isAdmin = $user->role === 'admin';
 
-        return redirect()->route('login')->with('success', 'Password admin berhasil diperbarui. Silakan login.');
+        // Jika user bukan admin, cek token (dari verify token flow)
+        if (!$isAdmin) {
+            $resetToken = DB::table('password_reset_tokens')
+                ->where('email', $request->email)
+                ->where('created_at', '>=', now()->subMinutes(60))
+                ->first();
+
+            if (!$resetToken) {
+                return back()->withErrors(['email' => 'Session reset password telah kadaluarsa. Silakan lakukan forgot password lagi.']);
+            }
+        }
+
+        // Update password
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        // Hapus token dari database jika ada
+        DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->delete();
+
+        $message = $isAdmin ? 'Password admin berhasil diperbarui. Silakan login.' : 'Password berhasil direset. Silakan login dengan password baru Anda.';
+        return redirect()->route('login')->with('success', $message);
     }
 
     public function showSetting()
