@@ -112,12 +112,24 @@ class UserController extends Controller
         DB::beginTransaction();
         try {
             //code...
+            $messages = [
+                'name.required' => 'Nama harus diisi',
+                'name.max' => 'Nama maksimal :max karakter',
+                'email.required' => 'Email harus diisi',
+                'email.email' => 'Format email tidak valid',
+                'email.unique' => 'Email sudah digunakan',
+                'password.required' => 'Password harus diisi',
+                'password.min' => 'Password minimal :min karakter',
+                'role.required' => 'Role harus dipilih',
+                'role.in' => 'Role tidak valid',
+            ];
+
             $request->validate([
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
                 'password' => 'required|string|min:6',
                 'role' => 'required|in:teacher,student',
-            ]);
+            ], $messages);
     
             // buat akun user
             $user = User::create([
@@ -129,10 +141,18 @@ class UserController extends Controller
     
             // buat record sesuai role
             if ($user->role == 'teacher') {
+                $messagesTeacher = [
+                    'nip.required' => 'NIP harus diisi',
+                    'nip.max' => 'NIP maksimal :max karakter',
+                    'nip.unique' => 'NIP sudah pernah dipakai',
+                    'subject.required' => 'Mata pelajaran harus diisi',
+                    'subject.max' => 'Mata pelajaran maksimal :max karakter',
+                ];
+
                 $request->validate([
                     'nip' => 'required|string|max:50|unique:teachers,nip',
                     'subject' => 'required|string|max:100',
-                ]);
+                ], $messagesTeacher);
     
                 $user->teacher()->create([
                     'id_user' => $user->id,
@@ -142,11 +162,21 @@ class UserController extends Controller
                 ]);
             } else if ($user->role == 'student') {
                 
+                $messagesStudent = [
+                    'nisn.required' => 'NISN harus diisi',
+                    'nisn.max' => 'NISN maksimal :max karakter',
+                    'nisn.unique' => 'NISN sudah pernah dipakai',
+                    'id_class.required' => 'Kelas harus dipilih',
+                    'id_class.integer' => 'ID kelas tidak valid',
+                    'entry_year.required' => 'Tahun masuk harus diisi',
+                    'entry_year.integer' => 'Tahun masuk tidak valid',
+                ];
+
                 $request->validate([
                     'nisn' => 'required|string|max:50|unique:students,nisn',
                     'id_class' => 'required|integer',
                     'entry_year' => 'required|integer',
-                ]);
+                ], $messagesStudent);
                 
                 $user->student()->create([
                     'id_user' => $user->id,
