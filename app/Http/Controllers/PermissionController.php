@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\NotificationType;
 use App\Models\AttendanceHistory;
+use App\Models\AttendanceHistoryDaily;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 
@@ -116,6 +117,19 @@ class PermissionController extends Controller
                             ]
                         );
                     }
+
+                    // update attendancehistorydaily to 'izin'
+                    AttendanceHistoryDaily::updateOrCreate(
+                        [
+                            'id_student' => $student->id,
+                            'id_class' => $student->id_class,
+                            'created_at' => $currentDate->toDateString(),
+                        ],
+                        [
+                            'status' => 'izin',
+                            'picture' => '',
+                        ]
+                    );
 
                     $createdSchoolDays++;
                     $currentDate->addDay();

@@ -537,7 +537,7 @@
                 }
 
                 $.ajax({
-                    url: "{{ url('/absensi-mapel/edit-status') }}/" + id,
+                    url: "{{ url('/pages/absensi-mapel/edit-status') }}/" + id,
                     type: "POST",
                     data: data,
                     success: function (res) {

@@ -195,7 +195,7 @@
             <div class="row mb-4 g-2">
                 <div class="col-md-4">
                     <div class="filter-label"><i class="fas fa-calendar me-1"></i> Tanggal</div>
-                    <input type="date" id="filter-tanggal" class="form-control rounded-3 shadow-sm">
+                    <input type="date" id="filter-tanggal" class="form-control rounded-3 shadow-sm" value="{{ $today ?? '' }}">
                 </div>
                 <div class="col-md-4">
                     <div class="filter-label"><i class="fas fa-calendar-alt me-1"></i> Bulan</div>
@@ -274,10 +274,18 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if($item->created_at)
+                                    @if($item->status == 'in progress')
+                                        <span class="text-muted">-</span>
+                                    @elseif($item->created_at)
+                                        @php
+                                            $bulanIndo = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+                                            $carbon = \Carbon\Carbon::parse($item->created_at);
+                                            $bulanName = $bulanIndo[$carbon->month - 1];
+                                            $formatted = $carbon->format('d') . ' ' . $bulanName . ' ' . $carbon->format('Y, H:i');
+                                        @endphp
                                         <span class="fw-semibold {{ $item->status == 'tepat_waktu' ? 'text-success' : 'text-danger' }}">
                                             <i class="fas fa-clock me-1"></i>
-                                            {{ \Carbon\Carbon::parse($item->created_at)->format('d M Y, H:i') }}
+                                            {{ $formatted }}
                                         </span>
                                     @else
                                         <span class="text-muted">-</span>
@@ -343,6 +351,19 @@
                 pageLength: 10
             });
 
+            // Auto-filter untuk tanggal hari ini saat page load
+            let todayDate = "{{ $today }}";
+            if (todayDate) {
+                let parts = todayDate.split('-');
+                let day = parts[2];
+                let month = parts[1];
+                let year = parts[0];
+                let bulanNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                let monthName = bulanNames[parseInt(month)];
+                let searchStr = day + ' ' + monthName + ' ' + year;
+                table.column(5).search(searchStr).draw();
+            }
+
             $('#select-all').on('click', function () {
                 $('.row-checkbox').prop('checked', this.checked);
             });
@@ -396,19 +417,33 @@
                 }
 
                 $.ajax({
-                    url: "{{ url('/absensi-harian/edit-status') }}/" + id,
+                    url: "{{ url('/pages/absensi/absensi_harian/edit-status') }}/" + id,
                     type: "POST",
                     data: data,
                     success: function(res) {
                         if(res.success) {
+                            alert('Berhasil: ' + res.message);
                             modalEditStatus.hide();
                             location.reload();
                         } else {
-                            alert('Gagal mengupdate status.');
+                            alert('Gagal: ' + (res.message || 'Gagal mengupdate status.'));
                         }
                     },
-                    error: function() {
-                        alert('Terjadi kesalahan.');
+                    error: function(xhr) {
+                        let errorMsg = 'Terjadi kesalahan.';
+
+                        // Jika ada error dari validasi
+                        if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        } else if (xhr.status === 404) {
+                            errorMsg = 'Route tidak ditemukan';
+                        } else if (xhr.status === 500) {
+                            errorMsg = 'Error server: ' + (xhr.responseJSON?.message || 'Internal server error');
+                        }
+
+                        alert('Error: ' + errorMsg);
                     }
                 });
             });
@@ -422,38 +457,67 @@
                     let month = parts[1];
                     let year = parts[0];
 
-                    // Konversi bulan ke nama bulan
-                    let bulanNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    // Konversi bulan ke nama bulan Indonesia
+                    let bulanNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
                     let monthName = bulanNames[parseInt(month)];
 
-                    // Format pencarian: "DD Mon YYYY"
+                    // Format pencarian: "DD BulanIndo YYYY"
                     let searchStr = day + ' ' + monthName + ' ' + year;
-                    table.column(5).search(searchStr).draw();
+                    table.column(5).search(searchStr, false, false).draw();
+
+                    // Clear month/year filters when date is selected
+                    $('#filter-bulan').val('');
+                    $('#filter-tahun').val('');
                 } else {
                     table.column(5).search('').draw();
                 }
             });
 
-            // Custom filter untuk bulan
+            // Custom filter untuk tanggal dan bulan/tahun
             $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                let tanggal = $('#filter-tanggal').val();
                 let bulan = $('#filter-bulan').val();
                 let tahun = $('#filter-tahun').val();
 
-                if (!bulan && !tahun) return true;
-
                 let waktuText = data[5]; // Kolom Waktu (index 5)
 
-                if (!waktuText) return false;
+                // Jika tanggal dipilih, filter by tanggal
+                if (tanggal) {
+                    let parts = tanggal.split('-');
+                    let day = parts[2];
+                    let month = parts[1];
+                    let year = parts[0];
 
-                // Parse format: "22 Apr 2026, 22:19"
+                    let bulanNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                    let monthName = bulanNames[parseInt(month)];
+                    let searchStr = day + ' ' + monthName + ' ' + year;
+
+                    // Tampilkan dummy records (waktu === '-')
+                    if (!waktuText || waktuText.trim() === '' || waktuText === '-' || waktuText.match(/^-\s*$/)) {
+                        return true;
+                    }
+
+                    // Untuk real records, match tanggalnya
+                    return waktuText.includes(searchStr);
+                }
+
+                // Jika bulan dan/atau tahun dipilih
+                if (!bulan && !tahun) return true;
+
+                // Tampilkan dummy records (waktu === '-') untuk semua filter bulan/tahun
+                if (!waktuText || waktuText.trim() === '' || waktuText === '-' || waktuText.match(/^-\s*$/)) {
+                    return true;  // Keep dummy records visible
+                }
+
+                // Parse format: "22 Mei 2026, 22:19" (Bahasa Indonesia) untuk real records
                 let bulanNames = {
-                    'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
-                    'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
-                    'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+                    'Januari': '01', 'Februari': '02', 'Maret': '03', 'April': '04',
+                    'Mei': '05', 'Juni': '06', 'Juli': '07', 'Agustus': '08',
+                    'September': '09', 'Oktober': '10', 'November': '11', 'Desember': '12'
                 };
 
-                let dateMatch = waktuText.match(/(\d{1,2})\s+(\w{3})\s+(\d{4})/);
-                if (!dateMatch) return false;
+                let dateMatch = waktuText.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/);
+                if (!dateMatch) return true;  // Jika tidak bisa parse, tampilkan
 
                 let day = dateMatch[1];
                 let monthName = dateMatch[2];
@@ -474,10 +538,14 @@
             });
 
             $('#filter-bulan').on('change', function () {
+                // Clear tanggal filter when month is selected
+                $('#filter-tanggal').val("{{ $today }}");
                 table.draw();
             });
 
             $('#filter-tahun').on('change', function () {
+                // Clear tanggal filter when year is selected
+                $('#filter-tanggal').val("{{ $today }}");
                 table.draw();
             });
 
@@ -497,7 +565,7 @@
                 if (tahun) params.append('tahun', tahun);
 
                 // Redirect to export endpoint
-                const exportUrl = `/absensi-harian/export-excel/${classId}?${params.toString()}`;
+                const exportUrl = `/pages/absensi/absensi_harian/export-excel/${classId}?${params.toString()}`;
                 window.location.href = exportUrl;
             });
         });
