@@ -5,15 +5,18 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "serve:app": "php artisan serve --host=192.168.1.3 --port=8000",
+        "serve:app": "php artisan serve --host=localhost --port=8000",
         "queue:work": "php artisan queue:work redis --sleep=1 --tries=3 --timeout=60",
-        "start": "concurrently --names \"server,worker\" -c \"bgBlue.bold,bgMagenta.bold\" \"npm:serve:app\" \"npm:queue:work\""
+        "start": "concurrently --names \"server,worker\" -c \"bgBlue.bold,bgMagenta.bold\" \"npm:serve:app\" \"npm:queue:work\"",
+        "tunnel": "tunnel.bat"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
         "axios": "^1.8.2",
         "concurrently": "^9.0.1",
+        "dotenv-cli": "^11.0.0",
         "laravel-vite-plugin": "^1.2.0",
+        "ngrok": "^5.0.0-beta.2",
         "tailwindcss": "^4.0.0",
         "vite": "^6.2.4"
     }
