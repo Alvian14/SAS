@@ -262,6 +262,52 @@
     .empty-state p {
         color: #6b7280;
     }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        margin-top: 30px;
+        padding: 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .pagination-btn {
+        padding: 10px 14px;
+        border: 1px solid #e5e7eb;
+        background: white;
+        color: #365CF5;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+        background: #365CF5;
+        color: white;
+        border-color: #365CF5;
+    }
+
+    .pagination-btn.active {
+        background: #365CF5;
+        color: white;
+        border-color: #365CF5;
+    }
+
+    .pagination-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .pagination-info {
+        color: #6b7280;
+        font-size: 14px;
+        font-weight: 600;
+    }
 </style>
 <div class="notif-wrapper mt-4">
     <!-- Header Section -->
@@ -395,12 +441,22 @@
                 <p>Belum ada notifikasi baru untuk Anda saat ini.</p>
             </div>
         @endif
+
+        <!-- Pagination Container -->
+        <div id="paginationContainer" class="pagination-container" style="display: none;">
+            <button class="pagination-btn" id="prevBtn" onclick="previousPage()">&laquo; Sebelumnya</button>
+            <span class="pagination-info" id="pageInfo"></span>
+            <button class="pagination-btn" id="nextBtn" onclick="nextPage()">Berikutnya &raquo;</button>
+        </div>
     </div>
 </div>
 
 <script>
     // kode untuk localStorage untuk menyimpan status baca notifikasi
     const READ_NOTIFICATION_STORAGE_KEY = 'sas_read_notifications';
+    const ITEMS_PER_PAGE = 10;
+    let currentPage = 1;
+    let filteredCards = [];
 
     function getReadNotificationIds() {
         try {
@@ -422,12 +478,60 @@
         localStorage.setItem(READ_NOTIFICATION_STORAGE_KEY, JSON.stringify(Array.from(readIds)));
     }
 
+    function displayPage(page) {
+        const startIndex = (page - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        const totalPages = Math.ceil(filteredCards.length / ITEMS_PER_PAGE);
+
+        // Hide all cards
+        filteredCards.forEach(card => {
+            card.style.display = 'none';
+        });
+
+        // Show cards for current page
+        for (let i = startIndex; i < endIndex && i < filteredCards.length; i++) {
+            filteredCards[i].style.display = '';
+        }
+
+        // Update pagination info
+        const paginationContainer = document.getElementById('paginationContainer');
+        const pageInfo = document.getElementById('pageInfo');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const searchEmptyState = document.querySelector('.search-empty-state');
+
+        if (filteredCards.length === 0) {
+            paginationContainer.style.display = 'none';
+        } else {
+            paginationContainer.style.display = 'flex';
+            pageInfo.textContent = `Halaman ${page} dari ${totalPages}`;
+            prevBtn.disabled = page === 1;
+            nextBtn.disabled = page === totalPages;
+        }
+
+        currentPage = page;
+    }
+
+    function previousPage() {
+        if (currentPage > 1) {
+            displayPage(currentPage - 1);
+        }
+    }
+
+    function nextPage() {
+        const totalPages = Math.ceil(filteredCards.length / ITEMS_PER_PAGE);
+        if (currentPage < totalPages) {
+            displayPage(currentPage + 1);
+        }
+    }
+
     // Tandai semua notifikasi sebagai sudah dibaca
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('searchNotification');
         const filterSelect = document.getElementById('filterNotification');
         const notificationList = document.getElementById('notificationList');
         const notificationContainer = document.getElementById('notificationContainer');
+        const markAllReadBtn = document.getElementById('markAllRead');
 
         if (!searchInput || !notificationList) {
             return;
@@ -443,8 +547,23 @@
             }
         });
 
+        // Event listener untuk tombol Tandai Semua Dibaca
+        if (markAllReadBtn) {
+            markAllReadBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                cards.forEach(function(card) {
+                    const cardId = card.getAttribute('data-id');
+                    card.classList.remove('unread');
+                    saveReadNotificationId(cardId);
+                });
+                if (typeof window.applyNotificationFilters === 'function') {
+                    window.applyNotificationFilters();
+                }
+            });
+        }
+
         const searchEmptyState = document.createElement('div');
-        searchEmptyState.className = 'empty-state';
+        searchEmptyState.className = 'empty-state search-empty-state';
         searchEmptyState.style.display = 'none';
         searchEmptyState.innerHTML = `
             <div class="empty-state-icon">
@@ -468,7 +587,7 @@
         function applyNotificationFilters() {
             const searchKeyword = searchInput.value.trim().toLowerCase();
             const statusFilter = filterSelect ? filterSelect.value : '';
-            let visibleCount = 0;
+            filteredCards = [];
 
             cards.forEach(function(card) {
                 const matchesSearch = !searchKeyword || getCardSearchText(card).includes(searchKeyword);
@@ -478,14 +597,16 @@
                     || (statusFilter === 'read' && !isUnread);
 
                 const shouldShow = matchesSearch && matchesStatus;
-                card.style.display = shouldShow ? '' : 'none';
-
                 if (shouldShow) {
-                    visibleCount += 1;
+                    filteredCards.push(card);
                 }
             });
 
-            searchEmptyState.style.display = visibleCount === 0 ? '' : 'none';
+            searchEmptyState.style.display = filteredCards.length === 0 ? '' : 'none';
+
+            // Reset to page 1 when filter changes
+            currentPage = 1;
+            displayPage(1);
         }
 
         searchInput.addEventListener('input', applyNotificationFilters);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Report;
 use App\Models\AttendanceHistory;
+use App\Models\AttendanceHistoryDaily;
 use App\Models\Student;
 use App\Models\Notification;
 use App\Enums\NotificationType;

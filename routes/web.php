@@ -192,10 +192,11 @@ Route::get('/pages/absensi/absensi_harian/{classId}', [HistoryDailyController::c
     ->middleware('auth')
     ->name('absensi.absensi_harian');
 
-Route::post('/absensi-harian/edit-status/{id}', [HistoryDailyController::class, 'editStatus'])
-->name('absensi_harian.edit_status');
+Route::post('/pages/absensi/absensi_harian/edit-status/{id}', [HistoryDailyController::class, 'editStatus'])
+    ->middleware('auth')
+    ->name('absensi_harian.edit_status');
 
-Route::get('/absensi-harian/export-excel/{classId}', [HistoryDailyController::class, 'exportExcel'])
+Route::get('/pages/absensi/absensi_harian/export-excel/{classId}', [HistoryDailyController::class, 'exportExcel'])
     ->middleware('auth')
     ->name('absensi_harian.export_excel');
 

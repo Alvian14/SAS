@@ -21,30 +21,87 @@ class HistoryDailyController extends Controller
     {
         $kelas = Classes::findOrFail($classId);
 
-        // Ambil semua siswa di kelas berdasarkan kolom id_class
+        // Ambil semua siswa di kelas
         $students = Student::where('id_class', $classId)->get();
 
-        // Ambil absensi harian yang sudah ada
-        $absensi = AttendanceHistoryDaily::with(['student', 'class'])
+        // Ambil SEMUA absensi harian dari database, diurutkan by tanggal (terbaru dulu)
+        $absensiFromDB = AttendanceHistoryDaily::with(['student', 'class'])
             ->where('id_class', $classId)
+            ->orderBy('created_at', 'desc')
             ->get();
 
-        // Gabungkan data siswa dan absensi
+        // Dapatkan semua hari UNIK dari records
+        $uniqueDates = $absensiFromDB
+            ->map(function($item) { return $item->created_at->format('Y-m-d'); })
+            ->unique()
+            ->values()
+            ->sort()
+            ->reverse() // Terbaru dulu
+            ->values();
+
+        // Build result: untuk SETIAP HARI, tampilkan SEMUA SISWA
         $result = [];
-        foreach ($students as $student) {
-            $absensiItem = $absensi->where('id_student', $student->id)->first();
-            $result[] = (object)[
-                'id' => $absensiItem ? $absensiItem->id : null,
-                'student' => $student,
-                'class' => $kelas,
-                'status' => $absensiItem ? $absensiItem->status : 'in progress',
-                'created_at' => $absensiItem ? $absensiItem->created_at : null,
-                'picture' => $absensiItem ? $absensiItem->picture : null,
-            ];
+        foreach ($uniqueDates as $date) {
+            foreach ($students as $student) {
+                // Cari record di database untuk student + date ini
+                $record = $absensiFromDB
+                    ->where('id_student', $student->id)
+                    ->filter(function($item) use ($date) {
+                        return $item->created_at->format('Y-m-d') === $date;
+                    })
+                    ->first();
+
+                if ($record) {
+                    // Ada record di database
+                    $result[] = (object)[
+                        'id' => $record->id,
+                        'student' => $record->student,
+                        'class' => $record->class,
+                        'status' => $record->status,
+                        'created_at' => $record->created_at,
+                        'picture' => $record->picture,
+                    ];
+                } else {
+                    // Dummy record: siswa belum absen di hari ini
+                    // Set created_at ke hari tersebut 00:00:00 untuk filter bekerja dengan baik
+                    $dummyDateTime = \Carbon\Carbon::parse($date . ' 00:00:00');
+
+                    $result[] = (object)[
+                        'id' => null,
+                        'student' => $student,
+                        'class' => $kelas,
+                        'status' => 'in progress',
+                        'created_at' => $dummyDateTime,
+                        'picture' => null,
+                    ];
+                }
+            }
         }
+
+        // Group data by tanggal (created_at)
+        $groupedByDate = collect();
+        foreach ($result as $item) {
+            $dateKey = $item->created_at->format('Y-m-d');
+
+            if (!$groupedByDate->has($dateKey)) {
+                $groupedByDate->put($dateKey, []);
+            }
+            $items = $groupedByDate->get($dateKey);
+            $items[] = $item;
+            $groupedByDate->put($dateKey, $items);
+        }
+
+        // Urutkan by tanggal (terbaru dulu)
+        $groupedArray = $groupedByDate->toArray();
+        krsort($groupedArray);
+
+        // Get today's date untuk default filter
+        $today = now()->format('Y-m-d');
 
         return view('pages.absensi.absensi_harian', [
             'absensi' => collect($result),
+            'groupedByDate' => $groupedArray,
+            'today' => $today,
             'kelas' => $kelas
         ]);
     }
@@ -62,14 +119,18 @@ class HistoryDailyController extends Controller
                 'id_class' => 'required|exists:clases,id',
             ]);
 
-            AttendanceHistoryDaily::create([
-                'id_student' => $request->id_student,
-                'id_class' => $request->id_class,
-                'status' => $request->status,
-                'picture' => $request->picture ?? '',
-            ]);
+            try {
+                AttendanceHistoryDaily::create([
+                    'id_student' => $request->id_student,
+                    'id_class' => $request->id_class,
+                    'status' => $request->status,
+                    'picture' => $request->picture ?? '',
+                ]);
 
-            return response()->json(['success' => true, 'message' => 'Data absensi berhasil ditambahkan.']);
+                return response()->json(['success' => true, 'message' => 'Data absensi berhasil ditambahkan.']);
+            } catch (\Exception $e) {
+                return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
+            }
         } else {
             // Update existing
             $absensi = AttendanceHistoryDaily::findOrFail($id);
@@ -89,9 +150,24 @@ class HistoryDailyController extends Controller
         // Get data absensi harian
         $rows = $this->getAbsensiHarianRowsForExport($classId, $request);
 
-        // Generate filename dengan tanggal
+        // Generate filename dan tanggal suffix berdasarkan filter
         $tanggal = $request->get('tanggal');
-        $suffixTanggal = $tanggal ? ('_' . preg_replace('/[^0-9\-]/', '', $tanggal)) : '';
+        $bulan = $request->get('bulan');
+        $tahun = $request->get('tahun');
+
+        // Build filename suffix
+        if ($tanggal) {
+            $suffixTanggal = '_' . preg_replace('/[^0-9\-]/', '', $tanggal);
+        } else if ($bulan && $tahun) {
+            $suffixTanggal = '_' . $tahun . '-' . $bulan;
+        } else if ($bulan) {
+            $suffixTanggal = '_Bulan' . $bulan;
+        } else if ($tahun) {
+            $suffixTanggal = '_' . $tahun;
+        } else {
+            $suffixTanggal = '_' . now()->format('Y-m-d');
+        }
+
         $filename = 'Rekap_Absensi_Harian_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $kelasName) . $suffixTanggal;
 
         // Create spreadsheet
@@ -253,34 +329,87 @@ class HistoryDailyController extends Controller
         // Get semua siswa di kelas
         $students = Student::where('id_class', $classId)->get();
 
-        // Filter by tanggal jika ada
+        // Determine filter parameters
+        $tanggal = $request->get('tanggal');
+        $bulan = $request->get('bulan');
+        $tahun = $request->get('tahun');
+
+        // Build query untuk fetch attendance records
         $query = AttendanceHistoryDaily::with(['student', 'class'])
             ->where('id_class', $classId);
 
-        if ($request->has('tanggal') && $request->get('tanggal')) {
-            $tanggal = $request->get('tanggal');
+        // Jika tanggal diset, filter by exact date
+        if ($tanggal) {
             $query->whereDate('created_at', $tanggal);
+        }
+        // Jika bulan dan tahun keduanya diset, filter by month AND year
+        else if ($bulan && $tahun) {
+            $query->whereMonth('created_at', $bulan)
+                  ->whereYear('created_at', $tahun);
+        }
+        // Jika hanya bulan diset, filter by month
+        else if ($bulan) {
+            $query->whereMonth('created_at', $bulan);
+        }
+        // Jika hanya tahun diset, filter by year
+        else if ($tahun) {
+            $query->whereYear('created_at', $tahun);
+        }
+        // Jika tidak ada filter, default ke hari ini
+        else {
+            $today = now()->format('Y-m-d');
+            $query->whereDate('created_at', $today);
         }
 
         $absensi = $query->get();
 
-        // Build rows untuk export
+        // Get unique dates dari filtered data
+        $uniqueDates = $absensi
+            ->map(function($item) { return $item->created_at->format('Y-m-d'); })
+            ->unique()
+            ->values()
+            ->sort()
+            ->reverse()
+            ->values();
+
+        // Build rows untuk export: untuk setiap hari, untuk setiap siswa
         $rows = [];
         $no = 1;
 
-        foreach ($students as $student) {
-            $absensiItem = $absensi->where('id_student', $student->id)->first();
+        foreach ($uniqueDates as $date) {
+            foreach ($students as $student) {
+                // Cari record untuk student + date ini
+                $record = $absensi
+                    ->where('id_student', $student->id)
+                    ->filter(function($item) use ($date) {
+                        return $item->created_at->format('Y-m-d') === $date;
+                    })
+                    ->first();
 
-            $rows[] = [
-                'no' => $no,
-                'student_name' => $student->name,
-                'nisn' => $student->nisn ?? '-',
-                'class_name' => $kelas->name,
-                'status' => $absensiItem ? ucfirst($absensiItem->status) : 'In Progress',
-                'waktu' => $absensiItem ? $absensiItem->created_at->format('Y-m-d H:i:s') : '-',
-            ];
+                if ($record) {
+                    // Ada record di database
+                    $rows[] = [
+                        'no' => $no,
+                        'student_name' => $record->student->name ?? '-',
+                        'nisn' => $record->student->nisn ?? '-',
+                        'class_name' => $record->class->name ?? '-',
+                        'status' => ucfirst($record->status),
+                        'waktu' => $record->created_at->format('d M Y H:i:s'),
+                    ];
+                } else {
+                    // Dummy record: siswa belum absen di hari ini
+                    $rows[] = [
+                        'no' => $no,
+                        'student_name' => $student->name,
+                        'nisn' => $student->nisn ?? '-',
+                        'class_name' => $kelas->name,
+                        'status' => 'In Progress',
+                        'waktu' => '-',
+                    ];
+                }
 
-            $no++;
+                $no++;
+            }
         }
 
         return $rows;
