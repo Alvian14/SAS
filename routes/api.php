@@ -5,6 +5,7 @@ use App\Http\Controllers\api\ClassController;
 use App\Http\Controllers\api\ScheduleController;
 use App\Http\Controllers\api\UserController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Api\AttendanceDailyController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -30,6 +31,9 @@ Route::post('/fcm/send-token', [NotificationController::class, 'sendToToken']);
 Route::post('/fcm/send-topic', [NotificationController::class, 'sendToTopic']);
 Route::post('/fcm/send-topic-template', [NotificationController::class, 'sendTopicTemplateExample']);
 
+// PUBLIC: attendance picture upload from Flask (no auth required for internal API)
+Route::post('/attendance/upload-picture', [AttendanceDailyController::class, 'uploadPicture']);
+
 // protected routes, need authentication
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/attendance-daily/report', [AttendanceController::class, 'dailyAttendanceReport']);
@@ -38,7 +42,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // get schedule for a specific class
     Route::get('/classes/{id}/schedule', [ClassController::class, 'schedule']);
     Route::get('/classes/{id}/schedule/{dayindex}', [ClassController::class, 'scheduleByDay']);
-    
+
     // update profile picture
     Route::post('/user/profile-picture', [UserController::class, 'updateProfilePhoto']);
 });
@@ -61,7 +65,6 @@ Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
 
     // notification
     Route::get('/student/notifications', [UserController::class, 'getStudentNotifications']);
-    
 });
 
 // role admin only
@@ -97,11 +100,10 @@ Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
     Route::post('/teacher/attendance/permission/reject', [AttendanceController::class, 'permissionReject']);
     Route::get('/teacher/attendance/permission/report/{classId}', [AttendanceController::class, 'permissionReportByClass']);
     //* permission zone END //
-    
+
     // announcement
     Route::post('/fcm/send-announcement', [ClassController::class, 'sendAnnouncementToClass']);
 
     // activity of teacher
     Route::get('/teacher/activity', [UserController::class, 'getTeacherActivity']);
-
 });
