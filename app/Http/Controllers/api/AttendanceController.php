@@ -944,7 +944,7 @@ class AttendanceController extends Controller
                 (int) $userStudent->id,
                 $template->title,
                 $template->body,
-                NotificationType::Permission,
+                NotificationType::PermissionAccepted,
                 // user id of teacher, convert to int.
                 (int) $user->id
             );
@@ -1040,7 +1040,7 @@ class AttendanceController extends Controller
                 (int) $student->user->id,
                 $template->title,
                 $template->body,
-                NotificationType::Permission,
+                NotificationType::PermissionRejected,
                 // user id of teacher, convert to int.
                 (int) $user->id
             );

@@ -38,6 +38,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // get schedule for a specific class
     Route::get('/classes/{id}/schedule', [ClassController::class, 'schedule']);
     Route::get('/classes/{id}/schedule/{dayindex}', [ClassController::class, 'scheduleByDay']);
+    
+    // update profile picture
+    Route::post('/user/profile-picture', [UserController::class, 'updateProfilePhoto']);
 });
 
 // route login pakai Sanctum
@@ -48,9 +51,6 @@ Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
         return $request->user()->load('teacher', 'student');
     });
 
-    // update profile picture
-    Route::post('/user/profile-picture', [UserController::class, 'updateProfilePhoto']);
-    
     // attendance record, permission, report, etc...
     Route::get('/testfeedback', [UserController::class, 'feedback']);
     Route::post('/qrattendance', [AttendanceController::class, 'qrAttendance']);
@@ -100,5 +100,8 @@ Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
     
     // announcement
     Route::post('/fcm/send-announcement', [ClassController::class, 'sendAnnouncementToClass']);
+
+    // activity of teacher
+    Route::get('/teacher/activity', [UserController::class, 'getTeacherActivity']);
 
 });
