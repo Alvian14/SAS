@@ -60,7 +60,7 @@ Route::post('/confirm-password', [AuthController::class, 'updatePassword'])
 // middleware auth
 Route::get('/pages/dashboard/dashboard', [DashboardController::class, 'index'])
     ->middleware('auth')
-    ->name('dashboard.index');
+    ->name('dashboard.index');  
 
 // ====================== akun =====================
 Route::get('/pages/akun/indentitas_siswa', [AuthController::class, 'identitasSiswa'])
