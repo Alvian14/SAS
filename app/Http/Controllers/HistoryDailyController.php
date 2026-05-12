@@ -17,18 +17,41 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 class HistoryDailyController extends Controller
 {
     use ExcelExportTrait;
-    public function absensiHarian($classId)
+    public function absensiHarian($classId, Request $request)
     {
         $kelas = Classes::findOrFail($classId);
 
         // Ambil semua siswa di kelas
         $students = Student::where('id_class', $classId)->get();
 
-        // Ambil SEMUA absensi harian dari database, diurutkan by tanggal (terbaru dulu)
-        $absensiFromDB = AttendanceHistoryDaily::with(['student', 'class'])
-            ->where('id_class', $classId)
-            ->orderBy('created_at', 'desc')
-            ->get();
+        // Determine filter parameters (default to today)
+        $tanggal = $request->get('tanggal', now()->format('Y-m-d'));
+        $bulan = $request->get('bulan');
+        $tahun = $request->get('tahun');
+
+        // Build query untuk fetch attendance records
+        $query = AttendanceHistoryDaily::with(['student', 'class'])
+            ->where('id_class', $classId);
+
+        // Jika tanggal diset, filter by exact date
+        if ($tanggal && !$bulan && !$tahun) {
+            $query->whereDate('created_at', $tanggal);
+        }
+        // Jika bulan dan tahun keduanya diset, filter by month AND year
+        else if ($bulan && $tahun) {
+            $query->whereMonth('created_at', $bulan)
+                  ->whereYear('created_at', $tahun);
+        }
+        // Jika hanya bulan diset, filter by month
+        else if ($bulan) {
+            $query->whereMonth('created_at', $bulan);
+        }
+        // Jika hanya tahun diset, filter by year
+        else if ($tahun) {
+            $query->whereYear('created_at', $tahun);
+        }
+
+        $absensiFromDB = $query->orderBy('created_at', 'desc')->get();
 
         // Dapatkan semua hari UNIK dari records
         $uniqueDates = $absensiFromDB
@@ -38,6 +61,11 @@ class HistoryDailyController extends Controller
             ->sort()
             ->reverse() // Terbaru dulu
             ->values();
+
+        // Jika filter tanggal spesifik dan tidak ada data, tambahkan tanggal tersebut
+        if ($tanggal && !$bulan && !$tahun && !$uniqueDates->contains($tanggal)) {
+            $uniqueDates = collect([$tanggal])->merge($uniqueDates);
+        }
 
         // Build result: untuk SETIAP HARI, tampilkan SEMUA SISWA
         $result = [];
@@ -102,7 +130,10 @@ class HistoryDailyController extends Controller
             'absensi' => collect($result),
             'groupedByDate' => $groupedArray,
             'today' => $today,
-            'kelas' => $kelas
+            'kelas' => $kelas,
+            'selectedTanggal' => $tanggal,
+            'selectedBulan' => $bulan,
+            'selectedTahun' => $tahun
         ]);
     }
 
