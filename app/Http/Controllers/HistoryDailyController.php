@@ -24,10 +24,15 @@ class HistoryDailyController extends Controller
         // Ambil semua siswa di kelas
         $students = Student::where('id_class', $classId)->get();
 
-        // Determine filter parameters (default to today)
-        $tanggal = $request->get('tanggal', now()->format('Y-m-d'));
+        // Determine filter parameters
+        $tanggal = $request->get('tanggal');
         $bulan = $request->get('bulan');
         $tahun = $request->get('tahun');
+
+        // Default ke hari ini hanya jika tidak ada filter apapun
+        if (!$tanggal && !$bulan && !$tahun) {
+            $tanggal = now()->format('Y-m-d');
+        }
 
         // Build query untuk fetch attendance records
         $query = AttendanceHistoryDaily::with(['student', 'class'])
@@ -365,12 +370,17 @@ class HistoryDailyController extends Controller
         $bulan = $request->get('bulan');
         $tahun = $request->get('tahun');
 
+        // Default ke hari ini hanya jika tidak ada filter apapun
+        if (!$tanggal && !$bulan && !$tahun) {
+            $tanggal = now()->format('Y-m-d');
+        }
+
         // Build query untuk fetch attendance records
         $query = AttendanceHistoryDaily::with(['student', 'class'])
             ->where('id_class', $classId);
 
         // Jika tanggal diset, filter by exact date
-        if ($tanggal) {
+        if ($tanggal && !$bulan && !$tahun) {
             $query->whereDate('created_at', $tanggal);
         }
         // Jika bulan dan tahun keduanya diset, filter by month AND year
@@ -385,11 +395,6 @@ class HistoryDailyController extends Controller
         // Jika hanya tahun diset, filter by year
         else if ($tahun) {
             $query->whereYear('created_at', $tahun);
-        }
-        // Jika tidak ada filter, default ke hari ini
-        else {
-            $today = now()->format('Y-m-d');
-            $query->whereDate('created_at', $today);
         }
 
         $absensi = $query->get();

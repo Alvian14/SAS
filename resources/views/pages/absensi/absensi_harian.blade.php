@@ -195,7 +195,7 @@
             <div class="row mb-4 g-2">
                 <div class="col-md-4">
                     <div class="filter-label"><i class="fas fa-calendar me-1"></i> Tanggal</div>
-                    <input type="date" id="filter-tanggal" class="form-control rounded-3 shadow-sm" value="{{ $selectedTanggal ?? $today ?? '' }}">
+                    <input type="date" id="filter-tanggal" class="form-control rounded-3 shadow-sm" value="{{ $selectedTanggal ?? '' }}">
                 </div>
                 <div class="col-md-4">
                     <div class="filter-label"><i class="fas fa-calendar-alt me-1"></i> Bulan</div>
@@ -357,9 +357,13 @@
                 pageLength: 10
             });
 
-            // Filter display berdasarkan selected date
-            let selectedDate = "{{ $selectedTanggal ?? $today }}";
+            // Filter display berdasarkan selected date / month / year
+            let selectedDate = "{{ $selectedTanggal ?? '' }}";
+            let selectedMonth = "{{ $selectedBulan ?? '' }}";
+            let selectedYear = "{{ $selectedTahun ?? '' }}";
+
             if (selectedDate) {
+                // Filter berdasarkan tanggal spesifik
                 let parts = selectedDate.split('-');
                 let day = parts[2];
                 let month = parts[1];
@@ -368,6 +372,35 @@
                 let monthName = bulanNames[parseInt(month)];
                 let searchStr = day + ' ' + monthName + ' ' + year;
                 table.column(5).search(searchStr, false, false).draw();
+            } else if (selectedMonth && selectedYear) {
+                // Filter berdasarkan bulan dan tahun - tampilkan SEMUA data bulan tersebut
+                let bulanNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                let monthName = bulanNames[parseInt(selectedMonth)];
+                let searchStr = monthName + ' ' + selectedYear;
+                table.column(5).search(searchStr, false, false).draw();
+            } else if (selectedMonth && !selectedYear) {
+                // Filter berdasarkan bulan saja - tampilkan SEMUA data bulan tersebut (semua tahun)
+                let bulanNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                let monthName = bulanNames[parseInt(selectedMonth)];
+                let searchStr = monthName;
+                table.column(5).search(searchStr, false, false).draw();
+            } else if (selectedYear && !selectedMonth) {
+                // Filter berdasarkan tahun saja - tampilkan SEMUA data tahun tersebut
+                let searchStr = selectedYear;
+                table.column(5).search(searchStr, false, false).draw();
+            } else {
+                // Default: tampilkan hari ini jika tidak ada filter apapun
+                let today = "{{ $today ?? '' }}";
+                if (today) {
+                    let parts = today.split('-');
+                    let day = parts[2];
+                    let month = parts[1];
+                    let year = parts[0];
+                    let bulanNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                    let monthName = bulanNames[parseInt(month)];
+                    let searchStr = day + ' ' + monthName + ' ' + year;
+                    table.column(5).search(searchStr, false, false).draw();
+                }
             }
 
             $('#select-all').on('click', function () {
