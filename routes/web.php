@@ -60,7 +60,7 @@ Route::post('/confirm-password', [AuthController::class, 'updatePassword'])
 // middleware auth
 Route::get('/pages/dashboard/dashboard', [DashboardController::class, 'index'])
     ->middleware('auth')
-    ->name('dashboard.index');  
+    ->name('dashboard.index');
 
 // ====================== akun =====================
 Route::get('/pages/akun/indentitas_siswa', [AuthController::class, 'identitasSiswa'])
@@ -208,7 +208,7 @@ Route::get('/absensi-mapel/get-by-mapel/{classId}/{subjectId}', [AttendanceHisto
     ->middleware('auth')
     ->name('absensi_mapel.get_by_mapel');
 
-Route::post('/absensi-mapel/edit-status/{id}', [AttendanceHistoryController::class, 'editStatus'])
+Route::post('/pages/absensi-mapel/edit-status/{id}', [AttendanceHistoryController::class, 'editStatus'])
     ->name('absensi_mapel.edit_status');
 
 Route::get('/absensi-mapel/export-excel/{classId}', [AttendanceHistoryController::class, 'exportExcel'])
