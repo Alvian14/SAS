@@ -195,8 +195,8 @@
                             <th style="width:50px;">No</th>
                             <th>Nama Siswa</th>
                             <th>NISN</th>
-                            <th>Jam Pertemuan</th>
                             <th>Tanggal Absensi</th>
+                            <th>Jam Pertemuan</th>
                             <th>Coordinate</th>
                             <th>Keterangan</th>
                         </tr>
@@ -294,6 +294,91 @@
                 <div id="empty-message" class="alert alert-info text-center p-4" role="alert">
                     <i class="fas fa-info-circle me-2"></i> Silahkan pilih pelajaran terlebih dahulu untuk menampilkan data absensi
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Export Filter -->
+    <div class="modal fade" id="modalExportFilter" tabindex="-1" aria-labelledby="modalExportFilterLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="modalExportFilterLabel">
+                        <i class="fas fa-file-excel me-2"></i> Export Absensi Mapel
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formExportFilter">
+                    <div class="modal-body">
+                        <p class="text-muted mb-3">Pilih bulan dan tahun untuk export data absensi mapel</p>
+                        <div class="mb-3">
+                            <label for="export-bulan" class="form-label">Bulan</label>
+                            <select class="form-select" id="export-bulan" name="bulan" required>
+                                <option value="">-- Pilih Bulan --</option>
+                                @php
+                                    $bulanIndo = ['01'=>'Januari','02'=>'Februari','03'=>'Maret','04'=>'April','05'=>'Mei','06'=>'Juni','07'=>'Juli','08'=>'Agustus','09'=>'September','10'=>'Oktober','11'=>'November','12'=>'Desember'];
+                                    $currentMonth = now()->timezone('Asia/Jakarta')->format('m');
+                                @endphp
+                                @foreach($bulanIndo as $num => $nama)
+                                    <option value="{{ $num }}" @selected($num === $currentMonth)>{{ $nama }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="export-tahun" class="form-label">Tahun</label>
+                            <select class="form-select" id="export-tahun" name="tahun" required>
+                                <option value="">-- Pilih Tahun --</option>
+                                @php
+                                    $currentYear = now()->timezone('Asia/Jakarta')->format('Y');
+                                @endphp
+                                @for($y = date('Y')-5; $y <= date('Y')+1; $y++)
+                                    <option value="{{ $y }}" @selected($y == $currentYear)>{{ $y }}</option>
+                                @endfor
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-download me-1"></i> Export Excel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Status -->
+    <div class="modal fade" id="modalEditStatus" tabindex="-1" aria-labelledby="modalEditStatusLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalEditStatusLabel">Edit Status Absensi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formEditStatus">
+                    <div class="modal-body">
+                        <input type="hidden" id="editAbsensiId" name="id">
+                        <input type="hidden" id="editStudentId" name="id_student">
+                        <input type="hidden" id="editClassId" name="id_class">
+                        <input type="hidden" id="editMapelId" name="id_subject">
+                        <div class="mb-3">
+                            <label for="editStatus" class="form-label">Status</label>
+                            <select class="form-select" id="editStatus" name="status" required>
+                                <option value="hadir">Hadir</option>
+                                <option value="izin">Izin</option>
+                                <option value="sakit">Sakit</option>
+                                <option value="alpha">Alpha</option>
+                                <option value="dispen">Dispen</option>
+                                <option value="belum">Belum Absen</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -555,91 +640,6 @@
             });
         });
     </script>
-
-    <!-- Modal Export Filter -->
-    <div class="modal fade" id="modalExportFilter" tabindex="-1" aria-labelledby="modalExportFilterLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title" id="modalExportFilterLabel">
-                        <i class="fas fa-file-excel me-2"></i> Export Absensi Mapel
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="formExportFilter">
-                    <div class="modal-body">
-                        <p class="text-muted mb-3">Pilih bulan dan tahun untuk export data absensi mapel</p>
-                        <div class="mb-3">
-                            <label for="export-bulan" class="form-label">Bulan</label>
-                            <select class="form-select" id="export-bulan" name="bulan" required>
-                                <option value="">-- Pilih Bulan --</option>
-                                @php
-                                    $bulanIndo = ['01'=>'Januari','02'=>'Februari','03'=>'Maret','04'=>'April','05'=>'Mei','06'=>'Juni','07'=>'Juli','08'=>'Agustus','09'=>'September','10'=>'Oktober','11'=>'November','12'=>'Desember'];
-                                    $currentMonth = now()->timezone('Asia/Jakarta')->format('m');
-                                @endphp
-                                @foreach($bulanIndo as $num => $nama)
-                                    <option value="{{ $num }}" @selected($num === $currentMonth)>{{ $nama }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="export-tahun" class="form-label">Tahun</label>
-                            <select class="form-select" id="export-tahun" name="tahun" required>
-                                <option value="">-- Pilih Tahun --</option>
-                                @php
-                                    $currentYear = now()->timezone('Asia/Jakarta')->format('Y');
-                                @endphp
-                                @for($y = date('Y')-5; $y <= date('Y')+1; $y++)
-                                    <option value="{{ $y }}" @selected($y == $currentYear)>{{ $y }}</option>
-                                @endfor
-                            </select>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-success">
-                            <i class="fas fa-download me-1"></i> Export Excel
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Edit Status -->
-    <div class="modal fade" id="modalEditStatus" tabindex="-1" aria-labelledby="modalEditStatusLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalEditStatusLabel">Edit Status Absensi</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="formEditStatus">
-                    <div class="modal-body">
-                        <input type="hidden" id="editAbsensiId" name="id">
-                        <input type="hidden" id="editStudentId" name="id_student">
-                        <input type="hidden" id="editClassId" name="id_class">
-                        <input type="hidden" id="editMapelId" name="id_subject">
-                        <div class="mb-3">
-                            <label for="editStatus" class="form-label">Status</label>
-                            <select class="form-select" id="editStatus" name="status" required>
-                                <option value="hadir">Hadir</option>
-                                <option value="izin">Izin</option>
-                                <option value="sakit">Sakit</option>
-                                <option value="alpha">Alpha</option>
-                                <option value="dispen">Dispen</option>
-                                <option value="belum">Belum Absen</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Simpan</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 
 @endsection
 

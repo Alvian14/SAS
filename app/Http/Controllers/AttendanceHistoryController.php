@@ -84,44 +84,54 @@ class AttendanceHistoryController extends Controller
 
     public function editStatus(Request $request, $id)
     {
-        $request->validate([
-            'status' => 'required|string'
-        ]);
-
-        // Jika $id adalah 'null', artinya create baru (belum ada di database)
-        if ($id === 'null') {
+        try {
             $request->validate([
-                'id_student' => 'required|exists:students,id',
-                'id_class' => 'required|exists:clases,id',
+                'status' => 'required|string'
             ]);
 
-            try {
-                // Get the first schedule for this subject and class
-                $mapelId = $request->get('id_subject');
+            // Jika $id adalah 'null', create baru
+            if ($id === 'null') {
+                $request->validate([
+                    'id_student' => 'required|integer',
+                    'id_class' => 'required|integer',
+                    'id_subject' => 'required|integer',
+                ]);
+
+                // Cari schedule
                 $schedule = Schedule::where('id_class', $request->id_class)
-                    ->where('id_subject', $mapelId)
+                    ->where('id_subject', $request->id_subject)
                     ->first();
 
+                // Create attendance record
                 AttendanceHistory::create([
                     'id_student' => $request->id_student,
                     'id_class' => $request->id_class,
                     'status' => $request->status,
                     'period_number' => 1,
-                    'coordinate' => null,
-                    'id_schedule' => $schedule?->id,
+                    'id_schedule' => $schedule ? $schedule->id : null,
+                    'coordinate' => '-7.604032330848524, 112.10176449791652',
+                    'created_at' => now(),
+                    'attendance_date' => now(),
                 ]);
 
                 return response()->json(['success' => true, 'message' => 'Data absensi berhasil ditambahkan.']);
-            } catch (\Exception $e) {
-                return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
-            }
-        } else {
-            // Update existing
-            $absensi = AttendanceHistory::findOrFail($id);
-            $absensi->status = $request->status;
-            $absensi->save();
+            } else {
+                // Update existing
+                $absensi = AttendanceHistory::findOrFail($id);
+                $absensi->update([
+                    'status' => $request->status,
 
-            return response()->json(['success' => true, 'message' => 'Status absensi berhasil diupdate.']);
+                    'created_at' => now(),
+                    'attendance_date' => now(),
+                ]);
+
+                return response()->json(['success' => true, 'message' => 'Status absensi berhasil diupdate.']);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
 
