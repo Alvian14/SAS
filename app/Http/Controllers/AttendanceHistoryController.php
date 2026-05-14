@@ -7,6 +7,7 @@ use App\Models\AttendanceHistory;
 use App\Models\Classes;
 use App\Models\Schedule;
 use App\Models\Student;
+use App\Models\Subject;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -15,7 +16,7 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class AttendanceHistoryController extends Controller
 {
-    public function absensiMapel($classId)
+    public function absensiMapel($classId, Request $request)
     {
         $kelas = Classes::findOrFail($classId);
 
@@ -34,16 +35,67 @@ class AttendanceHistoryController extends Controller
             ->sortBy('name')
             ->values();
 
+        // Default ke hari ini jika tidak ada filter
+        $tanggal = $request->get('tanggal', now()->format('Y-m-d'));
+        $subjectId = $request->get('subject_id');
+
+        $absensi = collect();
+        $belumAbsen = $allStudents;
+
+        // Jika ada subject filter, ambil data berdasarkan tanggal + day_of_week
+        if ($subjectId) {
+            // Parse tanggal untuk ambil day of week
+            $date = \Carbon\Carbon::createFromFormat('Y-m-d', $tanggal);
+
+            // Map hari ke format Indonesia
+            $dayMap = [
+                0 => 'Minggu',
+                1 => 'Senin',
+                2 => 'Selasa',
+                3 => 'Rabu',
+                4 => 'Kamis',
+                5 => 'Jumat',
+                6 => 'Sabtu'
+            ];
+
+            $dayName = $dayMap[$date->dayOfWeek] ?? '';
+
+            // Get schedule IDs untuk subject dan day ini
+            $scheduleIds = Schedule::where('id_class', $classId)
+                ->where('id_subject', $subjectId)
+                ->where('day_of_week', $dayName)
+                ->pluck('id')
+                ->toArray();
+
+            // Get attendance history untuk tanggal dan schedules spesifik
+            if (!empty($scheduleIds)) {
+                $absensi = AttendanceHistory::with(['student', 'class'])
+                    ->whereIn('id_schedule', $scheduleIds)
+                    ->where(function($q) use ($tanggal) {
+                        $q->whereDate('created_at', $tanggal)
+                          ->orWhereDate('attendance_date', $tanggal);
+                    })
+                    ->get();
+            }
+
+            // Ambil siswa yang sudah absen untuk tanggal + day ini
+            $sudahAbsenIds = $absensi->pluck('id_student')->unique();
+
+            // Siswa yang belum absen untuk tanggal + day ini
+            $belumAbsen = $allStudents->whereNotIn('id', $sudahAbsenIds)->values();
+        }
+
         return view('pages.absensi.absensi_mapel', [
-            'absensi' => collect(), // Initially empty
+            'absensi' => $absensi,
             'kelas'   => $kelas,
-            'belumAbsen' => $allStudents,
+            'belumAbsen' => $belumAbsen,
             'mapelList' => $mapelList,
             'allStudents' => $allStudents,
+            'selectedTanggal' => $tanggal,
         ]);
     }
 
-    public function getAbsensiByMapel($classId, $subjectId)
+    public function getAbsensiByMapel($classId, $subjectId, Request $request)
     {
         try {
             // Get schedules untuk subject ini di kelas ini
@@ -52,13 +104,28 @@ class AttendanceHistoryController extends Controller
                 ->pluck('id')
                 ->toArray();
 
-            // Get attendance history berdasarkan schedule ids
-            $absensi = collect();
+            // Build query untuk attendance history
+            $query = AttendanceHistory::with(['student', 'class']);
+
             if (!empty($scheduleIds)) {
-                $absensi = AttendanceHistory::with(['student', 'class'])
-                    ->whereIn('id_schedule', $scheduleIds)
-                    ->get();
+                $query->whereIn('id_schedule', $scheduleIds);
             }
+
+            // Apply date filters jika ada
+            $bulan = $request->get('bulan');
+            $tahun = $request->get('tahun');
+
+            if ($bulan && $tahun) {
+                $query->whereMonth('created_at', $bulan)
+                      ->whereYear('created_at', $tahun);
+            } elseif ($bulan) {
+                $query->whereMonth('created_at', $bulan);
+            } elseif ($tahun) {
+                $query->whereYear('created_at', $tahun);
+            }
+
+            // Get attendance history
+            $absensi = $query->get();
 
             // Get all students
             $allStudents = Student::where('id_class', $classId)->get();
@@ -82,6 +149,95 @@ class AttendanceHistoryController extends Controller
         }
     }
 
+    public function getSchedules($classId, $subjectId)
+    {
+        try {
+            // Get all schedules untuk subject ini di kelas ini
+            $schedules = Schedule::where('id_class', $classId)
+                ->where('id_subject', $subjectId)
+                ->get()
+                ->map(function($schedule) {
+                    return [
+                        'id' => $schedule->id,
+                        'day' => $schedule->day_of_week ?? 'N/A',
+                        'time' => ($schedule->start_time ? \Carbon\Carbon::parse($schedule->start_time)->format('H:i') : '') . ' - ' .
+                                  ($schedule->end_time ? \Carbon\Carbon::parse($schedule->end_time)->format('H:i') : '')
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'schedules' => $schedules,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getAbsensiByMapelAndDate($classId, $subjectId, $tanggal)
+    {
+        try {
+            // Parse tanggal
+            $date = \Carbon\Carbon::createFromFormat('Y-m-d', $tanggal);
+
+            // Map hari ke format Indonesia
+            $dayMap = [
+                0 => 'Minggu',
+                1 => 'Senin',
+                2 => 'Selasa',
+                3 => 'Rabu',
+                4 => 'Kamis',
+                5 => 'Jumat',
+                6 => 'Sabtu'
+            ];
+
+            $dayName = $dayMap[$date->dayOfWeek] ?? '';
+
+            // Get schedules untuk subject ini yang sesuai dengan hari ini
+            $scheduleIds = Schedule::where('id_class', $classId)
+                ->where('id_subject', $subjectId)
+                ->where('day_of_week', $dayName)
+                ->pluck('id')
+                ->toArray();
+
+            // Get attendance history untuk tanggal spesifik dan schedules tersebut
+            $absensi = collect();
+            if (!empty($scheduleIds)) {
+                $absensi = AttendanceHistory::with(['student', 'class'])
+                    ->whereIn('id_schedule', $scheduleIds)
+                    ->where(function($q) use ($tanggal) {
+                        $q->whereDate('created_at', $tanggal)
+                          ->orWhereDate('attendance_date', $tanggal);
+                    })
+                    ->get();
+            }
+
+            // Get all students
+            $allStudents = Student::where('id_class', $classId)->get();
+
+            // Siswa yang sudah absen untuk tanggal dan schedule ini
+            $sudahAbsenIds = $absensi->pluck('id_student')->unique();
+
+            // Siswa yang belum absen
+            $belumAbsen = $allStudents->whereNotIn('id', $sudahAbsenIds)->values();
+
+            return response()->json([
+                'success' => true,
+                'absensi' => $absensi,
+                'belumAbsen' => $belumAbsen,
+                'scheduleIds' => $scheduleIds,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function editStatus(Request $request, $id)
     {
         try {
@@ -94,35 +250,32 @@ class AttendanceHistoryController extends Controller
                 $request->validate([
                     'id_student' => 'required|integer',
                     'id_class' => 'required|integer',
-                    'id_subject' => 'required|integer',
+                    'id_schedule' => 'required|integer',
                 ]);
 
-                // Cari schedule
-                $schedule = Schedule::where('id_class', $request->id_class)
-                    ->where('id_subject', $request->id_subject)
-                    ->first();
-
-                // Create attendance record
+                // Create attendance record dengan id_schedule dari request
+                $currentDate = now()->format('Y-m-d');
                 AttendanceHistory::create([
                     'id_student' => $request->id_student,
                     'id_class' => $request->id_class,
                     'status' => $request->status,
                     'period_number' => 1,
-                    'id_schedule' => $schedule ? $schedule->id : null,
+                    'id_schedule' => $request->id_schedule,
                     'coordinate' => '-7.604032330848524, 112.10176449791652',
+                    'attendance_date' => $currentDate,
                     'created_at' => now(),
-                    'attendance_date' => now(),
+                    'updated_at' => now(),
                 ]);
 
                 return response()->json(['success' => true, 'message' => 'Data absensi berhasil ditambahkan.']);
             } else {
                 // Update existing
                 $absensi = AttendanceHistory::findOrFail($id);
+                $currentDate = now()->format('Y-m-d');
                 $absensi->update([
                     'status' => $request->status,
-
-                    'created_at' => now(),
-                    'attendance_date' => now(),
+                    'attendance_date' => $currentDate,
+                    'updated_at' => now(),
                 ]);
 
                 return response()->json(['success' => true, 'message' => 'Status absensi berhasil diupdate.']);
@@ -136,200 +289,360 @@ class AttendanceHistoryController extends Controller
     }
 
     /**
-     * Export absensi mapel ke Excel dengan filter bulan/tahun
+     * Export absensi mapel ke Excel - Format Grid per Periode (seperti standar absensi)
      */
     public function exportExcel($classId, Request $request)
     {
-        // Get kelas info
-        $kelas = Classes::findOrFail($classId);
-        $kelasName = $kelas->name ?? 'Kelas';
+        try {
+            // Get kelas info
+            $kelas = Classes::findOrFail($classId);
+            $kelasName = $kelas->name ?? 'Kelas';
 
-        // Ambil filter bulan dan tahun dari request
-        $bulan = $request->get('bulan', date('m'));
-        $tahun = $request->get('tahun', date('Y'));
+            // Get filter info
+            $mapelId = $request->get('mapel');
+            $bulan = $request->get('bulan') ?: date('m');
+            $tahun = $request->get('tahun') ?: date('Y');
 
-        // Get data absensi mapel dengan filter
-        $rows = $this->getAbsensiMapelRowsForExport($classId, $bulan, $tahun);
-
-        // Generate filename
-        $month_name = $this->getMonthName($bulan);
-        $filename = 'Rekap_Absensi_Mapel_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $kelasName) . '_' . $month_name . '_' . $tahun;
-
-        // Create spreadsheet
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Absensi Mapel');
-
-        // Insert 3 rows untuk info header
-        $sheet->insertNewRowBefore(1, 3);
-
-        // Row 1: Title
-        $title = 'REKAP ABSENSI MAPEL - ' . strtoupper($kelasName);
-        $sheet->setCellValue('A1', $title);
-        $sheet->mergeCells('A1:F1');
-
-        // Row 2: Bulan/Tahun info
-        $subtitle = $month_name . ' ' . $tahun;
-        $sheet->setCellValue('A2', $subtitle);
-        $sheet->mergeCells('A2:F2');
-
-        // Row 3: Export timestamp
-        $timestamp = 'Diekspor pada: ' . now()->timezone('Asia/Jakarta')->format('d M Y H:i:s') . ' WIB';
-        $sheet->setCellValue('A3', $timestamp);
-        $sheet->mergeCells('A3:F3');
-
-        // Style title rows
-        $sheet->getRowDimension(1)->setRowHeight(24);
-        $sheet->getRowDimension(2)->setRowHeight(18);
-        $sheet->getRowDimension(3)->setRowHeight(16);
-
-        $sheet->getStyle('A1:F1')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 14, 'color' => ['rgb' => '1F2937']],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-        ]);
-
-        $sheet->getStyle('A2:F2')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => '4B5563']],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-        ]);
-
-        $sheet->getStyle('A3:F3')->applyFromArray([
-            'font' => ['size' => 9, 'color' => ['rgb' => '6B7280']],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-        ]);
-
-        // Add headers at row 4
-        $headers = ['No', 'Nama Siswa', 'NISN', 'Kelas', 'Keterangan', 'Jam Pertemuan'];
-        foreach ($headers as $col => $header) {
-            $sheet->setCellValue($this->getColumnLetter($col + 1) . '4', $header);
-        }
-
-        // Style headers (Row 4)
-        $headerRange = 'A4:F4';
-        $sheet->getStyle($headerRange)->applyFromArray([
-            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '365CF5']],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER,
-                'wrapText' => true,
-            ],
-        ]);
-        $sheet->getRowDimension(4)->setRowHeight(22);
-
-        // Add data rows starting from row 5
-        $dataStartRow = 5;
-        foreach ($rows as $index => $row) {
-            $currentRow = $dataStartRow + $index;
-            $sheet->setCellValue('A' . $currentRow, $row['no']);
-            $sheet->setCellValue('B' . $currentRow, $row['student_name']);
-            $sheet->setCellValue('C' . $currentRow, $row['nisn']);
-            $sheet->setCellValue('D' . $currentRow, $row['class_name']);
-            $sheet->setCellValue('E' . $currentRow, $row['keterangan']);
-            $sheet->setCellValue('F' . $currentRow, $row['jam_pertemuan']);
-
-            // Zebra rows (alternate background color)
-            if (($index % 2) === 1) {
-                $sheet->getStyle('A' . $currentRow . ':F' . $currentRow)->applyFromArray([
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F4F7FF']],
-                ]);
+            // Get mapel/subject name
+            $mapelName = 'Mapel';
+            if ($mapelId) {
+                $subject = Subject::find($mapelId);
+                $mapelName = $subject ? $subject->name : 'Mapel';
             }
+
+            // Get all students
+            $students = Student::where('id_class', $classId)->orderBy('name', 'ASC')->get();
+            if ($students->isEmpty()) {
+                return response()->json(['error' => 'Tidak ada siswa di kelas'], 400);
+            }
+
+            // Get schedules untuk mapel ini
+            $scheduleIds = Schedule::where('id_class', $classId)
+                ->where('id_subject', $mapelId)
+                ->pluck('id')
+                ->toArray();
+
+            // Generate filename
+            $month_name = $this->getMonthName($bulan);
+            $filename = 'Absensi_Mapel_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $mapelName) . '_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $kelasName) . '.xlsx';
+
+            // Create spreadsheet
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setTitle('Absensi Mapel');
+
+            // Row 1: Title (Yellow background)
+            $title = 'ABSENSI ' . strtoupper($mapelName) . ' ' . strtoupper($kelasName);
+            $sheet->setCellValue('A1', $title);
+            $sheet->mergeCells('A1:AE1');
+            $sheet->getRowDimension(1)->setRowHeight(25);
+            $sheet->getStyle('A1')->applyFromArray([
+                'font' => ['bold' => true, 'size' => 14, 'color' => ['rgb' => '000000']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFCC00']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            ]);
+
+            // Row 2: Period info
+            $periodText = 'PERIODE ' . strtoupper($month_name) . ' ' . $tahun;
+            $sheet->setCellValue('A2', $periodText);
+            $sheet->mergeCells('A2:AE2');
+            $sheet->getRowDimension(2)->setRowHeight(20);
+            $sheet->getStyle('A2')->applyFromArray([
+                'font' => ['bold' => true, 'size' => 12, 'color' => ['rgb' => '000000']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFCC00']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            ]);
+
+            // Row 3: Empty
+            $sheet->getRowDimension(3)->setRowHeight(10);
+
+            // Row 4: Headers
+            $sheet->setCellValue('A4', 'Nama');
+            $sheet->setCellValue('B4', 'Jabatan');
+            
+            // Days columns (1-31)
+            $daysInMonth = \Carbon\Carbon::createFromDate($tahun, $bulan, 1)->daysInMonth;
+            for ($day = 1; $day <= 31; $day++) {
+                $colLetter = $this->getColumnLetter($day + 2); // +2 untuk offset dari kolom A (Nama) dan B (Jabatan)
+                if ($day <= $daysInMonth) {
+                    $sheet->setCellValue($colLetter . '4', $day);
+                } else {
+                    $sheet->setCellValue($colLetter . '4', '');
+                }
+            }
+            
+            // Summary columns
+            $jumlahCol = $this->getColumnLetter(35); // Column after day 31
+            $keteranganCol = $this->getColumnLetter(36);
+            $sheet->setCellValue($jumlahCol . '4', 'Jumlah\nHari Kerja');
+            $sheet->setCellValue($keteranganCol . '4', 'Keterangan');
+
+            // Style headers (Row 4) - Yellow background
+            $headerRange = 'A4:' . $keteranganCol . '4';
+            $sheet->getStyle($headerRange)->applyFromArray([
+                'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => '000000']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFCC00']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+            ]);
+            $sheet->getRowDimension(4)->setRowHeight(30);
+
+            // Get attendance data untuk bulan+tahun ini
+            $attendanceData = [];
+            if (!empty($scheduleIds)) {
+                $attendance = AttendanceHistory::where(function($q) use ($bulan, $tahun) {
+                    $q->where(function($qq) use ($bulan, $tahun) {
+                        $qq->whereMonth('created_at', $bulan)->whereYear('created_at', $tahun);
+                    })->orWhere(function($qq) use ($bulan, $tahun) {
+                        $qq->whereMonth('attendance_date', $bulan)->whereYear('attendance_date', $tahun);
+                    });
+                })->whereIn('id_schedule', $scheduleIds)->get();
+                
+                foreach ($attendance as $att) {
+                    $date = $att->attendance_date ? \Carbon\Carbon::parse($att->attendance_date) : \Carbon\Carbon::parse($att->created_at);
+                    $key = $att->id_student . '_' . $date->day;
+                    $attendanceData[$key] = $att->status;
+                }
+            }
+
+            // Add student rows
+            $dataRow = 5;
+            foreach ($students as $student) {
+                $sheet->setCellValue('A' . $dataRow, $student->name);
+                $sheet->setCellValue('B' . $dataRow, $student->classroom ? $student->classroom->name : '-');
+
+                // Add attendance status for each day
+                for ($day = 1; $day <= 31; $day++) {
+                    $colLetter = $this->getColumnLetter($day + 2);
+                    $key = $student->id . '_' . $day;
+                    $status = isset($attendanceData[$key]) ? $attendanceData[$key] : '';
+                    
+                    // Convert status to letter code
+                    $statusCode = '';
+                    if ($status) {
+                        switch($status) {
+                            case 'hadir':
+                                $statusCode = 'H';
+                                break;
+                            case 'izin':
+                                $statusCode = 'I';
+                                break;
+                            case 'sakit':
+                                $statusCode = 'S';
+                                break;
+                            case 'alpha':
+                                $statusCode = 'A';
+                                break;
+                            default:
+                                $statusCode = '';
+                        }
+                    }
+                    
+                    $sheet->setCellValue($colLetter . $dataRow, $statusCode);
+                    $sheet->getStyle($colLetter . $dataRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                }
+
+                // Borders untuk semua kolom
+                $dataRange = 'A' . $dataRow . ':' . $keteranganCol . $dataRow;
+                $sheet->getStyle($dataRange)->applyFromArray([
+                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+                    'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+                ]);
+
+                $dataRow++;
+            }
+
+            // Add legend
+            $legendRow = $dataRow + 2;
+            $sheet->setCellValue('A' . $legendRow, 'Keterangan:');
+            $sheet->getStyle('A' . $legendRow)->applyFromArray(['font' => ['bold' => true, 'size' => 11]]);
+
+            $legendRow++;
+            $legends = [
+                'H' => 'Hadir',
+                'I' => 'Izin',
+                'S' => 'Sakit',
+                'A' => 'Alpha'
+            ];
+
+            foreach ($legends as $code => $meaning) {
+                $sheet->setCellValue('A' . $legendRow, $code);
+                $sheet->setCellValue('B' . $legendRow, $meaning);
+                $sheet->getStyle('A' . $legendRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $legendRow++;
+            }
+
+            // Set column widths
+            $sheet->getColumnDimension('A')->setWidth(20);
+            $sheet->getColumnDimension('B')->setWidth(15);
+            
+            // Day columns
+            for ($day = 1; $day <= 31; $day++) {
+                $colLetter = $this->getColumnLetter($day + 2);
+                $sheet->getColumnDimension($colLetter)->setWidth(5);
+            }
+            
+            $sheet->getColumnDimension($jumlahCol)->setWidth(12);
+            $sheet->getColumnDimension($keteranganCol)->setWidth(15);
+
+            // Save and download
+            $writer = new Xlsx($spreadsheet);
+            $tempPath = storage_path('app/temp/' . $filename);
+            @mkdir(dirname($tempPath), 0755, true);
+            $writer->save($tempPath);
+
+            return response()->download($tempPath)->deleteFileAfterSend(true);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
-
-        // Get highest row
-        $highestRow = $sheet->getHighestRow();
-
-        // Apply borders to all data
-        $tableRange = 'A4:F' . $highestRow;
-        $sheet->getStyle($tableRange)->applyFromArray([
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                    'color' => ['rgb' => 'D1D5DB'],
-                ],
-            ],
-        ]);
-
-        // Center align specific columns
-        $sheet->getStyle('A5:A' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('D5:D' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('F5:F' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-        // Set column widths
-        $sheet->getColumnDimension('A')->setWidth(6);
-        $sheet->getColumnDimension('B')->setWidth(28);
-        $sheet->getColumnDimension('C')->setWidth(16);
-        $sheet->getColumnDimension('D')->setWidth(14);
-        $sheet->getColumnDimension('E')->setWidth(16);
-        $sheet->getColumnDimension('F')->setWidth(20);
-
-        // Freeze top rows
-        $sheet->freezePane('A5');
-
-        // Save and download
-        $writer = new Xlsx($spreadsheet);
-        $tempPath = storage_path('app/temp/' . $filename . '.xlsx');
-        @mkdir(dirname($tempPath), 0755, true);
-        $writer->save($tempPath);
-
-        return response()->download($tempPath)->deleteFileAfterSend(true);
     }
 
     /**
-     * Helper: Get absensi mapel rows for export
+     * Helper: Get absensi mapel rows for export sesuai dengan filter
+     * Export semua siswa di kelas dengan status absensi mereka (jika ada)
      */
-    private function getAbsensiMapelRowsForExport($classId, $bulan, $tahun)
+    private function getAbsensiMapelRowsForExport($classId, $mapelId, $tanggal = null, $bulan = null, $tahun = null)
     {
         // Get kelas
         $kelas = Classes::findOrFail($classId);
 
-        // Get semua siswa di kelas
-        $students = Student::where('id_class', $classId)->get();
+        // Get semua siswa di kelas (PENTING: ambil SEMUA siswa)
+        $students = Student::where('id_class', $classId)
+            ->orderBy('name', 'ASC')
+            ->get();
 
-        // Get absensi mapel dengan filter bulan/tahun
-        $query = AttendanceHistory::with(['student', 'class'])
-            ->where('id_class', $classId);
-
-        if ($bulan && $tahun) {
-            $query->whereRaw('YEAR(created_at) = ?', [$tahun])
-                  ->whereRaw('MONTH(created_at) = ?', [$bulan]);
+        if ($students->isEmpty()) {
+            return [];
         }
 
+        // Get schedules untuk mapel ini
+        $scheduleIds = Schedule::where('id_class', $classId)
+            ->where('id_subject', $mapelId)
+            ->pluck('id')
+            ->toArray();
+
+        // Build query untuk attendance history - ambil SEMUA attendance untuk mapel ini
+        $query = AttendanceHistory::with(['student', 'class']);
+
+        // Filter by schedule if available
+        if (!empty($scheduleIds)) {
+            $query->whereIn('id_schedule', $scheduleIds);
+        } else {
+            // Jika tidak ada schedule, kembalikan semua siswa dengan keterangan "-"
+            return $this->buildEmptyAttendanceRows($students);
+        }
+
+        // Apply date filters - PENTING: include semua attendance data sesuai filter
+        if ($tanggal) {
+            // Untuk tanggal spesifik
+            $query->where(function($q) use ($tanggal) {
+                $q->whereDate('created_at', $tanggal)
+                  ->orWhereDate('attendance_date', $tanggal);
+            });
+        } elseif ($bulan && $tahun) {
+            // Untuk bulan+tahun spesifik
+            $query->where(function($q) use ($bulan, $tahun) {
+                $q->where(function($qq) use ($bulan, $tahun) {
+                    $qq->whereMonth('created_at', $bulan)
+                       ->whereYear('created_at', $tahun);
+                })->orWhere(function($qq) use ($bulan, $tahun) {
+                    $qq->whereMonth('attendance_date', $bulan)
+                       ->whereYear('attendance_date', $tahun);
+                });
+            });
+        } elseif ($bulan) {
+            // Untuk bulan spesifik
+            $query->where(function($q) use ($bulan) {
+                $q->whereMonth('created_at', $bulan)
+                  ->orWhereMonth('attendance_date', $bulan);
+            });
+        } elseif ($tahun) {
+            // Untuk tahun spesifik
+            $query->where(function($q) use ($tahun) {
+                $q->whereYear('created_at', $tahun)
+                  ->orWhereYear('attendance_date', $tahun);
+            });
+        }
+
+        // Get attendance records
         $absensi = $query->get();
 
-        // Build rows untuk export
+        // Build rows untuk export - PENTING: include SEMUA students
         $rows = [];
         $no = 1;
 
         foreach ($students as $student) {
-            $absensiItem = $absensi->where('id_student', $student->id)->first();
+            // Cari attendance record untuk student ini
+            // Jika ada multiple records, ambil yang paling recent
+            $absensiItem = $absensi->where('id_student', $student->id)->sortByDesc('created_at')->first();
 
             $keterangan = '-';
+            $attendanceDate = '-';
+            $jamPertemuan = '-';
+
             if ($absensiItem) {
-                if ($absensiItem->status == 'hadir') {
-                    $keterangan = 'Hadir';
-                } elseif ($absensiItem->status == 'izin') {
-                    $keterangan = 'Izin';
-                } elseif ($absensiItem->status == 'sakit') {
-                    $keterangan = 'Sakit';
-                } elseif ($absensiItem->status == 'alpha') {
-                    $keterangan = 'Alpha';
-                } elseif ($absensiItem->status == 'dispen') {
-                    $keterangan = 'Dispen';
-                } else {
-                    $keterangan = ucfirst($absensiItem->status);
+                // Tentukan keterangan berdasarkan status
+                switch($absensiItem->status) {
+                    case 'hadir':
+                        $keterangan = 'Hadir';
+                        break;
+                    case 'izin':
+                        $keterangan = 'Izin';
+                        break;
+                    case 'sakit':
+                        $keterangan = 'Sakit';
+                        break;
+                    case 'alpha':
+                        $keterangan = 'Alpha';
+                        break;
+                    case 'dispen':
+                        $keterangan = 'Dispen';
+                        break;
+                    default:
+                        $keterangan = ucfirst($absensiItem->status);
                 }
+
+                // Format tanggal dan jam dari attendance record
+                $attendanceDate = $absensiItem->attendance_date
+                    ? \Carbon\Carbon::parse($absensiItem->attendance_date)->format('d/m/Y')
+                    : ($absensiItem->created_at ? $absensiItem->created_at->format('d/m/Y') : '-');
+
+                $jamPertemuan = $absensiItem->created_at ? $absensiItem->created_at->format('H:i') : '-';
             }
 
+            // Add row untuk student ini (terlepas ada attendance atau tidak)
             $rows[] = [
                 'no' => $no,
                 'student_name' => $student->name,
                 'nisn' => $student->nisn ?? '-',
-                'class_name' => $kelas->name,
+                'attendance_date' => $attendanceDate,
+                'jam_pertemuan' => $jamPertemuan,
                 'keterangan' => $keterangan,
-                'jam_pertemuan' => $absensiItem ? ($absensiItem->created_at->format('H:i') ?? '-') : '-',
             ];
 
+            $no++;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Helper: Build empty attendance rows jika tidak ada schedule
+     */
+    private function buildEmptyAttendanceRows($students)
+    {
+        $rows = [];
+        $no = 1;
+
+        foreach ($students as $student) {
+            $rows[] = [
+                'no' => $no,
+                'student_name' => $student->name,
+                'nisn' => $student->nisn ?? '-',
+                'attendance_date' => '-',
+                'jam_pertemuan' => '-',
+                'keterangan' => '-',
+            ];
             $no++;
         }
 

@@ -74,7 +74,7 @@
         </div>
     </div>
 
-    {{-- @php
+    @php
         $totalHadir     = isset($absensi) ? $absensi->where('status','tepat_waktu')->count() : 0;
         $totalTerlambat = isset($absensi) ? $absensi->where('status','terlambat')->count() : 0;
         $totalLainnya   = isset($absensi) ? $absensi->whereNotIn('status',['tepat_waktu','terlambat'])->count() : 0;
@@ -95,7 +95,7 @@
                 <div><div class="label">Hadir</div><div class="count">{{ $totalHadir }}</div></div>
             </div>
         </div>
-    </div> --}}
+    </div>
 
     <!-- Card Wrapper -->
     <div class="card border-0 shadow-sm rounded-4">
@@ -299,7 +299,7 @@
     </div>
 
     <!-- Modal Export Filter -->
-    <div class="modal fade" id="modalExportFilter" tabindex="-1" aria-labelledby="modalExportFilterLabel" aria-hidden="true">
+    <div class="modal fade" id="modalExportFilter" tabindex="-1" aria-labelledby="modalExportFilterLabel" aria-hidden="true" style="display:none;">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
@@ -362,6 +362,13 @@
                         <input type="hidden" id="editStudentId" name="id_student">
                         <input type="hidden" id="editClassId" name="id_class">
                         <input type="hidden" id="editMapelId" name="id_subject">
+                        <div class="mb-3" id="scheduleField" style="display:none;">
+                            <label for="editSchedule" class="form-label">Pilih Schedule <span class="text-danger">*</span></label>
+                            <select class="form-select" id="editSchedule" name="id_schedule">
+                                <option value="">-- Pilih Schedule --</option>
+                            </select>
+                            <small class="text-muted d-block mt-1">Pilih schedule untuk membuat record absensi baru</small>
+                        </div>
                         <div class="mb-3">
                             <label for="editStatus" class="form-label">Status</label>
                             <select class="form-select" id="editStatus" name="status" required>
@@ -398,6 +405,164 @@
 
             $('#select-all').on('click', function () {
                 $('.row-checkbox').prop('checked', this.checked);
+            });
+
+            // Handle filter tanggal, bulan, tahun
+            function loadAbsensiWithFilters() {
+                const tanggal = $('#filter-tanggal').val();
+                const bulan = $('#filter-bulan').val();
+                const tahun = $('#filter-tahun').val();
+                const mapelId = $('#filter-mapel').val();
+                const classId = "{{ $kelas->id }}";
+
+                if (!mapelId) {
+                    alert('Silahkan pilih pelajaran terlebih dahulu.');
+                    return;
+                }
+
+                // Prioritas: tanggal > bulan+tahun > bulan > tahun
+                let url = "{{ url('/absensi-mapel/get-by-mapel') }}/" + classId + "/" + mapelId;
+
+                if (tanggal) {
+                    // Jika tanggal spesifik, gunakan date filter
+                    url = "{{ url('/absensi-mapel/get-by-mapel-date') }}/" + classId + "/" + mapelId + "/" + tanggal;
+                    console.log('Filter dengan tanggal:', tanggal);
+                } else if (bulan && tahun) {
+                    // Jika bulan+tahun, gunakan filter ini
+                    url += "?bulan=" + bulan + "&tahun=" + tahun;
+                    console.log('Filter dengan bulan+tahun:', bulan, tahun);
+                } else if (bulan) {
+                    // Jika hanya bulan
+                    url += "?bulan=" + bulan;
+                    console.log('Filter dengan bulan:', bulan);
+                } else if (tahun) {
+                    // Jika hanya tahun
+                    url += "?tahun=" + tahun;
+                    console.log('Filter dengan tahun:', tahun);
+                }
+
+                // Destroy DataTable dulu SEBELUM fetch
+                if ($.fn.DataTable.isDataTable('#example')) {
+                    $('#example').DataTable().destroy();
+                }
+
+                // Fetch absensi data
+                $.ajax({
+                    url: url,
+                    type: "GET",
+                    dataType: "json",
+                    success: function(response) {
+                        console.log('API Response:', response);
+
+                        // Update hidden data dengan response
+                        window.currentAbsensi = response.absensi || [];
+                        window.currentBelumAbsen = response.belumAbsen || [];
+
+                        // Clear tbody COMPLETELY - hapus semua child
+                        $('#table-body').empty();
+
+                        let rownum = 1;
+
+                        // Add existing absensi rows
+                        if (response.absensi && response.absensi.length > 0) {
+                            response.absensi.forEach(function(item, idx) {
+                                let statusBadge = '';
+                                if (item.status === 'hadir') {
+                                    statusBadge = '<span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#dcfce7;color:#16a34a;font-size:0.9em;"><i class="fas fa-check-circle me-1"></i> Hadir</span>';
+                                } else if (item.status === 'izin') {
+                                    statusBadge = '<span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#fef9c3;color:#eab308;font-size:0.9em;"><i class="fas fa-envelope me-1"></i> Izin</span>';
+                                } else if (item.status === 'sakit') {
+                                    statusBadge = '<span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#f0fdf4;color:#22c55e;font-size:0.9em;"><i class="fas fa-medkit me-1"></i> Sakit</span>';
+                                } else if (item.status === 'alpha') {
+                                    statusBadge = '<span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#fee2e2;color:#dc2626;font-size:0.9em;"><i class="fas fa-times-circle me-1"></i> Alpha</span>';
+                                } else if (item.status === 'dispen') {
+                                    statusBadge = '<span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#e0e7ff;color:#6366f1;font-size:0.9em;"><i class="fas fa-user-shield me-1"></i> Dispen</span>';
+                                } else {
+                                    statusBadge = '<span class="badge rounded-pill px-3 py-2 fw-bold">' + item.status + '</span>';
+                                }
+
+                                const attendanceDate = item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}) : '-';
+                                const attendanceTime = item.created_at ? new Date(item.created_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'}) : '-';
+
+                                let coordinateCell = '';
+                                if (item.coordinate) {
+                                    coordinateCell = `<a href="https://www.google.com/maps?q=${item.coordinate}" target="_blank" class="text-decoration-none" title="Buka di Google Maps"><span class="fw-semibold" style="font-size:0.85rem; color:#365CF5; cursor:pointer;"><i class="fas fa-map-marker-alt me-1"></i>${item.coordinate}</span></a>`;
+                                } else {
+                                    coordinateCell = '<span class="fw-semibold text-muted" style="font-size:0.85rem;">-</span>';
+                                }
+
+                                const row = `
+                                    <tr data-absensi-index="${idx}">
+                                        <td class="text-center"><input type="checkbox" class="row-checkbox" /></td>
+                                        <td class="text-center fw-bold">${rownum}</td>
+                                        <td><span class="fw-semibold text-dark d-block">${item.student?.name || '-'}</span></td>
+                                        <td><span class="fw-semibold">${item.student?.nisn || '-'}</span></td>
+                                        <td class="text-center"><span class="badge rounded-pill px-3 py-2" style="background:#e3eafd;color:#365CF5;font-weight:600;">${attendanceDate}</span></td>
+                                        <td class="text-center"><span class="badge rounded-pill px-3 py-2" style="background:#e3eafd;color:#365CF5;font-weight:600;">${attendanceTime}</span></td>
+                                        <td class="text-center">${coordinateCell}</td>
+                                        <td>${statusBadge}</td>
+                                    </tr>
+                                `;
+                                $('#table-body').append(row);
+                                rownum++;
+                            });
+                        }
+
+                        // Add belum absen rows
+                        if (response.belumAbsen && response.belumAbsen.length > 0) {
+                            response.belumAbsen.forEach(function(siswa, idx) {
+                                const row = `
+                                    <tr data-absensi-index="new_${idx}">
+                                        <td class="text-center"><input type="checkbox" class="row-checkbox" /></td>
+                                        <td class="text-center fw-bold">${rownum}</td>
+                                        <td><span class="fw-semibold text-dark d-block">${siswa.name}</span></td>
+                                        <td><span class="fw-semibold">${siswa.nisn}</span></td>
+                                        <td class="text-center">-</td>
+                                        <td class="text-center">-</td>
+                                        <td class="text-center">-</td>
+                                        <td><span class="badge rounded-pill px-3 py-2 fw-bold" style="background:#fff3cd;color:#b45309;font-size:0.9em;"><i class="fas fa-minus-circle me-1"></i> Belum Absen</span></td>
+                                    </tr>
+                                `;
+                                $('#table-body').append(row);
+                                rownum++;
+                            });
+                        }
+
+                        $('#table-body').show();
+                        $('#empty-message').hide();
+
+                        // Reinitialize DataTable
+                        table = $('#example').DataTable({
+                            lengthChange: false,
+                            language: {
+                                search: "Cari:",
+                                info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                                emptyTable: "Tidak ada data absensi mapel.",
+                                paginate: { first:"Awal", last:"Akhir", next:"Berikutnya", previous:"Sebelumnya" }
+                            },
+                            pageLength: 10
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', error, xhr.responseText);
+                        alert('Gagal memuat data absensi: ' + error);
+                    }
+                });
+            }
+
+            // Handle filter tanggal change
+            $('#filter-tanggal').on('change', function() {
+                loadAbsensiWithFilters();
+            });
+
+            // Handle filter bulan change
+            $('#filter-bulan').on('change', function() {
+                loadAbsensiWithFilters();
+            });
+
+            // Handle filter tahun change
+            $('#filter-tahun').on('change', function() {
+                loadAbsensiWithFilters();
             });
 
             // Handle filter mapel
@@ -525,29 +690,68 @@
                 }
             });
 
-            // Handle export button - show modal
+            // Handle export button - format grid standar per periode
             $('#btn-export-excel').on('click', function () {
-                $('#modalExportFilter').modal('show');
-            });
-
-            // Handle export form submission
-            $('#formExportFilter').on('submit', function (e) {
-                e.preventDefault();
                 const classId = "{{ $kelas->id ?? 0 }}";
-                const bulan = $('#export-bulan').val();
-                const tahun = $('#export-tahun').val();
+                const mapelId = $('#filter-mapel').val();
 
-                if (!bulan || !tahun) {
-                    alert('Pilih bulan dan tahun terlebih dahulu.');
+                // Get current bulan dan tahun (atau use today)
+                let bulan = $('#filter-bulan').val();
+                let tahun = $('#filter-tahun').val();
+
+                // Default ke bulan/tahun sekarang jika kosong
+                if (!bulan) {
+                    bulan = new Date().getMonth() + 1;
+                    bulan = String(bulan).padStart(2, '0');
+                }
+                if (!tahun) {
+                    tahun = new Date().getFullYear();
+                }
+
+                if (!mapelId) {
+                    alert('Pilih pelajaran terlebih dahulu.');
                     return;
                 }
 
-                // Build URL and redirect
-                const exportUrl = `/absensi-mapel/export-excel/${classId}?bulan=${bulan}&tahun=${tahun}`;
-                window.location.href = exportUrl;
+                // Send POST request untuk export grid format
+                $.ajax({
+                    url: `/absensi-mapel/export-excel/${classId}`,
+                    type: 'POST',
+                    data: {
+                        mapel: mapelId,
+                        bulan: bulan,
+                        tahun: tahun,
+                        _token: '{{ csrf_token() }}'
+                    },
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function(data, status, xhr) {
+                        // Get filename dari Content-Disposition header
+                        const disposition = xhr.getResponseHeader('Content-Disposition');
+                        let filename = 'absensi_mapel.xlsx';
 
-                // Close modal
-                $('#modalExportFilter').modal('hide');
+                        if (disposition && disposition.indexOf('attachment') !== -1) {
+                            const matches = disposition.match(/filename[^;=\n]*=(["\']?)([^"\';\n]*)\1/);
+                            if (matches && matches[2]) {
+                                filename = matches[2];
+                            }
+                        }
+
+                        // Download file
+                        const link = document.createElement('a');
+                        const url = window.URL.createObjectURL(data);
+                        link.href = url;
+                        link.download = filename;
+                        document.body.appendChild(link);
+                        link.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(link);
+                    },
+                    error: function() {
+                        alert('Gagal export data.');
+                    }
+                });
             });
 
             // Inisialisasi modal Bootstrap
@@ -577,6 +781,10 @@
                         studentId = siswaData?.id;
                         classId = "{{ $kelas->id }}";
                         nama = siswaData?.name;
+
+                        // Tampilkan schedule field untuk data baru
+                        $('#scheduleField').show();
+                        loadScheduleOptions(classId, currentMapelId);
                     } else {
                         // Data dari absensi
                         const absensiList = window.currentAbsensi;
@@ -587,6 +795,9 @@
                         studentId = absensiData?.student?.id;
                         classId = absensiData?.class?.id;
                         nama = absensiData?.student?.name;
+
+                        // Sembunyikan schedule field untuk data existing
+                        $('#scheduleField').hide();
                     }
 
                     // Set values ke hidden inputs
@@ -599,6 +810,28 @@
                     modalEditStatus.show();
                 }
             });
+
+            // Function to load schedule options
+            function loadScheduleOptions(classId, subjectId) {
+                $.ajax({
+                    url: "{{ url('/absensi-mapel/get-schedules') }}/" + classId + "/" + subjectId,
+                    type: "GET",
+                    dataType: "json",
+                    success: function(response) {
+                        $('#editSchedule').html('<option value="">-- Pilih Schedule --</option>');
+                        if (response.success && response.schedules) {
+                            response.schedules.forEach(function(schedule) {
+                                $('#editSchedule').append(
+                                    '<option value="' + schedule.id + '">' + (schedule.day + ' - ' + schedule.time || 'Schedule ' + schedule.id) + '</option>'
+                                );
+                            });
+                        }
+                    },
+                    error: function() {
+                        alert('Gagal memuat schedule.');
+                    }
+                });
+            }
 
             $('#formEditStatus').on('submit', function (e) {
                 e.preventDefault();
@@ -614,11 +847,17 @@
                     _token: '{{ csrf_token() }}'
                 };
 
-                // Jika create baru (id adalah 'null'), tambahkan id_student, id_class, dan id_subject
+                // Jika create baru (id adalah 'null'), tambahkan id_student, id_class, id_subject, dan id_schedule
                 if (id === 'null') {
+                    const scheduleId = $('#editSchedule').val();
+                    if (!scheduleId) {
+                        alert('Pilih schedule terlebih dahulu.');
+                        return;
+                    }
                     data.id_student = studentId;
                     data.id_class = classId;
                     data.id_subject = mapelId;
+                    data.id_schedule = scheduleId;
                 }
 
                 $.ajax({
