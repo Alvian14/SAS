@@ -73,17 +73,30 @@ class UserController extends Controller
     {
         try {
             $user = User::where('email', $request->email)->first();
-    
+
+            // cek apakah email user ditemukan
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akun tidak ditemukan'
+                ], 401);
+            }
+
+             // cek apakah password benar
             if (!$user || !Hash::check($request->password, $user->password)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid credentials'
+                    'message' => 'Email atau password tidak sesuai'
                 ], 401);
             }
 
             // check if user is banned
-
-            // check if user id / token has set or not, so user just login in one device only
+            if ($user->is_banned) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akun anda telah diblokir. Silakan hubungi administrator untuk informasi lebih lanjut.'
+                ], 403);
+            }
             
             $token = $user->createToken('auth_token')->plainTextToken;
             $this->syncTopicSubscribe($user);
@@ -117,7 +130,7 @@ class UserController extends Controller
                 'name.max' => 'Nama maksimal :max karakter',
                 'email.required' => 'Email harus diisi',
                 'email.email' => 'Format email tidak valid',
-                'email.unique' => 'Email sudah digunakan',
+                'email.unique' => 'Akun ini sudah terdaftar',
                 'password.required' => 'Password harus diisi',
                 'password.min' => 'Password minimal :min karakter',
                 'role.required' => 'Role harus dipilih',
@@ -165,7 +178,7 @@ class UserController extends Controller
                 $messagesStudent = [
                     'nisn.required' => 'NISN harus diisi',
                     'nisn.max' => 'NISN maksimal :max karakter',
-                    'nisn.unique' => 'NISN sudah pernah dipakai',
+                    'nisn.unique' => 'Akun ini sudah terdaftar',
                     'id_class.required' => 'Kelas harus dipilih',
                     'id_class.integer' => 'ID kelas tidak valid',
                     'entry_year.required' => 'Tahun masuk harus diisi',
@@ -196,7 +209,7 @@ class UserController extends Controller
     
             return response()->json([
                 'success' => true,
-                'message' => 'Register success',
+                'message' => 'Anda berhasil register',
                 'access_token' => $token,
                 'token_type' => 'Bearer',
                 'user' => $user->load('teacher', 'student')

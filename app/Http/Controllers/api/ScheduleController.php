@@ -81,7 +81,7 @@ class ScheduleController extends Controller
 
         try {
             // test only
-            // $now = Carbon::parse('2026-03-11 08:35:00', timezone: 'Asia/Jakarta')
+            // $now = Carbon::parse('2026-05-09', timezone: 'Asia/Jakarta');
             // request time
             $now = Carbon::now('Asia/Jakarta');
             $dayOfWeek = strtolower($now->locale('id')->dayName); // get day name in Indonesian and convert to lowercase
