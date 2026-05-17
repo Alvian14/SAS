@@ -2,11 +2,9 @@
 
 namespace Database\Seeders;
 
-use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Str;
 
 class ScheduleSeeder extends Seeder
 {
@@ -15,69 +13,92 @@ class ScheduleSeeder extends Seeder
      */
     public function run(): void
     {
-        $className = '10TKJ1';
-        $classId = 1;
-        $teacherId = 1;
+        $class = DB::table('clases')
+            ->where('name', '11 TKJ 1')
+            ->first();
 
-        // 5 subjects (keperluan testing)
-        $subjects = [
-            ['id' => 1, 'code' => 'MTK', 'name' => 'Matematika', 'start' => 1, 'end' => 2, 'id_academic_periods' => 2,],
-            ['id' => 2, 'code' => 'SENBUD', 'name' => 'Seni Kebudayaan', 'start' => 3, 'end' => 3, 'id_academic_periods' => 2,],
-            ['id' => 3, 'code' => 'SEJ', 'name' => 'Sejarah', 'start' => 4, 'end' => 5, 'id_academic_periods' => 2,],
-            ['id' => 4, 'code' => 'BD', 'name' => 'Bahasa Daerah', 'start' => 6, 'end' => 6, 'id_academic_periods' => 2,],
-            ['id' => 5, 'code' => 'KIM', 'name' => 'Kimia', 'start' => 7, 'end' => 8, 'id_academic_periods' => 2,],
-        ];
-
-        $periods = config('periods.periods');
-
-        // days to seed: Senin, Selasa, Rabu
-        $days = ['senin', 'selasa', 'rabu'];
-
-        foreach ($days as $day) {
-            // choose 3 or 4 schedules per day
-            $count = random_int(3, 4);
-            $subs = $subjects;
-            shuffle($subs);
-            $selected = array_slice($subs, 0, $count);
-
-            foreach ($selected as $subject) {
-                $startTime = $periods[(int) $subject['start']]['start'];
-                $endTime   = $periods[(int) $subject['end']]['end'];
-                $idAcademicPeriods = $subject['id_academic_periods'];
-
-                // token 4 digit random
-                $token = (string) random_int(1000, 9999);
-
-                $rawCode = "{$className}-" . strtoupper(substr($day, 0, 3)) . "-{$subject['start']}-{$subject['end']}-{$subject['code']}-{$subject['id_academic_periods']}-{$token}";
-
-                $jsonQr = [
-                    'raw_code'     => $rawCode,
-                    'class'        => $className,
-                    'day_of_week'  => $day,
-                    'period_start' => $subject['start'],
-                    'period_end'   => $subject['end'],
-                    'subject_code' => $subject['code'],
-                    'token'        => $token,
-                ];
-
-                DB::table('schedules')->insert([
-                    'id_class'     => $classId,
-                    'id_teacher'   => $teacherId,
-                    'id_subject'   => $subject['id'],
-                    'day_of_week'  => $day,
-                    'period_start' => $subject['start'],
-                    'period_end'   => $subject['end'],
-                    'start_time'   => $startTime,
-                    'end_time'     => $endTime,
-                    'id_academic_periods' => $idAcademicPeriods,
-                    'code'         => Crypt::encryptString($rawCode),
-                    'created_at'   => now(),
-                    'updated_at'   => now(),
-                ]);
-
-                dump($jsonQr);
-            }
+        if (!$class) {
+            throw new \RuntimeException('Kelas 11 TKJ 1 tidak ditemukan. Jalankan ClasesSeeder terlebih dahulu.');
         }
 
+        $teacherId = DB::table('teachers')
+            ->orderBy('id')
+            ->value('id');
+
+        if (!$teacherId) {
+            throw new \RuntimeException('Tidak ada data guru untuk membuat jadwal. Jalankan TeacherSeeder terlebih dahulu.');
+        }
+
+        $academicPeriodId = DB::table('academic_periods')
+            ->where('is_active', 1)
+            ->value('id');
+
+        if (!$academicPeriodId) {
+            throw new \RuntimeException('Tidak ada academic period aktif. Jalankan AcademicPeriodsSeeder terlebih dahulu.');
+        }
+
+        $subjects = DB::table('subjects')
+            ->orderBy('id')
+            ->get(['id', 'code', 'name']);
+
+        if ($subjects->count() < 4) {
+            throw new \RuntimeException('Data mapel belum cukup untuk membuat jadwal. Jalankan SubjectSeeder terlebih dahulu.');
+        }
+
+        $periods = config('periods.periods');
+        $scheduleWindows = [
+            3 => [[1, 2], [3, 5], [6, 10]],
+            4 => [[1, 1], [2, 3], [5, 7], [9, 10]],
+        ];
+
+        $days = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
+        $daySubjectMap = [
+            'senin' => [0, 1, 2],
+            'selasa' => [2, 3, 4],
+            'rabu' => [1, 3, 0, 4],
+            'kamis' => [4, 0, 2],
+            'jumat' => [3, 1, 2, 0],
+            'sabtu' => [0, 4, 1],
+        ];
+
+        foreach ($days as $day) {
+            $subjectIndexes = $daySubjectMap[$day];
+            $count = count($subjectIndexes);
+            $windows = $scheduleWindows[$count];
+
+            foreach ($subjectIndexes as $slotIndex => $subjectIndex) {
+                $subject = $subjects->get($subjectIndex);
+
+                if (!$subject) {
+                    continue;
+                }
+
+                [$periodStart, $periodEnd] = $windows[$slotIndex];
+
+                if (!isset($periods[$periodStart], $periods[$periodEnd])) {
+                    throw new \RuntimeException("Konfigurasi periode tidak ditemukan untuk rentang {$periodStart}-{$periodEnd}.");
+                }
+
+                $startTime = $periods[$periodStart]['start'];
+                $endTime = $periods[$periodEnd]['end'];
+                $token = (string) random_int(1000, 9999);
+                $rawCode = "{$class->name}-" . strtoupper(substr($day, 0, 3)) . "-{$periodStart}-{$periodEnd}-{$subject->code}-{$academicPeriodId}-{$token}";
+
+                DB::table('schedules')->insert([
+                    'id_class' => $class->id,
+                    'id_teacher' => $teacherId,
+                    'id_subject' => $subject->id,
+                    'day_of_week' => $day,
+                    'period_start' => $periodStart,
+                    'period_end' => $periodEnd,
+                    'start_time' => $startTime,
+                    'end_time' => $endTime,
+                    'id_academic_periods' => $academicPeriodId,
+                    'code' => Crypt::encryptString($rawCode),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
     }
 }

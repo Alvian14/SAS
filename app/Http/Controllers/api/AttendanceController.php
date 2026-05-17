@@ -28,16 +28,24 @@ class AttendanceController extends Controller
 {
     protected FirebaseMessagingService $fcm;
     protected NotificationHelperService $notificationHelper;
-    public $distanceMaximumTolerance = 100000; // in meters
+    public $distanceMaximumTolerance; // in meters (loaded from config)
 
-    public $latOfAttendance = -7.7811912;
-    public $lonOfAttendance = 112.0315286;
+    // using lat and lon from config coordinate.php
+    public $latOfAttendance;
+    public $lonOfAttendance;
 
 
     public function __construct(FirebaseMessagingService $fcm, NotificationHelperService $notificationHelper)
     {
         $this->fcm = $fcm;
         $this->notificationHelper = $notificationHelper;
+        $coordinate = config('coordinate.coordinate', '-7.604032330848524, 112.10176449791652');
+        [$lat, $lon] = array_map('trim', explode(',', $coordinate));
+        $this->latOfAttendance = (float) $lat;
+        $this->lonOfAttendance = (float) $lon;
+
+        // load maximum distance tolerance from config (meters)
+        $this->distanceMaximumTolerance = (int) config('coordinate.max_distance_tolerance', 1000);
     }
 
     public function qrAttendance(Request $request) {
@@ -72,6 +80,13 @@ class AttendanceController extends Controller
                 return response()->json(['success' => false, 'message' => 'Student profile not found for user'], 403);
             }
 
+            // // use student id from raw body for testing purpose.
+            // $idStudent = $request->id_student;
+            // $student = Student::find($idStudent);
+            // if (!$student) {
+            //     return response()->json(['success' => false, 'message' => 'Student not found'], 404);
+            // }
+
             $idStudent = $student->id;
             $idClass   = $request->id_class;
             $rawCode   = $request->qrcode;
@@ -81,8 +96,8 @@ class AttendanceController extends Controller
             $lon = $request->longitude;
 
             // Center of School Location
-            $schoolLat = -7.7811912;
-            $schoolLon = 112.0315286;
+            $schoolLat = $this->latOfAttendance;
+            $schoolLon = $this->lonOfAttendance;
 
             // count distance with helper
             $distance = getDistanceInMeters($lat, $lon, $schoolLat, $schoolLon);
@@ -91,7 +106,7 @@ class AttendanceController extends Controller
                 return response()->json(
                     [
                     'success' => false,
-                    'message' => "Lokasi di luar radius {$this->distanceMaximumTolerance} meter (jarak: {$distance} m)",
+                    'message' => "Lokasi di luar jangkauan (jarak: {$distance} m)",
                 ], 403);
             }
 
@@ -107,8 +122,8 @@ class AttendanceController extends Controller
             } else {
                 // $now = Carbon::now('Asia/Jakarta');
                 // testing using date: 1 April 2026 07:15 WIB (should be valid for schedule 7-8)
-                // $now = Carbon::parse('2026-04-20 08:32:00', 'Asia/Jakarta');
-                $now = Carbon::parse('Asia/Jakarta');
+                $now = Carbon::parse('2026-05-18 07:15:00', 'Asia/Jakarta');
+                // $now = Carbon::parse('Asia/Jakarta');
             }
 
             $dayOfWeek = strtolower($now->locale('id')->dayName); // example: "senin"

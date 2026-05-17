@@ -261,7 +261,7 @@ class AttendanceHistoryController extends Controller
                     'status' => $request->status,
                     'period_number' => 1,
                     'id_schedule' => $request->id_schedule,
-                    'coordinate' => '-7.604032330848524, 112.10176449791652',
+                    'coordinate' => config('coordinate.coordinate', '-7.604032330848524, 112.10176449791652'),
                     'attendance_date' => $currentDate,
                     'created_at' => now(),
                     'updated_at' => now(),
