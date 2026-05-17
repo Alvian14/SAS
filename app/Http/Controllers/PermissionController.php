@@ -20,12 +20,23 @@ class PermissionController extends Controller
 {
 
     protected NotificationHelperService $notificationHelper;
-    public $latOfAttendance = -7.7811912;
-    public $lonOfAttendance = 112.0315286;
+    public $latOfAttendance;
+    public $lonOfAttendance;
 
     public function __construct(NotificationHelperService $notificationHelper)
     {
         $this->notificationHelper = $notificationHelper;
+        $this->initCoordinatesFromConfig();
+    }
+
+
+    
+    private function initCoordinatesFromConfig(): void
+    {
+        $coordinate = config('coordinate.coordinate', '-7.604032330848524, 112.10176449791652');
+        [$lat, $lon] = array_map('trim', explode(',', $coordinate));
+        $this->latOfAttendance = (float) $lat;
+        $this->lonOfAttendance = (float) $lon;
     }
 
     public function index()
@@ -112,7 +123,7 @@ class PermissionController extends Controller
                             [
                                 'id_class' => $schedule->id_class,
                                 'period_number' => $schedule->period_start,
-                                'coordinate' => "$this->latOfAttendance, $this->lonOfAttendance",
+                                'coordinate' => $this->latOfAttendance . ', ' . $this->lonOfAttendance,
                                 'status' => $permissionReason,
                             ]
                         );
