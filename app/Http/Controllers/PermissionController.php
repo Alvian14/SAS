@@ -119,17 +119,27 @@ class PermissionController extends Controller
                     }
 
                     // update attendancehistorydaily to 'izin'
-                    AttendanceHistoryDaily::updateOrCreate(
-                        [
-                            'id_student' => $student->id,
-                            'id_class' => $student->id_class,
-                            'created_at' => $currentDate->toDateString(),
-                        ],
-                        [
+                    // Cari berdasarkan id_student, id_class, dan tanggal dari created_at
+                    // Jika ada, update. Jika tidak ada, create
+                    $attendanceDaily = AttendanceHistoryDaily::whereDate('created_at', $currentDate->toDateString())
+                        ->where('id_student', $student->id)
+                        ->where('id_class', $student->id_class)
+                        ->first();
+
+                    if ($attendanceDaily) {
+                        $attendanceDaily->update([
                             'status' => 'izin',
                             'picture' => '',
-                        ]
-                    );
+                        ]);
+                    } else {
+                        AttendanceHistoryDaily::create([
+                            'id_student' => $student->id,
+                            'id_class' => $student->id_class,
+                            'created_at' => $currentDate,
+                            'status' => 'izin',
+                            'picture' => '',
+                        ]);
+                    }
 
                     $createdSchoolDays++;
                     $currentDate->addDay();

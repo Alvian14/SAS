@@ -195,7 +195,7 @@
             <div class="row mb-4 g-2">
                 <div class="col-md-4">
                     <div class="filter-label"><i class="fas fa-calendar me-1"></i> Tanggal</div>
-                    <input type="date" id="filter-tanggal" class="form-control rounded-3 shadow-sm" value="{{ $today ?? '' }}">
+                    <input type="date" id="filter-tanggal" class="form-control rounded-3 shadow-sm" value="{{ $selectedTanggal ?? '' }}">
                 </div>
                 <div class="col-md-4">
                     <div class="filter-label"><i class="fas fa-calendar-alt me-1"></i> Bulan</div>
@@ -205,7 +205,7 @@
                             $bulanIndo = ['01'=>'Januari','02'=>'Februari','03'=>'Maret','04'=>'April','05'=>'Mei','06'=>'Juni','07'=>'Juli','08'=>'Agustus','09'=>'September','10'=>'Oktober','11'=>'November','12'=>'Desember'];
                         @endphp
                         @foreach($bulanIndo as $num => $nama)
-                            <option value="{{ $num }}">{{ $nama }}</option>
+                            <option value="{{ $num }}" {{ ($selectedBulan ?? '') == $num ? 'selected' : '' }}>{{ $nama }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -214,7 +214,7 @@
                     <select id="filter-tahun" class="form-select rounded-3 shadow-sm">
                         <option value="">-- Pilih Tahun --</option>
                         @for($y = date('Y')-5; $y <= date('Y')+1; $y++)
-                            <option value="{{ $y }}">{{ $y }}</option>
+                            <option value="{{ $y }}" {{ ($selectedTahun ?? '') == $y ? 'selected' : '' }}>{{ $y }}</option>
                         @endfor
                     </select>
                 </div>
@@ -275,7 +275,13 @@
                                 </td>
                                 <td>
                                     @if($item->status == 'in progress')
-                                        <span class="text-muted">-</span>
+                                        @php
+                                            $bulanIndo = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+                                            $carbon = \Carbon\Carbon::parse($item->created_at);
+                                            $bulanName = $bulanIndo[$carbon->month - 1];
+                                            $formatted = $carbon->format('d') . ' ' . $bulanName . ' ' . $carbon->format('Y');
+                                        @endphp
+                                        <span class="text-muted">{{ $formatted }}</span>
                                     @elseif($item->created_at)
                                         @php
                                             $bulanIndo = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -351,17 +357,50 @@
                 pageLength: 10
             });
 
-            // Auto-filter untuk tanggal hari ini saat page load
-            let todayDate = "{{ $today }}";
-            if (todayDate) {
-                let parts = todayDate.split('-');
+            // Filter display berdasarkan selected date / month / year
+            let selectedDate = "{{ $selectedTanggal ?? '' }}";
+            let selectedMonth = "{{ $selectedBulan ?? '' }}";
+            let selectedYear = "{{ $selectedTahun ?? '' }}";
+
+            if (selectedDate) {
+                // Filter berdasarkan tanggal spesifik
+                let parts = selectedDate.split('-');
                 let day = parts[2];
                 let month = parts[1];
                 let year = parts[0];
                 let bulanNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
                 let monthName = bulanNames[parseInt(month)];
                 let searchStr = day + ' ' + monthName + ' ' + year;
-                table.column(5).search(searchStr).draw();
+                table.column(5).search(searchStr, false, false).draw();
+            } else if (selectedMonth && selectedYear) {
+                // Filter berdasarkan bulan dan tahun - tampilkan SEMUA data bulan tersebut
+                let bulanNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                let monthName = bulanNames[parseInt(selectedMonth)];
+                let searchStr = monthName + ' ' + selectedYear;
+                table.column(5).search(searchStr, false, false).draw();
+            } else if (selectedMonth && !selectedYear) {
+                // Filter berdasarkan bulan saja - tampilkan SEMUA data bulan tersebut (semua tahun)
+                let bulanNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                let monthName = bulanNames[parseInt(selectedMonth)];
+                let searchStr = monthName;
+                table.column(5).search(searchStr, false, false).draw();
+            } else if (selectedYear && !selectedMonth) {
+                // Filter berdasarkan tahun saja - tampilkan SEMUA data tahun tersebut
+                let searchStr = selectedYear;
+                table.column(5).search(searchStr, false, false).draw();
+            } else {
+                // Default: tampilkan hari ini jika tidak ada filter apapun
+                let today = "{{ $today ?? '' }}";
+                if (today) {
+                    let parts = today.split('-');
+                    let day = parts[2];
+                    let month = parts[1];
+                    let year = parts[0];
+                    let bulanNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                    let monthName = bulanNames[parseInt(month)];
+                    let searchStr = day + ' ' + monthName + ' ' + year;
+                    table.column(5).search(searchStr, false, false).draw();
+                }
             }
 
             $('#select-all').on('click', function () {
@@ -448,105 +487,60 @@
                 });
             });
 
-            // Custom filter untuk tanggal
+            // Custom filter untuk tanggal - reload page dengan parameter
             $('#filter-tanggal').on('change', function () {
-                let selectedDate = $(this).val(); // format: YYYY-MM-DD
+                let selectedDate = $(this).val();
+                const classId = "{{ $kelas->id ?? 0 }}";
+
                 if (selectedDate) {
-                    let parts = selectedDate.split('-');
-                    let day = parts[2];
-                    let month = parts[1];
-                    let year = parts[0];
-
-                    // Konversi bulan ke nama bulan Indonesia
-                    let bulanNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                    let monthName = bulanNames[parseInt(month)];
-
-                    // Format pencarian: "DD BulanIndo YYYY"
-                    let searchStr = day + ' ' + monthName + ' ' + year;
-                    table.column(5).search(searchStr, false, false).draw();
-
-                    // Clear month/year filters when date is selected
-                    $('#filter-bulan').val('');
-                    $('#filter-tahun').val('');
-                } else {
-                    table.column(5).search('').draw();
+                    // Redirect ke URL dengan tanggal parameter
+                    const url = `{{ route('absensi.absensi_harian', ['classId' => $kelas->id]) }}?tanggal=${selectedDate}`;
+                    window.location.href = url;
                 }
             });
 
-            // Custom filter untuk tanggal dan bulan/tahun
-            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
-                let tanggal = $('#filter-tanggal').val();
-                let bulan = $('#filter-bulan').val();
-                let tahun = $('#filter-tahun').val();
-
-                let waktuText = data[5]; // Kolom Waktu (index 5)
-
-                // Jika tanggal dipilih, filter by tanggal
-                if (tanggal) {
-                    let parts = tanggal.split('-');
-                    let day = parts[2];
-                    let month = parts[1];
-                    let year = parts[0];
-
-                    let bulanNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                    let monthName = bulanNames[parseInt(month)];
-                    let searchStr = day + ' ' + monthName + ' ' + year;
-
-                    // Tampilkan dummy records (waktu === '-')
-                    if (!waktuText || waktuText.trim() === '' || waktuText === '-' || waktuText.match(/^-\s*$/)) {
-                        return true;
-                    }
-
-                    // Untuk real records, match tanggalnya
-                    return waktuText.includes(searchStr);
-                }
-
-                // Jika bulan dan/atau tahun dipilih
-                if (!bulan && !tahun) return true;
-
-                // Tampilkan dummy records (waktu === '-') untuk semua filter bulan/tahun
-                if (!waktuText || waktuText.trim() === '' || waktuText === '-' || waktuText.match(/^-\s*$/)) {
-                    return true;  // Keep dummy records visible
-                }
-
-                // Parse format: "22 Mei 2026, 22:19" (Bahasa Indonesia) untuk real records
-                let bulanNames = {
-                    'Januari': '01', 'Februari': '02', 'Maret': '03', 'April': '04',
-                    'Mei': '05', 'Juni': '06', 'Juli': '07', 'Agustus': '08',
-                    'September': '09', 'Oktober': '10', 'November': '11', 'Desember': '12'
-                };
-
-                let dateMatch = waktuText.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/);
-                if (!dateMatch) return true;  // Jika tidak bisa parse, tampilkan
-
-                let day = dateMatch[1];
-                let monthName = dateMatch[2];
-                let year = dateMatch[3];
-                let monthNum = bulanNames[monthName];
-
-                let match = true;
+            // Handler untuk bulan filter - reload page dengan parameter
+            $('#filter-bulan').on('change', function () {
+                let bulan = $(this).val();
+                const classId = "{{ $kelas->id ?? 0 }}";
 
                 if (bulan) {
-                    match = match && (monthNum === bulan);
+                    // Jika ada tahun juga, include keduanya
+                    let tahun = $('#filter-tahun').val();
+                    if (tahun) {
+                        const url = `{{ route('absensi.absensi_harian', ['classId' => $kelas->id]) }}?bulan=${bulan}&tahun=${tahun}`;
+                        window.location.href = url;
+                    } else {
+                        const url = `{{ route('absensi.absensi_harian', ['classId' => $kelas->id]) }}?bulan=${bulan}`;
+                        window.location.href = url;
+                    }
+                } else {
+                    // Kembali ke hari ini
+                    const url = `{{ route('absensi.absensi_harian', ['classId' => $kelas->id]) }}`;
+                    window.location.href = url;
                 }
+            });
+
+            // Handler untuk tahun filter - reload page dengan parameter
+            $('#filter-tahun').on('change', function () {
+                let tahun = $(this).val();
+                let bulan = $('#filter-bulan').val();
+                const classId = "{{ $kelas->id ?? 0 }}";
 
                 if (tahun) {
-                    match = match && (year === tahun);
+                    // Jika bulan juga dipilih, include keduanya
+                    if (bulan) {
+                        const url = `{{ route('absensi.absensi_harian', ['classId' => $kelas->id]) }}?bulan=${bulan}&tahun=${tahun}`;
+                        window.location.href = url;
+                    } else {
+                        const url = `{{ route('absensi.absensi_harian', ['classId' => $kelas->id]) }}?tahun=${tahun}`;
+                        window.location.href = url;
+                    }
+                } else {
+                    // Clear semua filter
+                    const url = `{{ route('absensi.absensi_harian', ['classId' => $kelas->id]) }}`;
+                    window.location.href = url;
                 }
-
-                return match;
-            });
-
-            $('#filter-bulan').on('change', function () {
-                // Clear tanggal filter when month is selected
-                $('#filter-tanggal').val("{{ $today }}");
-                table.draw();
-            });
-
-            $('#filter-tahun').on('change', function () {
-                // Clear tanggal filter when year is selected
-                $('#filter-tanggal').val("{{ $today }}");
-                table.draw();
             });
 
             // Handle export form
@@ -554,9 +548,9 @@
                 e.preventDefault();
 
                 const classId = "{{ $kelas->id ?? 0 }}";
-                const tanggal = $('#filter-tanggal').val() || '';
-                const bulan = $('#filter-bulan').val() || '';
-                const tahun = $('#filter-tahun').val() || '';
+                const tanggal = "{{ $selectedTanggal ?? '' }}";
+                const bulan = "{{ $selectedBulan ?? '' }}";
+                const tahun = "{{ $selectedTahun ?? '' }}";
 
                 // Build query string
                 let params = new URLSearchParams();

@@ -208,15 +208,28 @@ Route::get('/absensi-mapel/get-by-mapel/{classId}/{subjectId}', [AttendanceHisto
     ->middleware('auth')
     ->name('absensi_mapel.get_by_mapel');
 
-Route::post('/absensi-mapel/edit-status/{id}', [AttendanceHistoryController::class, 'editStatus'])
+Route::get('/absensi-mapel/get-by-mapel-date/{classId}/{subjectId}/{tanggal}', [AttendanceHistoryController::class, 'getAbsensiByMapelAndDate'])
+    ->middleware('auth')
+    ->name('absensi_mapel.get_by_mapel_date');
+
+Route::get('/absensi-mapel/get-schedules/{classId}/{subjectId}', [AttendanceHistoryController::class, 'getSchedules'])
+    ->middleware('auth')
+    ->name('absensi_mapel.get_schedules');
+Route::post('/pages/absensi-mapel/edit-status/{id}', [AttendanceHistoryController::class, 'editStatus'])
+    ->middleware('auth')
     ->name('absensi_mapel.edit_status');
+
+// Route::get('/absensi-mapel/export-excel/{classId}', [AttendanceHistoryController::class, 'exportExcel'])
+//     ->middleware('auth')
+//     ->name('absensi_mapel.export_excel');
+
+Route::get('/absensi-mapel/get-schedules/{classId}/{subjectId}', [AttendanceHistoryController::class, 'getSchedules']);
+
+Route::post('/absensi-mapel/export-excel/{classId}', [AttendanceHistoryController::class, 'exportExcel']);
 
 Route::get('/absensi-mapel/export-excel/{classId}', [AttendanceHistoryController::class, 'exportExcel'])
     ->middleware('auth')
     ->name('absensi_mapel.export_excel');
-
-
-
 // ============================ end absensi ====================
 
 Route::get('/pages/notifikasi/notifikasi', [NotificationController::class, 'index'])
