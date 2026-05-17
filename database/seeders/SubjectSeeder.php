@@ -17,7 +17,11 @@ class SubjectSeeder extends Seeder
             ['code' => 'SENBUD', 'name' => 'Seni Kebudayaan',   'type' => 'umum'],
             ['code' => 'SEJ',    'name' => 'Sejarah',           'type' => 'umum'],
             ['code' => 'BD',     'name' => 'Bahasa Daerah',     'type' => 'umum'],
+            ['code' => 'FIS',    'name' => 'Fisika',            'type' => 'umum'],
             ['code' => 'KIM',    'name' => 'Kimia',             'type' => 'jurusan'],
+            ['code' => 'SDG',    'name' => 'Sistem Digital', 'type' => 'jurusan'],
+            ['code' => 'PRODAS',    'name' => 'Pemrograman Dasar ', 'type' => 'jurusan'],
+            ['code' => 'JARKOM',    'name' => 'Jaringan Komputer', 'type' => 'jurusan'],
         ];
 
         foreach ($subjects as $subject) {
