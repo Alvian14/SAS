@@ -103,10 +103,9 @@ class AttendanceController extends Controller
             $distance = getDistanceInMeters($lat, $lon, $schoolLat, $schoolLon);
 
             if ($distance > $this->distanceMaximumTolerance) {
-                return response()->json(
-                    [
+                return response()->json([
                     'success' => false,
-                    'message' => "Lokasi di luar jangkauan (jarak: {$distance} m)",
+                    'message' => 'Lokasi di luar jangkauan',
                 ], 403);
             }
 
@@ -120,9 +119,9 @@ class AttendanceController extends Controller
             if ($request->filled('date')) {
                 $now = Carbon::parse($request->input('date'), 'Asia/Jakarta');
             } else {
-                // $now = Carbon::now('Asia/Jakarta');
+                $now = Carbon::now('Asia/Jakarta');
                 // testing using date: 1 April 2026 07:15 WIB (should be valid for schedule 7-8)
-                $now = Carbon::parse('2026-05-18 07:15:00', 'Asia/Jakarta');
+                // $now = Carbon::parse('2026-05-18 07:15:00', 'Asia/Jakarta');
                 // $now = Carbon::parse('Asia/Jakarta');
             }
 
