@@ -323,13 +323,9 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li>
-                                <form method="POST" action="{{ route('kelas.destroy', $kelas->id) }}" onsubmit="return confirm('Yakin ingin menghapus kelas ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="dropdown-item text-danger">
-                                        <i class="fas fa-trash me-2"></i>Hapus Kelas
-                                    </button>
-                                </form>
+                                <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#modalHapusKelas" data-kelas-id="{{ $kelas->id }}" data-kelas-name="{{ $kelas->name }}">
+                                    <i class="fas fa-trash me-2"></i>Hapus Kelas
+                                </button>
                             </li>
                         </ul>
                     </div>
@@ -373,13 +369,9 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li>
-                                <form method="POST" action="{{ route('kelas.destroy', $kelas->id) }}" onsubmit="return confirm('Yakin ingin menghapus kelas ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="dropdown-item text-danger">
-                                        <i class="fas fa-trash me-2"></i>Hapus Kelas
-                                    </button>
-                                </form>
+                                <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#modalHapusKelas" data-kelas-id="{{ $kelas->id }}" data-kelas-name="{{ $kelas->name }}">
+                                    <i class="fas fa-trash me-2"></i>Hapus Kelas
+                                </button>
                             </li>
                         </ul>
                     </div>
@@ -423,13 +415,9 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li>
-                                <form method="POST" action="{{ route('kelas.destroy', $kelas->id) }}" onsubmit="return confirm('Yakin ingin menghapus kelas ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="dropdown-item text-danger">
-                                        <i class="fas fa-trash me-2"></i>Hapus Kelas
-                                    </button>
-                                </form>
+                                <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#modalHapusKelas" data-kelas-id="{{ $kelas->id }}" data-kelas-name="{{ $kelas->name }}">
+                                    <i class="fas fa-trash me-2"></i>Hapus Kelas
+                                </button>
                             </li>
                         </ul>
                     </div>
@@ -451,6 +439,53 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Hapus Kelas -->
+<div class="modal fade" id="modalHapusKelas" tabindex="-1" aria-labelledby="modalHapusKelasLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content shadow-lg border-0 rounded-4">
+            <div class="modal-header bg-danger text-white border-0 rounded-top-4">
+                <h5 class="modal-title fw-bold" id="modalHapusKelasLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Hapus Kelas
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <p class="mb-2">Apakah Anda yakin ingin menghapus kelas berikut?</p>
+                <div class="alert alert-warning" role="alert">
+                    <strong id="kelasNameDisplay"></strong>
+                </div>
+                <p class="text-muted small">Tindakan ini tidak dapat dibatalkan. Semua data terkait dengan kelas ini juga akan dihapus.</p>
+            </div>
+            <div class="modal-footer bg-white border-0 p-3">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Batal
+                </button>
+                <form id="formHapusKelas" method="POST" style="display: inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>Hapus Sekarang
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modalHapus = document.getElementById('modalHapusKelas');
+        modalHapus.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const kelasId = button.getAttribute('data-kelas-id');
+            const kelasName = button.getAttribute('data-kelas-name');
+
+            document.getElementById('kelasNameDisplay').textContent = kelasName;
+            document.getElementById('formHapusKelas').action = '{{ route("kelas.destroy", ":id") }}'.replace(':id', kelasId);
+        });
+    });
+</script>
 @endsection
 
 
