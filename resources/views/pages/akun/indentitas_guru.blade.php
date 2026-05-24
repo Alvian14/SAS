@@ -163,7 +163,7 @@
                             </td>
                             <td class="text-center">
                                 @if($teacher->user && $teacher->user->profile_picture)
-                                    <img src="{{ asset('storage/teacher/' . $teacher->user->profile_picture) }}" alt="Foto" width="36" height="36" class="rounded-circle border border-2 border-primary shadow-sm">
+                                    <img src="{{ asset('storage/profile_pictures/teacher/' . $teacher->user->profile_picture) }}" alt="Foto" width="36" height="36" class="rounded-circle border border-2 border-primary shadow-sm">
                                 @else
                                     <img src="https://ui-avatars.com/api/?name={{ urlencode($teacher->name) }}" alt="Foto" width="36" height="36" class="rounded-circle border border-2 border-primary shadow-sm">
                                 @endif

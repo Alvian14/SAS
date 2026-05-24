@@ -171,7 +171,7 @@
                             </td>
                             <td class="text-center">
                                 @if($student->user->profile_picture)
-                                    <img src="{{ asset('storage/student/' . $student->user->profile_picture) }}" alt="Foto Profil" width="36" height="36" class="rounded-circle border border-2 border-primary shadow-sm">
+                                    <img src="{{ asset('storage/profile_pictures/student/' . $student->user->profile_picture) }}" alt="Foto Profil" width="36" height="36" class="rounded-circle border border-2 border-primary shadow-sm">
                                 @else
                                     <img src="https://ui-avatars.com/api/?name={{ urlencode($student->name) }}" alt="Foto Profil" width="36" height="36" class="rounded-circle border border-2 border-primary shadow-sm">
                                 @endif
