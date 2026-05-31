@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Classes;
 use Illuminate\Http\Request;
 use App\Models\Student;
+use App\Models\ClassModel;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -15,9 +17,16 @@ class DashboardController extends Controller
 
         // Statistik siswa
         $totalSiswa = Student::count();
-        $siswaKelas10 = Student::where('id_class', 1)->count();
-        $siswaKelas11 = Student::where('id_class', 2)->count();
-        $siswaKelas12 = Student::where('id_class', 3)->count();
+
+        // Get class IDs by grade dari database
+        $class10Ids = Classes::where('grade', 10)->pluck('id');
+        $class11Ids = Classes::where('grade', 11)->pluck('id');
+        $class12Ids = Classes::where('grade', 12)->pluck('id');
+
+        // Count students in each grade
+        $siswaKelas10 = Student::whereIn('id_class', $class10Ids)->count();
+        $siswaKelas11 = Student::whereIn('id_class', $class11Ids)->count();
+        $siswaKelas12 = Student::whereIn('id_class', $class12Ids)->count();
 
         // Ambil data absensi harian per hari untuk semua bulan dalam tahun berjalan
         $allMonthlyStats = [];

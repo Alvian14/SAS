@@ -68,6 +68,38 @@
         background-color: #ffc107;
         color: #212529;
     }
+    .btn-dataset-siswa {
+        font-weight: bold;
+        background-color: transparent;
+        color: #06b6d4;
+        border: 2px solid #06b6d4;
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        border-radius: 8px;
+    }
+    .btn-dataset-siswa:hover {
+        background-color: #06b6d4;
+        color: #fff;
+    }
+    .btn-camera-siswa {
+        font-weight: bold;
+        background-color: transparent;
+        color: #17a2b8;
+        border: 2px solid #17a2b8;
+        padding: 8px 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        border-radius: 8px;
+    }
+    .btn-camera-siswa:hover {
+        background-color: #17a2b8;
+        color: #fff;
+    }
     @media (max-width: 767.98px) {
         .btn-tambah-siswa,
         .btn-edit-siswa,
@@ -136,6 +168,12 @@
             <div class="d-flex gap-2 flex-column flex-md-row w-100 w-md-auto justify-content-md-end mt-2 mt-md-0">
                 <button class="btn btn-tambah-siswa btn-sm" style="font-size:14px;padding:7px 14px;" data-bs-toggle="modal" data-bs-target="#modalTambahSiswa">
                     <i class="fas fa-plus"></i> Tambah Siswa
+                </button>
+                <button class="btn btn-camera-siswa btn-sm" style="font-size:14px;padding:7px 14px;" id="btn-camera-siswa" type="button">
+                    <i class="fas fa-camera me-1"></i> Kamera
+                </button>
+                <button class="btn btn-dataset-siswa btn-sm" style="font-size:14px;padding:7px 14px;" id="btn-dataset-siswa" type="button">
+                    <i class="fas fa-database me-1"></i> Dataset
                 </button>
                 <button class="btn btn-edit-siswa btn-sm" style="font-size:14px;padding:7px 14px;" id="btn-edit-siswa" type="button">
                     <i class="fas fa-edit"></i> Edit
@@ -917,58 +955,13 @@
         $(document).ready(function () {
             // Validasi form submit add - pastikan 3 foto sudah diambil
             $('#btn-submit-form').on('click', function(e) {
-                const photosData = document.getElementById('webcam-photo-data').value;
-
-                if (!photosData) {
-                    e.preventDefault();
-                    Swal.fire({
-                        title: 'Foto Webcam Diperlukan',
-                        text: 'Silakan ambil 3 foto webcam sebelum menyimpan data',
-                        icon: 'warning',
-                        confirmButtonText: 'OK'
-                    });
-                    return false;
-                }
-
-                const photos = photosData.split('|||').filter(p => p.trim() !== '');
-                if (photos.length < 3) {
-                    e.preventDefault();
-                    Swal.fire({
-                        title: 'Foto Tidak Lengkap',
-                        text: `Anda harus mengambil 3 foto. Foto yang tersimpan: ${photos.length}/3`,
-                        icon: 'warning',
-                        confirmButtonText: 'OK'
-                    });
-                    return false;
-                }
+                // Webcam photos adalah opsional - boleh submit tanpa foto
+                // Validation dihapus untuk membuat webcam truly optional seperti profile picture
             });
 
-            // Validasi form submit edit - pastikan 3 foto sudah diambil
+            // Form edit siswa - webcam photos opsional
             $('#formEditSiswa').on('submit', function(e) {
-                const photosData = document.getElementById('webcam-photo-data-edit').value;
-
-                if (!photosData) {
-                    e.preventDefault();
-                    Swal.fire({
-                        title: 'Foto Webcam Diperlukan',
-                        text: 'Silakan ambil 3 foto webcam sebelum menyimpan data',
-                        icon: 'warning',
-                        confirmButtonText: 'OK'
-                    });
-                    return false;
-                }
-
-                const photos = photosData.split('|||').filter(p => p.trim() !== '');
-                if (photos.length < 3) {
-                    e.preventDefault();
-                    Swal.fire({
-                        title: 'Foto Tidak Lengkap',
-                        text: `Anda harus mengambil 3 foto. Foto yang tersimpan: ${photos.length}/3`,
-                        icon: 'warning',
-                        confirmButtonText: 'OK'
-                    });
-                    return false;
-                }
+                // Tidak ada validasi - webcam opsional seperti profile picture
             });
             $('#example').DataTable({
                 lengthChange: false,
@@ -1037,6 +1030,88 @@
 
                             document.body.appendChild(form);
                             form.submit();
+                        });
+                    }
+                });
+            });
+
+            $('#btn-camera-siswa').on('click', function () {
+                Swal.fire({
+                    title: 'Jalankan Camera Absensi?',
+                    text: 'Apakah Anda yakin ingin menjalankan camera absensi?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Jalankan',
+                    cancelButtonText: 'Batal',
+                    confirmButtonColor: '#17a2b8',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: 'http://presensiku.site/flaskpresensiku/attendance/camera/start',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            success: function(response) {
+                                Swal.fire({
+                                    toast: true,
+                                    position: 'bottom-end',
+                                    icon: 'success',
+                                    title: 'Camera absensi berhasil dijalankan',
+                                    showConfirmButton: false,
+                                    timer: 2000
+                                });
+                            },
+                            error: function(error) {
+                                Swal.fire({
+                                    toast: true,
+                                    position: 'bottom-end',
+                                    icon: 'error',
+                                    title: 'Gagal menjalankan camera absensi',
+                                    showConfirmButton: false,
+                                    timer: 2000
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+
+            $('#btn-dataset-siswa').on('click', function () {
+                Swal.fire({
+                    title: 'Latih Model CNN?',
+                    text: 'Apakah Anda yakin ingin melatih model CNN? Proses ini mungkin memakan waktu beberapa saat.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Latih',
+                    cancelButtonText: 'Batal',
+                    confirmButtonColor: '#06b6d4',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: 'http://presensiku.site/flaskpresensiku/pipeline/run',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            success: function(response) {
+                                Swal.fire({
+                                    toast: true,
+                                    position: 'bottom-end',
+                                    icon: 'success',
+                                    title: 'Latih model cnn berhasil dijalankan',
+                                    showConfirmButton: false,
+                                    timer: 2000
+                                });
+                            },
+                            error: function(error) {
+                                Swal.fire({
+                                    toast: true,
+                                    position: 'bottom-end',
+                                    icon: 'error',
+                                    title: 'Gagal menjalankan latih model',
+                                    showConfirmButton: false,
+                                    timer: 2000
+                                });
+                            }
                         });
                     }
                 });
