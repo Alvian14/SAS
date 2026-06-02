@@ -106,4 +106,8 @@ Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
 
     // activity of teacher
     Route::get('/teacher/activity', [UserController::class, 'getTeacherActivity']);
+    
+    // copy url for public access qr (5 minutes valid)
+    Route::get('/teacher/attendance/qr/generate/{idSchedule}', [AttendanceController::class, 'generateLinkQrAttendance']);
 });
+

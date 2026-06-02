@@ -147,7 +147,10 @@ Route::put('/pages/jadwal/jadwal/{id}', [JadwalController::class, 'update'])
 Route::delete('/pages/jadwal/jadwal', [JadwalController::class, 'destroy'])
     ->middleware('auth')
     ->name('jadwal.destroy');
-Route::get('/jadwal/qr/{id}', [JadwalController::class, 'showQr'])->name('jadwal.qr');
+Route::get('/jadwal/qr/{id}', [JadwalController::class, 'showQr'])->middleware('auth')->name('jadwal.qr');
+Route::get('/jadwal/qr-link/{id}', [JadwalController::class, 'generateQrLink'])
+    ->middleware('auth')
+    ->name('jadwal.qr.link');
 // ========================= end jadwal ======================
 
 
@@ -277,6 +280,8 @@ Route::post('/permissions/{id}/reject', [PermissionController::class, 'permissio
 Route::get('/send-wa', [NotificationController::class, 'sendWa'])
     ->name('send.wa');
 
+Route::get('/public/attendance/qr/{token}', [JadwalController::class, 'showPublicQr'])
+    ->name('jadwal.qr.public');
 
 // Route::get('send-wa', function () {
 //     $response = Http::withHeaders([

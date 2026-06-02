@@ -3,18 +3,24 @@
 namespace App\Http\Controllers;
 
 
-use Illuminate\Http\Request;
-use App\Models\Schedule;
+use App\Models\AcademicPeriod;
 use App\Models\Classes;
+use App\Models\Schedule;
 use App\Models\Subject;
 use App\Models\Teacher;
-use App\Models\AcademicPeriod;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\View;
+use App\Services\QrLinkService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 
 class JadwalController extends Controller
 {
+    protected QrLinkService $qrLinkService;
+
+    public function __construct(QrLinkService $qrLinkService)
+    {
+        $this->qrLinkService = $qrLinkService;
+    }
     public function index()
     {
            $kelas = Classes::all();
@@ -181,5 +187,39 @@ class JadwalController extends Controller
     {
         $jadwal = Schedule::findOrFail($id);
         return view('pages.jadwal.qr', compact('jadwal'));
+    }
+
+    public function showPublicQr($token)
+    {
+        $tokenData = Cache::get("public_qr_link:$token");
+
+        if (!$tokenData) {
+            return view('public.attendance.qr-error', [
+                'status' => 'expired',
+                'message' => 'Link QR sudah expired atau tidak valid. Silakan minta link baru dari guru.'
+            ]);
+        }
+
+        $idSchedule = $tokenData['schedule_id'];
+        $expiresAt = $tokenData['expires_at'];
+
+        $jadwal = Schedule::with(['class', 'subject', 'teacher'])->find($idSchedule);
+
+        if (!$jadwal) {
+            return view('public.attendance.qr-error', [
+                'status' => 'notfound',
+                'message' => 'Data jadwal tidak ditemukan.'
+            ]);
+        }
+
+        $publicUrl = route('jadwal.qr.public', ['token' => $token]);
+
+        return view('public.attendance.qr', compact('jadwal', 'publicUrl', 'expiresAt'));
+    }
+
+    public function generateQrLink($id)
+    {
+        $result = $this->qrLinkService->generateLink($id);
+        return response()->json($result);
     }
 }
