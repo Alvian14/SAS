@@ -253,6 +253,24 @@
     </div>
     <hr class="my-4"> <!-- Garis horizontal pembatas kelas 10, 11, 12 -->
 
+    <!-- Notifikasi Sukses -->
+    @if (session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert" id="successAlert">
+            <i class="fas fa-check-circle me-2"></i>
+            <strong>Berhasil!</strong> {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <script>
+            setTimeout(function() {
+                const alert = document.getElementById('successAlert');
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        </script>
+    @endif
+
     <!-- Modal Tambah Kelas -->
     <div class="modal fade" id="modalTambahKelas" tabindex="-1" aria-labelledby="modalTambahKelasLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -276,7 +294,8 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Tingkat</label>
-                            <input type="number" name="grade" class="form-control" placeholder="Contoh: 10" min="10" max="12" required>
+                            <input type="number" id="addGrade" name="grade" class="form-control" placeholder="Contoh: 10" min="10" max="12" required>
+                            <small class="text-muted">Hanya boleh: 10, 11, atau 12</small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Kode Kelas</label>
@@ -322,6 +341,16 @@
                             <i class="fas fa-ellipsis-v"></i>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#modalEditKelas"
+                                    data-kelas-id="{{ $kelas->id }}"
+                                    data-kelas-name="{{ $kelas->name }}"
+                                    data-kelas-major="{{ $kelas->major }}"
+                                    data-kelas-grade="{{ $kelas->grade }}"
+                                    data-kelas-code="{{ $kelas->code }}">
+                                    <i class="fas fa-edit me-2"></i>Edit Kelas
+                                </button>
+                            </li>
                             <li>
                                 <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#modalHapusKelas" data-kelas-id="{{ $kelas->id }}" data-kelas-name="{{ $kelas->name }}">
                                     <i class="fas fa-trash me-2"></i>Hapus Kelas
@@ -369,6 +398,16 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li>
+                                <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#modalEditKelas"
+                                    data-kelas-id="{{ $kelas->id }}"
+                                    data-kelas-name="{{ $kelas->name }}"
+                                    data-kelas-major="{{ $kelas->major }}"
+                                    data-kelas-grade="{{ $kelas->grade }}"
+                                    data-kelas-code="{{ $kelas->code }}">
+                                    <i class="fas fa-edit me-2"></i>Edit Kelas
+                                </button>
+                            </li>
+                            <li>
                                 <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#modalHapusKelas" data-kelas-id="{{ $kelas->id }}" data-kelas-name="{{ $kelas->name }}">
                                     <i class="fas fa-trash me-2"></i>Hapus Kelas
                                 </button>
@@ -415,6 +454,16 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li>
+                                <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#modalEditKelas"
+                                    data-kelas-id="{{ $kelas->id }}"
+                                    data-kelas-name="{{ $kelas->name }}"
+                                    data-kelas-major="{{ $kelas->major }}"
+                                    data-kelas-grade="{{ $kelas->grade }}"
+                                    data-kelas-code="{{ $kelas->code }}">
+                                    <i class="fas fa-edit me-2"></i>Edit Kelas
+                                </button>
+                            </li>
+                            <li>
                                 <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#modalHapusKelas" data-kelas-id="{{ $kelas->id }}" data-kelas-name="{{ $kelas->name }}">
                                     <i class="fas fa-trash me-2"></i>Hapus Kelas
                                 </button>
@@ -436,6 +485,51 @@
                 </div>
             </div>
             @endforeach
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit Kelas -->
+<div class="modal fade" id="modalEditKelas" tabindex="-1" aria-labelledby="modalEditKelasLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content shadow-lg border-0 rounded-4">
+            <div class="modal-header bg-warning text-white border-0 rounded-top-4">
+                <h5 class="modal-title fw-bold" id="modalEditKelasLabel">
+                    <i class="fas fa-edit me-2"></i>Edit Kelas
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEditKelas" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-body bg-light">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nama Kelas</label>
+                        <input type="text" id="editNamaKelas" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Jurusan</label>
+                        <input type="text" id="editJurusanKelas" name="major" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tingkat</label>
+                        <input type="number" id="editTingkatKelas" name="grade" class="form-control" min="10" max="12" required>
+                        <small class="text-muted">Hanya boleh: 10, 11, atau 12</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Kode Kelas</label>
+                        <input type="text" id="editKodeKelas" name="code" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer bg-white border-0 p-3">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Batal
+                    </button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save me-1"></i>Simpan Perubahan
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -475,6 +569,77 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Validasi Tingkat pada form Tambah
+        const addGradeInput = document.getElementById('addGrade');
+        if (addGradeInput) {
+            addGradeInput.addEventListener('change', function() {
+                validateGrade(this);
+            });
+            addGradeInput.addEventListener('invalid', function(e) {
+                e.preventDefault();
+                const grade = this.value;
+                if (grade && ![10, 11, 12].includes(parseInt(grade))) {
+                    this.setCustomValidity('Tingkat kelas hanya boleh 10, 11, atau 12');
+                } else if (!grade) {
+                    this.setCustomValidity('Tingkat kelas harus diisi');
+                }
+            });
+            addGradeInput.addEventListener('input', function() {
+                this.setCustomValidity('');
+            });
+        }
+
+        // Validasi Tingkat pada form Edit
+        const editGradeInput = document.getElementById('editTingkatKelas');
+        if (editGradeInput) {
+            editGradeInput.addEventListener('change', function() {
+                validateGrade(this);
+            });
+            editGradeInput.addEventListener('invalid', function(e) {
+                e.preventDefault();
+                const grade = this.value;
+                if (grade && ![10, 11, 12].includes(parseInt(grade))) {
+                    this.setCustomValidity('Tingkat kelas hanya boleh 10, 11, atau 12');
+                } else if (!grade) {
+                    this.setCustomValidity('Tingkat kelas harus diisi');
+                }
+            });
+            editGradeInput.addEventListener('input', function() {
+                this.setCustomValidity('');
+            });
+        }
+
+        function validateGrade(input) {
+            const grade = parseInt(input.value);
+            if (input.value && ![10, 11, 12].includes(grade)) {
+                input.classList.add('is-invalid');
+                input.classList.remove('is-valid');
+            } else if (input.value) {
+                input.classList.remove('is-invalid');
+                input.classList.add('is-valid');
+            } else {
+                input.classList.remove('is-invalid', 'is-valid');
+            }
+        }
+
+        // Modal Edit
+        const modalEdit = document.getElementById('modalEditKelas');
+        modalEdit.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const kelasId = button.getAttribute('data-kelas-id');
+            const kelasName = button.getAttribute('data-kelas-name');
+            const kelasMajor = button.getAttribute('data-kelas-major');
+            const kelasGrade = button.getAttribute('data-kelas-grade');
+            const kelasCode = button.getAttribute('data-kelas-code');
+
+            document.getElementById('editNamaKelas').value = kelasName;
+            document.getElementById('editJurusanKelas').value = kelasMajor;
+            document.getElementById('editTingkatKelas').value = kelasGrade;
+            document.getElementById('editKodeKelas').value = kelasCode;
+            document.getElementById('formEditKelas').action = '{{ route("kelas.update", ":id") }}'.replace(':id', kelasId);
+        });
+
+        // Modal Hapus
         const modalHapus = document.getElementById('modalHapusKelas');
         modalHapus.addEventListener('show.bs.modal', function(event) {
             const button = event.relatedTarget;
@@ -486,6 +651,7 @@
         });
     });
 </script>
+
 @endsection
 
 
