@@ -15,6 +15,7 @@ use App\Models\Schedule;
 use App\Models\Student;
 use App\Services\FirebaseMessagingService;
 use App\Services\NotificationHelperService;
+use App\Services\QrLinkService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\Request;
@@ -35,10 +36,13 @@ class AttendanceController extends Controller
     public $lonOfAttendance;
 
 
-    public function __construct(FirebaseMessagingService $fcm, NotificationHelperService $notificationHelper)
+    protected QrLinkService $qrLinkService;
+
+    public function __construct(FirebaseMessagingService $fcm, NotificationHelperService $notificationHelper, QrLinkService $qrLinkService)
     {
         $this->fcm = $fcm;
         $this->notificationHelper = $notificationHelper;
+        $this->qrLinkService = $qrLinkService;
         $coordinate = config('coordinate.coordinate', '-7.604032330848524, 112.10176449791652');
         [$lat, $lon] = array_map('trim', explode(',', $coordinate));
         $this->latOfAttendance = (float) $lat;
@@ -1170,6 +1174,30 @@ class AttendanceController extends Controller
             ]
         ], 200);
 
+    }
+
+    // return json response link randomize for public qr code, access from website
+    // use cache 5 minutes for the link, if more than 5 minutes, the link will be expired and generate new link.
+        public function generateLinkQrAttendance(Request $request, $idSchedule)
+    {
+        try {
+            if (!$request->user()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 401);
+            }
+
+            $result = $this->qrLinkService->generateLink($idSchedule);
+            return response()->json($result);
+
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error',
+                'error' => $th->getMessage()
+            ], 500);
+        }
     }
 
 }
