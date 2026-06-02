@@ -169,6 +169,11 @@ Route::post('/pages/kelas/kelas', [ClassController::class, 'store'])
     ->middleware('auth')
     ->name('kelas.store');
 
+// Route untuk update kelas
+Route::put('/pages/kelas/kelas/{id}', [ClassController::class, 'update'])
+    ->middleware('auth')
+    ->name('kelas.update');
+
 // Route untuk hapus kelas
 Route::delete('/pages/kelas/kelas/{id}', [ClassController::class, 'destroy'])
     ->middleware('auth')

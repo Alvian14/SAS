@@ -33,8 +33,12 @@ class ClassController extends Controller
         $request->validate([
             'name'  => 'required|string|max:255',
             'major' => 'required|string|max:255',
-            'grade' => 'required|integer',
+            'grade' => 'required|integer|in:10,11,12',
             'code'  => 'required|string|max:50',
+        ], [
+            'grade.required' => 'Tingkat kelas harus diisi.',
+            'grade.integer' => 'Tingkat kelas harus berupa angka.',
+            'grade.in' => 'Tingkat kelas hanya boleh 10, 11, atau 12.',
         ]);
 
         Classes::create([
@@ -46,6 +50,30 @@ class ClassController extends Controller
 
         return redirect()->route('kelas.absensi')->with('success', 'Kelas berhasil ditambahkan.');
         return redirect()->route('kelas.mapel')->with('success', 'Kelas berhasil ditambahkan.');
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'name'  => 'required|string|max:255',
+            'major' => 'required|string|max:255',
+            'grade' => 'required|integer|in:10,11,12',
+            'code'  => 'required|string|max:50',
+        ], [
+            'grade.required' => 'Tingkat kelas harus diisi.',
+            'grade.integer' => 'Tingkat kelas harus berupa angka.',
+            'grade.in' => 'Tingkat kelas hanya boleh 10, 11, atau 12.',
+        ]);
+
+        $kelas = Classes::findOrFail($id);
+        $kelas->update([
+            'name'  => $request->name,
+            'major' => $request->major,
+            'grade' => $request->grade,
+            'code'  => $request->code,
+        ]);
+
+        return redirect()->back()->with('success', 'Kelas berhasil diperbarui.');
     }
 
     public function destroy($id)
