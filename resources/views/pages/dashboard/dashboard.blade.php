@@ -1,6 +1,172 @@
 @extends('pages.index')
 
 @section('admin_content')
+<style>
+  /* Custom Calendar Styling based on Mockup */
+  #calendar-mini {
+    font-family: 'Poppins', sans-serif;
+  }
+  #calendar-mini .fc-theme-standard td, 
+  #calendar-mini .fc-theme-standard th,
+  #calendar-mini .fc-theme-standard .fc-scrollgrid {
+    border: none !important;
+  }
+  #calendar-mini .fc-scrollgrid {
+    border: none !important;
+  }
+  #calendar-mini .fc-today-button {
+    display: none !important;
+  }
+  #calendar-mini .fc-button {
+    background: transparent !important;
+    border: none !important;
+    color: #64748b !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    font-size: 1.1rem !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease !important;
+  }
+  #calendar-mini .fc-button:hover {
+    background: #f1f5f9 !important;
+    color: #1e293b !important;
+  }
+  #calendar-mini .fc-button .fc-icon {
+    font-size: 1.1rem !important;
+  }
+  #calendar-mini .fc-toolbar-title {
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    color: #1e293b !important;
+    text-transform: capitalize;
+  }
+  #calendar-mini .fc-header-toolbar {
+    margin-bottom: 20px !important;
+  }
+  #calendar-mini .fc-col-header-cell-cushion {
+    visibility: hidden !important;
+    position: relative !important;
+    display: block !important;
+    font-size: 0 !important;
+    padding: 8px 0 !important;
+  }
+  #calendar-mini .fc-col-header-cell:nth-child(1) .fc-col-header-cell-cushion::after {
+    content: "M";
+    visibility: visible !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+    color: #64748b !important;
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+  #calendar-mini .fc-col-header-cell:nth-child(2) .fc-col-header-cell-cushion::after {
+    content: "S";
+    visibility: visible !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+    color: #64748b !important;
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+  #calendar-mini .fc-col-header-cell:nth-child(3) .fc-col-header-cell-cushion::after {
+    content: "S";
+    visibility: visible !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+    color: #64748b !important;
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+  #calendar-mini .fc-col-header-cell:nth-child(4) .fc-col-header-cell-cushion::after {
+    content: "R";
+    visibility: visible !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+    color: #64748b !important;
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+  #calendar-mini .fc-col-header-cell:nth-child(5) .fc-col-header-cell-cushion::after {
+    content: "K";
+    visibility: visible !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+    color: #64748b !important;
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+  #calendar-mini .fc-col-header-cell:nth-child(6) .fc-col-header-cell-cushion::after {
+    content: "J";
+    visibility: visible !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+    color: #64748b !important;
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+  #calendar-mini .fc-col-header-cell:nth-child(7) .fc-col-header-cell-cushion::after {
+    content: "S";
+    visibility: visible !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+    color: #64748b !important;
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+  #calendar-mini .fc-daygrid-day-top {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    float: none !important;
+  }
+  #calendar-mini .fc-daygrid-day-number {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    font-size: 0.95rem !important;
+    color: #334155 !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+  }
+  #calendar-mini .fc-daygrid-day-number:hover {
+    background-color: #f1f5f9 !important;
+    border-radius: 50% !important;
+    color: #0f172a !important;
+  }
+  #calendar-mini .fc-day-today {
+    background-color: transparent !important;
+  }
+  #calendar-mini .fc-day-today .fc-daygrid-day-number,
+  #calendar-mini .cal-active-day {
+    background-color: #6366f1 !important;
+    color: #ffffff !important;
+    border-radius: 50% !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3) !important;
+  }
+  #calendar-mini .fc-daygrid-day-events,
+  #calendar-mini .fc-daygrid-day-bottom {
+    display: none !important;
+  }
+  #calendar-mini .fc-daygrid-day {
+    height: 48px !important;
+  }
+</style>
 <div class="container-fluid px-4 py-4">
 
   {{-- ===== Header ===== --}}
@@ -138,27 +304,9 @@
       </div>
     </div>
 
-    {{-- Statistik Ringkas --}}
+    {{-- Kalender --}}
     <div class="col-lg-4">
       <div class="card border-0 rounded-4 shadow-sm h-100">
-        <div class="card-header bg-white border-0 px-4 pt-4 pb-0 rounded-top-4">
-          <h6 class="fw-bold mb-0" style="color:#1e293b;">Rekap Absensi</h6>
-          <small class="text-muted">Bulan {{ now()->translatedFormat('F Y') }}</small>
-        </div>
-        <div class="card-body px-4 pb-4 pt-3">
-          <div style="position:relative;height:300px;">
-            <canvas id="Chart2"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  {{-- ===== Kalender ===== --}}
-  <div class="row g-4 mb-4">
-    <div class="col-lg-5">
-      <div class="card border-0 rounded-4 shadow-sm">
         <div class="card-header bg-white border-0 px-4 pt-4 pb-0 rounded-top-4">
           <h6 class="fw-bold mb-0" style="color:#1e293b;">
             <i class="lni lni-calendar me-2 text-primary"></i>Kalender
@@ -169,6 +317,7 @@
         </div>
       </div>
     </div>
+
   </div>
 
 </div>
@@ -268,6 +417,38 @@
 
     document.getElementById('month-picker').addEventListener('change', function() {
         renderChart(parseInt(this.value));
+    });
+
+    // Handle day selection for custom calendar
+    document.addEventListener('DOMContentLoaded', function() {
+        const container = document.getElementById('calendar-mini');
+        if (container) {
+            container.addEventListener('click', function(e) {
+                const dayCell = e.target.closest('.fc-daygrid-day-number');
+                if (dayCell) {
+                    // Remove active class from previous
+                    const activeCell = container.querySelector('.cal-active-day');
+                    if (activeCell) {
+                        activeCell.classList.remove('cal-active-day');
+                    }
+                    // If the clicked day is today, it already highlights, but we can standardise the class
+                    const todayCell = container.querySelector('.fc-day-today .fc-daygrid-day-number');
+                    if (todayCell && todayCell !== dayCell) {
+                        // Temporarily override today's color back to normal
+                        todayCell.style.setProperty('background-color', 'transparent', 'important');
+                        todayCell.style.setProperty('color', '#334155', 'important');
+                        todayCell.style.setProperty('font-weight', '400', 'important');
+                        todayCell.style.setProperty('box-shadow', 'none', 'important');
+                    } else if (todayCell === dayCell) {
+                        todayCell.style.removeProperty('background-color');
+                        todayCell.style.removeProperty('color');
+                        todayCell.style.removeProperty('font-weight');
+                        todayCell.style.removeProperty('box-shadow');
+                    }
+                    dayCell.classList.add('cal-active-day');
+                }
+            });
+        }
     });
 </script>
 @endpush
