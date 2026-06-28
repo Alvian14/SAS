@@ -239,6 +239,31 @@
         color: #9ca3af;
     }
 
+    /* Role badges */
+    .role-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 999px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        line-height: 1.4;
+    }
+    .role-badge.role-admin   { background:#eef2ff; color:#4338ca; }
+    .role-badge.role-teacher { background:#dcfce7; color:#15803d; }
+    .role-badge.role-student { background:#fef3c7; color:#b45309; }
+    .role-badge.role-system  { background:#f3f4f6; color:#4b5563; }
+
+    .notif-sender {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
     .empty-state {
         text-align: center;
         padding: 60px 20px;
@@ -343,13 +368,21 @@
         @if(isset($notifications) && $notifications->count() > 0)
             <div id="notificationList">
                 @foreach($notifications as $notification)
+                    @php
+                        $sender      = $notification->sender;
+                        $senderName  = $sender ? $sender->display_name : 'Sistem';
+                        $senderRole  = $sender ? $sender->role : 'system';
+                        $senderLabel = $sender ? $sender->role_label : 'Sistem';
+                        $senderEmail = $sender->email ?? null;
+                        $className   = $notification->class?->name ?? '-';
+                    @endphp
                     <div class="notif-card unread" onclick="openNotificationModal(this, 'notifDetailModal-{{ $notification->id }}')"
                         data-id="{{ $notification->id }}"
                         data-title="{{ $notification->title }}"
                         data-message="{{ $notification->body }}"
                         data-time="{{ $notification->created_at?->format('d M Y H:i') }}"
-                        data-sender="{{ $notification->sender->name ?? 'Sistem' }}"
-                        data-class="{{ $notification->class->name ?? '-' }}">
+                        data-sender="{{ $senderName }}"
+                        data-class="{{ $className }}">
 
                         <div class="notif-actions">
                             <form action="{{ route('notifikasi.destroy', $notification->id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus notifikasi ini?');">
@@ -371,14 +404,23 @@
                             </div>
                             <p class="notif-message">{{ Str::limit($notification->body, 100) }}</p>
                             <div class="notif-meta">
-                                <span>
+                                <span class="notif-sender">
                                     <i class="fas fa-user"></i>
-                                    {{ $notification->sender->name ?? 'Sistem' }}
+                                    <strong>{{ $senderName }}</strong>
+                                    <span class="role-badge role-{{ $senderRole }}">
+                                        @switch($senderRole)
+                                            @case('admin')   <i class="fas fa-user-shield"></i> @break
+                                            @case('teacher') <i class="fas fa-chalkboard-teacher"></i> @break
+                                            @case('student') <i class="fas fa-user-graduate"></i> @break
+                                            @default         <i class="fas fa-robot"></i>
+                                        @endswitch
+                                        {{ $senderLabel }}
+                                    </span>
                                 </span>
                                 @if($notification->class)
                                     <span>
                                         <i class="fas fa-chalkboard"></i>
-                                        {{ $notification->class->name ?? '-' }}
+                                        {{ $className }}
                                     </span>
                                 @endif
                             </div>
@@ -411,14 +453,29 @@
                                     <div class="d-flex gap-3">
                                         <div style="flex: 1; background: white; border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px;">
                                             <span style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">Pengirim</span>
-                                            <div style="font-weight: 600; font-size: 14px; color: #111827;">
-                                                <i class="fas fa-user text-primary me-1"></i> {{ $notification->sender->name ?? 'Sistem' }}
+                                            <div style="font-weight: 600; font-size: 14px; color: #111827; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                                <i class="fas fa-user text-primary me-1"></i>
+                                                <span>{{ $senderName }}</span>
+                                                <span class="role-badge role-{{ $senderRole }}">
+                                                    @switch($senderRole)
+                                                        @case('admin')   <i class="fas fa-user-shield"></i> @break
+                                                        @case('teacher') <i class="fas fa-chalkboard-teacher"></i> @break
+                                                        @case('student') <i class="fas fa-user-graduate"></i> @break
+                                                        @default         <i class="fas fa-robot"></i>
+                                                    @endswitch
+                                                    {{ $senderLabel }}
+                                                </span>
                                             </div>
+                                            @if($senderEmail)
+                                                <div style="margin-top:6px; font-size:12px; color:#6b7280;">
+                                                    <i class="fas fa-envelope me-1"></i>{{ $senderEmail }}
+                                                </div>
+                                            @endif
                                         </div>
                                         <div style="flex: 1; background: white; border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px;">
                                             <span style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">Kelas</span>
                                             <div style="font-weight: 600; font-size: 14px; color: #111827;">
-                                                <i class="fas fa-chalkboard text-primary me-1"></i> {{ $notification->class->name ?? '-' }}
+                                                <i class="fas fa-chalkboard text-primary me-1"></i> {{ $className }}
                                             </div>
                                         </div>
                                     </div>
@@ -483,12 +540,14 @@
         const endIndex = startIndex + ITEMS_PER_PAGE;
         const totalPages = Math.ceil(filteredCards.length / ITEMS_PER_PAGE);
 
-        // Hide all cards
-        filteredCards.forEach(card => {
+        // Sembunyikan SEMUA card dulu (bukan hanya yg di filteredCards),
+        // supaya kartu yg tidak lolos filter benar-benar hilang.
+        const allCards = document.querySelectorAll('#notificationList .notif-card');
+        allCards.forEach(card => {
             card.style.display = 'none';
         });
 
-        // Show cards for current page
+        // Tampilkan kartu untuk halaman saat ini
         for (let i = startIndex; i < endIndex && i < filteredCards.length; i++) {
             filteredCards[i].style.display = '';
         }
@@ -498,9 +557,8 @@
         const pageInfo = document.getElementById('pageInfo');
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
-        const searchEmptyState = document.querySelector('.search-empty-state');
 
-        if (filteredCards.length === 0) {
+        if (filteredCards.length === 0 || totalPages <= 1) {
             paginationContainer.style.display = 'none';
         } else {
             paginationContainer.style.display = 'flex';
@@ -574,6 +632,41 @@
         `;
         notificationContainer.appendChild(searchEmptyState);
 
+        // Pesan empty state kontekstual berdasarkan filter aktif.
+        const EMPTY_STATES = {
+            search: {
+                icon: 'fa-search',
+                title: 'Notifikasi tidak ditemukan',
+                desc:  'Coba gunakan kata kunci lain atau ubah filter.'
+            },
+            unread: {
+                icon: 'fa-check-circle',
+                title: 'Tidak ada notifikasi belum dibaca',
+                desc:  'Semua notifikasi sudah Anda baca. Bagus!'
+            },
+            read: {
+                icon: 'fa-inbox',
+                title: 'Belum ada notifikasi yang dibaca',
+                desc:  'Buka notifikasi untuk menandainya sebagai dibaca.'
+            },
+            all: {
+                icon: 'fa-bell-slash',
+                title: 'Tidak ada notifikasi',
+                desc:  'Belum ada pemberitahuan untuk Anda saat ini.'
+            }
+        };
+
+        function renderEmptyState(state) {
+            const cfg = EMPTY_STATES[state] || EMPTY_STATES.search;
+            searchEmptyState.innerHTML = `
+                <div class="empty-state-icon">
+                    <i class="fas ${cfg.icon}"></i>
+                </div>
+                <h3>${cfg.title}</h3>
+                <p>${cfg.desc}</p>
+            `;
+        }
+
         function getCardSearchText(card) {
             const title = card.getAttribute('data-title') || '';
             const message = card.getAttribute('data-message') || '';
@@ -602,7 +695,21 @@
                 }
             });
 
-            searchEmptyState.style.display = filteredCards.length === 0 ? '' : 'none';
+            if (filteredCards.length === 0) {
+                // Tentukan state empty yg paling tepat
+                let state = 'all';
+                if (searchKeyword) {
+                    state = 'search';
+                } else if (statusFilter === 'unread') {
+                    state = 'unread';
+                } else if (statusFilter === 'read') {
+                    state = 'read';
+                }
+                renderEmptyState(state);
+                searchEmptyState.style.display = '';
+            } else {
+                searchEmptyState.style.display = 'none';
+            }
 
             // Reset to page 1 when filter changes
             currentPage = 1;
