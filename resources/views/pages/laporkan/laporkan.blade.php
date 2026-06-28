@@ -157,12 +157,12 @@
                                         <i class="fas fa-edit"></i> Update
                                     </button>
                                     <ul class="dropdown-menu" aria-labelledby="dropdownStatus{{ $item->id }}">
-                                        <li><a class="dropdown-item"  onclick="event.preventDefault(); updateReportStatus({{ $item->id }}, 'hadir')">Hadir</a></li>
-                                        <li><a class="dropdown-item"  onclick="event.preventDefault(); updateReportStatus({{ $item->id }}, 'izin')">Izin</a></li>
-                                        <li><a class="dropdown-item"  onclick="event.preventDefault(); updateReportStatus({{ $item->id }}, 'sakit')">Sakit</a></li>
-                                        <li><a class="dropdown-item"  onclick="event.preventDefault(); updateReportStatus({{ $item->id }}, 'alpha')">Alpha</a></li>
-                                        <li><a class="dropdown-item"  onclick="event.preventDefault(); updateReportStatus({{ $item->id }}, 'dispen')">Dispen</a></li>
-                                        <li><a class="dropdown-item"  onclick="event.preventDefault(); updateReportStatus({{ $item->id }}, 'invalid')">Invalid</a></li>
+                                        <li><a class="dropdown-item js-update-status" href="#" data-report-id="{{ $item->id }}" data-status="hadir">Hadir</a></li>
+                                        <li><a class="dropdown-item js-update-status" href="#" data-report-id="{{ $item->id }}" data-status="izin">Izin</a></li>
+                                        <li><a class="dropdown-item js-update-status" href="#" data-report-id="{{ $item->id }}" data-status="sakit">Sakit</a></li>
+                                        <li><a class="dropdown-item js-update-status" href="#" data-report-id="{{ $item->id }}" data-status="alpha">Alpha</a></li>
+                                        <li><a class="dropdown-item js-update-status" href="#" data-report-id="{{ $item->id }}" data-status="dispen">Dispen</a></li>
+                                        <li><a class="dropdown-item js-update-status" href="#" data-report-id="{{ $item->id }}" data-status="invalid">Invalid</a></li>
                                     </ul>
                                 </div>
                             </td>
@@ -177,25 +177,54 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        $(document).ready(function () {
-            $('#example').DataTable({
-                lengthChange: false,
-                language: {
-                    search: "Cari:",
-                    info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-                    emptyTable: "Tidak ada data laporan.",
-                    paginate: { first:"Awal", last:"Akhir", next:"Berikutnya", previous:"Sebelumnya" }
-                },
-                pageLength: 10
-            });
-        });
+        const STATUS_LABELS = {
+            hadir: 'Hadir',
+            izin: 'Izin',
+            sakit: 'Sakit',
+            alpha: 'Alpha',
+            dispen: 'Dispen',
+            invalid: 'Invalid'
+        };
+
+        const STATUS_COLORS = {
+            hadir: '#22c55e',
+            izin: '#0dcaf0',
+            sakit: '#6f42c1',
+            alpha: '#dc3545',
+            dispen: '#6c757d',
+            invalid: '#ffc107'
+        };
 
         function updateReportStatus(reportId, status) {
-            if (confirm('Apakah Anda yakin ingin mengubah status menjadi ' + status + '?')) {
-                const actionCell = document.querySelector(`#dropdownStatus${reportId}`).closest('td');
+            if (typeof Swal === 'undefined') {
+                console.error('SweetAlert2 (Swal) belum dimuat.');
+                return;
+            }
 
-                // Kemudian submit form
+            const label = STATUS_LABELS[status] || status;
+            const color = STATUS_COLORS[status] || '#365CF5';
+
+            Swal.fire({
+                icon: 'question',
+                title: 'Ubah Status Laporan?',
+                html: 'Status laporan akan diubah menjadi <strong style="color:' + color + ';">' + label + '</strong>.',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-check me-1"></i> Ya, Ubah',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: color,
+                cancelButtonColor: '#6c757d',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'rounded-4 shadow-lg',
+                    title: 'fw-bold',
+                    confirmButton: 'fw-semibold px-4',
+                    cancelButton: 'fw-semibold px-4'
+                }
+            }).then(function (result) {
+                if (!result.isConfirmed) return;
+
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '{{ route("report.updateStatus", ":id") }}'.replace(':id', reportId);
@@ -216,8 +245,76 @@
 
                 document.body.appendChild(form);
                 form.submit();
-            }
+            });
         }
+
+        $(function () {
+            // DataTables init
+            if ($('#example').length) {
+                $('#example').DataTable({
+                    lengthChange: false,
+                    language: {
+                        search: "Cari:",
+                        info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                        emptyTable: "Tidak ada data laporan.",
+                        paginate: { first: "Awal", last: "Akhir", next: "Berikutnya", previous: "Sebelumnya" }
+                    },
+                    pageLength: 10
+                });
+            }
+
+            // Delegasi klik via jQuery — bekerja walaupun DataTables me-render
+            // ulang baris, dan tidak terpengaruh urutan load Bootstrap.
+            $(document).off('click.updateStatus').on('click.updateStatus', '.js-update-status', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const $btn = $(this);
+                const reportId = $btn.data('report-id');
+                const status = $btn.data('status');
+                if (reportId && status) {
+                    updateReportStatus(reportId, status);
+                }
+            });
+        });
+    </script>
+
+    {{-- Flash feedback (success / error) --}}
+    <div id="page-flash"
+        data-success="{{ session('success') ?? '' }}"
+        data-error="{{ session('error') ?? '' }}"
+        style="display:none;"></div>
+
+    <script>
+        (function () {
+            const flashEl = document.getElementById('page-flash');
+            if (!flashEl) return;
+            const successMsg = flashEl.dataset.success || '';
+            const errorMsg = flashEl.dataset.error || '';
+
+            document.addEventListener('DOMContentLoaded', function () {
+                if (successMsg) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'bottom-end',
+                        icon: 'success',
+                        title: successMsg,
+                        showConfirmButton: false,
+                        timer: 2500,
+                        timerProgressBar: true
+                    });
+                } else if (errorMsg) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'bottom-end',
+                        icon: 'error',
+                        title: errorMsg,
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true
+                    });
+                }
+            });
+        })();
     </script>
 @endsection
 
