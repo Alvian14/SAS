@@ -363,9 +363,15 @@ class AuthController extends Controller
             // Redirect kembali ke identitas siswa dengan pesan sukses
             return redirect()->route('akun.indentitas_siswa')->with('success', 'Data siswa berhasil ditambahkan.');
         } catch (ValidationException $e) {
-            return redirect()->back()->withErrors($e->errors())->withInput();
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput()
+                ->with('open_modal', 'tambah');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Registrasi siswa gagal. Silakan coba lagi.')->withInput();
+            return redirect()->back()
+                ->with('error', 'Registrasi siswa gagal. Silakan coba lagi.')
+                ->withInput()
+                ->with('open_modal', 'tambah');
         }
     }
 
@@ -505,9 +511,17 @@ class AuthController extends Controller
 
             return redirect()->route('akun.indentitas_siswa')->with('success', 'Data siswa berhasil diupdate.');
         } catch (ValidationException $e) {
-            return redirect()->back()->withErrors($e->errors())->withInput();
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput()
+                ->with('open_modal', 'edit')
+                ->with('edit_id', $id);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Update siswa gagal. Silakan coba lagi.')->withInput();
+            return redirect()->back()
+                ->with('error', 'Update siswa gagal. Silakan coba lagi.')
+                ->withInput()
+                ->with('open_modal', 'edit')
+                ->with('edit_id', $id);
         }
     }
 
@@ -568,9 +582,15 @@ class AuthController extends Controller
 
             return redirect()->route('akun.indentitas_guru')->with('success', 'Data guru berhasil ditambahkan.');
         } catch (ValidationException $e) {
-            return redirect()->back()->withErrors($e->errors())->withInput();
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput()
+                ->with('open_modal', 'tambah');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Registrasi guru gagal: ' . $e->getMessage())->withInput();
+            return redirect()->back()
+                ->with('error', 'Registrasi guru gagal: ' . $e->getMessage())
+                ->withInput()
+                ->with('open_modal', 'tambah');
         }
     }
 
@@ -626,9 +646,17 @@ class AuthController extends Controller
 
             return redirect()->route('akun.indentitas_guru')->with('success', 'Data guru berhasil diupdate.');
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return redirect()->back()->withErrors($e->errors())->withInput();
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput()
+                ->with('open_modal', 'edit')
+                ->with('edit_id', $id);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Update guru gagal. Silakan coba lagi.')->withInput();
+            return redirect()->back()
+                ->with('error', 'Update guru gagal. Silakan coba lagi.')
+                ->withInput()
+                ->with('open_modal', 'edit')
+                ->with('edit_id', $id);
         }
     }
 

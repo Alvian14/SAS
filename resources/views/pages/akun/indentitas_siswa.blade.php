@@ -272,13 +272,13 @@
                             <label class="form-label fw-semibold text-dark">
                                 Nama Lengkap
                             </label>
-                            <input type="text" name="name" class="form-control border-2" placeholder="Masukkan nama lengkap" required>
+                            <input type="text" name="name" class="form-control border-2" placeholder="Masukkan nama lengkap" value="{{ old('name') }}" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold text-dark">
                                 Email
                             </label>
-                            <input type="email" name="email" class="form-control border-2" placeholder="contoh@email.com" required>
+                            <input type="email" name="email" class="form-control border-2" placeholder="contoh@email.com" value="{{ old('email') }}" required>
                         </div>
                     </div>
 
@@ -294,7 +294,7 @@
                             <label class="form-label fw-semibold text-dark">
                                 NISN
                             </label>
-                            <input type="number" name="nisn" class="form-control border-2" placeholder="Nomor Induk Siswa" required>
+                            <input type="number" name="nisn" class="form-control border-2" placeholder="Nomor Induk Siswa" value="{{ old('nisn') }}" required>
                         </div>
                     </div>
 
@@ -307,7 +307,7 @@
                             <select name="id_class" class="form-select border-2" required>
                                 <option value="">-- Pilih Kelas --</option>
                                 @foreach($classes as $kelas)
-                                    <option value="{{ $kelas->id }}">{{ $kelas->name }}</option>
+                                    <option value="{{ $kelas->id }}" {{ (string)old('id_class') === (string)$kelas->id ? 'selected' : '' }}>{{ $kelas->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -315,7 +315,7 @@
                             <label class="form-label fw-semibold text-dark">
                                 Tahun Masuk
                             </label>
-                            <input type="number" name="entry_year" class="form-control border-2" placeholder="2024" min="2015" max="2030" required>
+                            <input type="number" name="entry_year" class="form-control border-2" placeholder="2024" min="2015" max="2030" value="{{ old('entry_year') }}" required>
                         </div>
                     </div>
 
@@ -489,6 +489,24 @@
                             <input type="number" name="entry_year" id="edit-entry_year" class="form-control border-2" min="2015" max="2030" required>
                         </div>
                     </div>
+
+                    <!-- Foto Profil -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold text-dark">
+                                Foto Profil
+                                <small class="text-muted">(opsional, kosongkan jika tidak ingin mengganti)</small>
+                            </label>
+                            <div class="d-flex align-items-center gap-3 mb-2">
+                                <img id="edit-profile-preview" src="" alt="Foto Profil" width="64" height="64" class="rounded-circle border border-2 border-primary shadow-sm" style="object-fit: cover;">
+                                <input type="file" name="profile_picture" id="edit-profile_picture" class="form-control border-2" accept="image/*">
+                            </div>
+                            <div class="form-text text-muted">
+                                Format: JPG, PNG, GIF. Maksimal 2MB.
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="row mb-3">
                         <div class="col-12">
                             <label class="form-label fw-semibold text-dark">
@@ -702,8 +720,7 @@
         document.getElementById('btn-start-webcam-edit').addEventListener('click', function(e) {
             e.preventDefault();
             startWebcamEdit();
-        });
-        document.getElementById('btn-capture-edit').addEventListener('click', function(e) {
+        });        document.getElementById('btn-capture-edit').addEventListener('click', function(e) {
             e.preventDefault();
             capturePhotoEdit();
         });
@@ -726,6 +743,18 @@
         document.getElementById('btn-next-photo-edit').addEventListener('click', function(e) {
             e.preventDefault();
             nextPhotoEdit();
+        });
+
+        // Live preview foto profil saat memilih file baru (modal edit)
+        document.getElementById('edit-profile_picture').addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('edit-profile-preview').src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
         });
 
         // Add Modal Functions
@@ -1137,6 +1166,11 @@
                     $('#edit-entry_year').val(entryYear);
                     $('#formEditSiswa').attr('action', '{{ url("/pages/akun/indentitas_siswa") }}/' + id);
 
+                    // Set preview foto profil dari baris tabel & reset input file
+                    const profileImg = tr.find('td').eq(1).find('img').attr('src');
+                    $('#edit-profile-preview').attr('src', profileImg || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(name));
+                    $('#edit-profile_picture').val('');
+
                     document.getElementById('initial-container-edit').style.display = 'block';
                     document.getElementById('webcam-container-edit').style.display = 'none';
                     document.getElementById('preview-container-edit').style.display = 'none';
@@ -1247,270 +1281,93 @@
         });
     </script>
 
-    @if(session('success'))
+    {{-- Flash & validation feedback (single source) --}}
+    <div id="page-flash"
+        data-success="{{ session('success') ?? '' }}"
+        data-error="{{ session('error') ?? '' }}"
+        data-open-modal="{{ session('open_modal') ?? '' }}"
+        data-edit-id="{{ session('edit_id') ?? '' }}"
+        data-errors='@json($errors->all())'
+        style="display:none;"></div>
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            Swal.fire({
-                toast: true,
-                position: 'bottom-end',
-                icon: 'success',
-                title: '{{ session('success') }}',
-                showConfirmButton: false,
-                timer: 2500,
-                timerProgressBar: true
-            });
-        });
-    </script>
-    @endif
+        (function () {
+            const flashEl = document.getElementById('page-flash');
+            if (!flashEl) return;
 
-    @if(session('error'))
-    <scrip>
-        document.addEventListener('DOMContentLoaded', function() {
-            Swal.fire({
-                toast: true,
-                position: 'bottom-end',
-                icon: 'error',
-                title: '{{ session('error') }}',
-                showConfirmButton: false,
-                timer: 2500,
-                timerProgressBar: true
-            });
-        });
-    </script>
-    @endif
-
-
-    @if(session('success'))
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            Swal.fire({
-                toast: true,
-                position: 'bottom-end',
-                icon: 'success',
-                title: '{{ session('success') }}',
-                showConfirmButton: false,
-                timer: 2500,
-                timerProgressBar: true
-            });
-        });
-    </script>
-    @endif
-
-    @if(session('error'))
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            Swal.fire({
-                toast: true,
-                position: 'bottom-end',
-                icon: 'error',
-                title: '{{ session('error') }}',
-                showConfirmButton: false,
-                timer: 2500,
-                timerProgressBar: true
-            });
-        });
-    </script>
-    @endif
-
-    <!-- Webcam Script -->
-    <script>
-        let webcamStream = null;
-        let webcamCanvas = null;
-        let collectedPhotos = [null, null, null]; // Array untuk 3 foto
-        let currentPhotoIndex = 0; // Index untuk photo yang sedang diambil (0, 1, 2)
-
-        document.getElementById('btn-start-webcam').addEventListener('click', function(e) {
-            e.preventDefault();
-            startWebcam();
-        });
-
-        document.getElementById('btn-capture').addEventListener('click', function(e) {
-            e.preventDefault();
-            capturePhoto();
-        });
-
-        document.getElementById('btn-stop-webcam').addEventListener('click', function(e) {
-            e.preventDefault();
-            stopWebcam();
-        });
-
-        document.getElementById('btn-retake').addEventListener('click', function(e) {
-            e.preventDefault();
-            retakePhoto();
-        });
-
-        document.getElementById('btn-use-photo').addEventListener('click', function(e) {
-            e.preventDefault();
-            usePhoto();
-        });
-
-        document.getElementById('btn-delete-accepted-photo').addEventListener('click', function(e) {
-            e.preventDefault();
-            deleteAcceptedPhoto();
-        });
-
-        document.getElementById('btn-next-photo').addEventListener('click', function(e) {
-            e.preventDefault();
-            nextPhoto();
-        });
-
-        function startWebcam() {
-            const video = document.getElementById('webcam-video');
-
-            const constraints = {
-                video: {
-                    width: { ideal: 400 },
-                    height: { ideal: 400 }
-                },
-                audio: false
-            };
-
-            navigator.mediaDevices.getUserMedia(constraints)
-                .then(function(stream) {
-                    webcamStream = stream;
-                    video.srcObject = stream;
-                    video.onloadedmetadata = function() {
-                        video.play();
-                        document.getElementById('initial-container').style.display = 'none';
-                        document.getElementById('webcam-container').style.display = 'block';
-                    };
-                })
-                .catch(function(err) {
-                    alert('Gagal akses webcam: ' + err.message);
-                });
-        }
-
-        function capturePhoto() {
-            const video = document.getElementById('webcam-video');
-            const canvas = document.getElementById('webcam-canvas');
-            const context = canvas.getContext('2d');
-
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            webcamCanvas = canvas;
-
-            stopWebcam();
-
-            document.getElementById('webcam-container').style.display = 'none';
-            document.getElementById('preview-container').style.display = 'block';
-        }
-
-        function stopWebcam() {
-            if (webcamStream) {
-                webcamStream.getTracks().forEach(track => track.stop());
-                webcamStream = null;
+            const successMsg = flashEl.dataset.success || '';
+            const errorMsg = flashEl.dataset.error || '';
+            const openModal = flashEl.dataset.openModal || '';
+            let validationErrors = [];
+            try {
+                validationErrors = JSON.parse(flashEl.dataset.errors || '[]');
+            } catch (e) {
+                validationErrors = [];
             }
-        }
 
-        function retakePhoto() {
-            document.getElementById('preview-container').style.display = 'none';
-            document.getElementById('initial-container').style.display = 'block';
-        }
-
-        function usePhoto() {
-            if (webcamCanvas) {
-                const photoData = webcamCanvas.toDataURL('image/png');
-
-                // Simpan foto ke array
-                collectedPhotos[currentPhotoIndex] = photoData;
-
-                // Tampilkan preview di accepted-container
-                document.getElementById('accepted-photo-preview').src = photoData;
-                document.getElementById('photos-progress').textContent = `Foto ${currentPhotoIndex + 1} dari 3`;
-
-                document.getElementById('preview-container').style.display = 'none';
-                document.getElementById('accepted-container').style.display = 'block';
-            }
-        }
-
-        function deleteAcceptedPhoto() {
-            collectedPhotos[currentPhotoIndex] = null;
-            document.getElementById('accepted-container').style.display = 'none';
-            document.getElementById('initial-container').style.display = 'block';
-
-            Swal.fire({
-                toast: true,
-                position: 'bottom-end',
-                icon: 'info',
-                title: 'Foto dihapus',
-                showConfirmButton: false,
-                timer: 2000
-            });
-        }
-
-        function nextPhoto() {
-            if (currentPhotoIndex < 2) {
-                currentPhotoIndex++;
-                document.getElementById('accepted-container').style.display = 'none';
-                document.getElementById('initial-container').style.display = 'block';
-            } else {
-                // Semua 3 foto sudah diambil, tampilkan summary
-                showPhotosSummary();
-            }
-        }
-
-        function showPhotosSummary() {
-            // Tampilkan semua 3 foto di summary
-            for (let i = 0; i < 3; i++) {
-                if (collectedPhotos[i]) {
-                    document.getElementById(`summary-photo-${i + 1}`).src = collectedPhotos[i];
+            document.addEventListener('DOMContentLoaded', function () {
+                // Toast sukses
+                if (successMsg) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'bottom-end',
+                        icon: 'success',
+                        title: successMsg,
+                        showConfirmButton: false,
+                        timer: 2500,
+                        timerProgressBar: true
+                    });
                 }
-            }
 
-            // Simpan semua foto ke hidden input (comma-separated)
-            const photosString = collectedPhotos.map(photo => {
-                if (photo) {
-                    return photo;
+                // Dialog validasi (centered) — prioritaskan ini dulu
+                if (validationErrors.length > 0) {
+                    const listHtml = '<ul class="list-unstyled text-center mb-0 p-0">' +
+                        validationErrors.map(function (msg) {
+                            return '<li class="mb-1">' + msg + '</li>';
+                        }).join('') + '</ul>';
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal Menyimpan Data',
+                        html: listHtml,
+                        confirmButtonText: 'Mengerti',
+                        confirmButtonColor: '#365CF5',
+                        customClass: {
+                            popup: 'rounded-4 shadow-lg',
+                            title: 'fw-bold text-danger',
+                            confirmButton: 'fw-semibold px-4'
+                        }
+                    }).then(function () {
+                        reopenModalIfNeeded();
+                    });
+                } else if (errorMsg) {
+                    // Toast error umum (bukan validasi)
+                    Swal.fire({
+                        toast: true,
+                        position: 'bottom-end',
+                        icon: 'error',
+                        title: errorMsg,
+                        showConfirmButton: false,
+                        timer: 2500,
+                        timerProgressBar: true
+                    }).then(function () {
+                        reopenModalIfNeeded();
+                    });
+                } else {
+                    reopenModalIfNeeded();
                 }
-                return '';
-            }).join('|||'); // Gunakan ||| sebagai delimiter
-
-            document.getElementById('webcam-photo-data').value = photosString;
-
-            document.getElementById('accepted-container').style.display = 'none';
-            document.getElementById('photos-summary-container').style.display = 'block';
-        }
-
-        function deletePhotoFromSummary(btn) {
-            const photoNum = parseInt(btn.getAttribute('data-photo')) - 1;
-            collectedPhotos[photoNum] = null;
-
-            // Hide foto yang dihapus
-            document.getElementById(`summary-photo-${photoNum + 1}`).style.opacity = '0.5';
-            btn.style.display = 'none';
-
-            // Update hidden input
-            const photosString = collectedPhotos.map(photo => {
-                if (photo) {
-                    return photo;
-                }
-                return '';
-            }).join('|||');
-
-            document.getElementById('webcam-photo-data').value = photosString;
-
-            Swal.fire({
-                toast: true,
-                position: 'bottom-end',
-                icon: 'info',
-                title: 'Foto dihapus',
-                showConfirmButton: false,
-                timer: 2000
             });
-        }
 
-        document.getElementById('modalTambahSiswa').addEventListener('hidden.bs.modal', function() {
-            stopWebcam();
-            document.getElementById('initial-container').style.display = 'block';
-            document.getElementById('webcam-container').style.display = 'none';
-            document.getElementById('preview-container').style.display = 'none';
-            document.getElementById('accepted-container').style.display = 'none';
-            document.getElementById('photos-summary-container').style.display = 'none';
-            document.getElementById('webcam-photo-data').value = '';
-            collectedPhotos = [null, null, null];
-            currentPhotoIndex = 0;
-        });
+            function reopenModalIfNeeded() {
+                if (openModal === 'tambah') {
+                    const el = document.getElementById('modalTambahSiswa');
+                    if (el && typeof bootstrap !== 'undefined') {
+                        bootstrap.Modal.getOrCreateInstance(el).show();
+                    }
+                }
+                // Catatan: modal edit tidak otomatis dibuka kembali karena membutuhkan
+                // data dinamis (foto, kelas, dsb) yang dimuat saat tombol edit diklik.
+            }
+        })();
     </script>
 @endsection
