@@ -251,15 +251,56 @@
         document.getElementById('qrCode').appendChild(qr.element);
 
         document.getElementById('btn-copy-link').onclick = function() {
-            const url = window.location.href;
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(url).then(function() {
-                    document.getElementById('copy-success').style.display = 'block';
-                    setTimeout(() => { document.getElementById('copy-success').style.display = 'none'; }, 2000);
+            const btn = this;
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+
+            // Hit web route untuk generate link
+            fetch('/jadwal/qr-link/{{ $jadwal->id }}', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                }
+            })
+                .then(async response => {
+                    const data = await response.json();
+                    console.log('Response status:', response.status);
+                    console.log('Response data:', data);
+                    
+                    if (!response.ok) {
+                        throw new Error(data.message || `HTTP ${response.status}`);
+                    }
+                    return data;
+                })
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+
+                    if (data.success && data.data.url) {
+                        const url = data.data.url;
+
+                        if (navigator.clipboard) {
+                            navigator.clipboard.writeText(url).then(function() {
+                                document.getElementById('copy-success').style.display = 'block';
+                                setTimeout(() => { document.getElementById('copy-success').style.display = 'none'; }, 2000);
+                            }).catch(() => {
+                                alert('Gagal meng-copy link ke clipboard');
+                            });
+                        } else {
+                            prompt('Copy link berikut:', url);
+                        }
+                    } else {
+                        alert('Gagal membuat link publik: ' + (data.message || 'Silakan coba lagi'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                    alert('Gagal membuat link publik: ' + error.message);
                 });
-            } else {
-                prompt('Copy link berikut:', url);
-            }
         };
 
         document.getElementById('btn-print').onclick = function() { window.print(); };

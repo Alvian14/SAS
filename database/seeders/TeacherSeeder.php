@@ -17,7 +17,7 @@ class TeacherSeeder extends Seeder
         // Cari user guru berdasarkan email
 
         Teacher::create([
-            'name' => 'Alvian hidayatulloh',
+            'name' => 'Zainal Abidin',
             'nip' => '198001012005011001',
             'subject' => 'SENBUD, SEJ',
             'id_user' => 2,

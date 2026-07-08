@@ -64,4 +64,31 @@ class User extends Authenticatable
     {
         return $this->hasOne(Student::class, 'id_user');
     }
+
+    /**
+     * Nama tampilan: ambil dari relasi teacher/student, fallback ke email.
+     */
+    public function getDisplayNameAttribute(): string
+    {
+        if ($this->relationLoaded('teacher') ? $this->teacher : $this->teacher()->first()) {
+            return $this->teacher->name;
+        }
+        if ($this->relationLoaded('student') ? $this->student : $this->student()->first()) {
+            return $this->student->name;
+        }
+        return $this->email ?? 'Pengguna';
+    }
+
+    /**
+     * Label role dalam Bahasa Indonesia.
+     */
+    public function getRoleLabelAttribute(): string
+    {
+        return match ($this->role) {
+            'admin'   => 'Admin',
+            'teacher' => 'Guru',
+            'student' => 'Siswa',
+            default   => ucfirst((string) $this->role),
+        };
+    }
 }

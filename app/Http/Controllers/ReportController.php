@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Report;
 use App\Models\AttendanceHistory;
+use App\Models\AttendanceHistoryDaily;
 use App\Models\Student;
 use App\Models\Notification;
 use App\Enums\NotificationType;
@@ -40,7 +41,7 @@ class ReportController extends Controller
             // Find report by id
             $report = Report::find($id);
             if (!$report) {
-                return redirect()->back()->with('error', 'Data laporan tidak ditemukan');
+                return redirect()->back()->with('error', 'Data laporkan tidak ditemukan');
             }
 
             // Validate status

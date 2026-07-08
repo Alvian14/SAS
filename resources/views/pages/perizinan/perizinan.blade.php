@@ -153,11 +153,15 @@
                             <td>
                                 @if($item->status === 'proses')
                                     <div class="d-flex gap-2">
-                                        <form action="{{ url('permissions/' . $item->id . '/approve') }}" method="POST">
+                                        <form action="{{ url('permissions/' . $item->id . '/approve') }}" method="POST" class="form-approve-permission" data-student-name="{{ $item->student->name ?? $item->id_student }}">
                                             @csrf
-                                            <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Setujui pengajuan ini?')">Approve</button>
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                <i class="fas fa-check me-1"></i> Approve
+                                            </button>
                                         </form>
-                                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal" data-permission-id="{{ $item->id }}" data-student-name="{{ $item->student->name ?? $item->id_student }}">Tolak</button>
+                                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal" data-permission-id="{{ $item->id }}" data-student-name="{{ $item->student->name ?? $item->id_student }}">
+                                            <i class="fas fa-times me-1"></i> Tolak
+                                        </button>
                                     </div>
                                 @else
                                     <span class="text-muted">-</span>
@@ -216,6 +220,7 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         // Handle reject modal
         const rejectModal = document.getElementById('rejectModal');
@@ -230,6 +235,39 @@
                 document.getElementById('feedbackInput').value = '';
             });
         }
+
+        // Konfirmasi approve via SweetAlert (mengganti window.confirm)
+        document.querySelectorAll('.form-approve-permission').forEach(function (form) {
+            form.addEventListener('submit', function (e) {
+                if (form.dataset.confirmed === 'true') {
+                    return; // sudah dikonfirmasi, lanjutkan submit
+                }
+                e.preventDefault();
+                const studentName = form.getAttribute('data-student-name') || 'siswa ini';
+                Swal.fire({
+                    icon: 'question',
+                    title: 'Setujui Pengajuan Izin?',
+                    html: 'Anda akan menyetujui pengajuan izin dari <strong>' + studentName + '</strong>.',
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="fas fa-check me-1"></i> Ya, Setujui',
+                    cancelButtonText: 'Batal',
+                    confirmButtonColor: '#22c55e',
+                    cancelButtonColor: '#6c757d',
+                    reverseButtons: true,
+                    customClass: {
+                        popup: 'rounded-4 shadow-lg',
+                        title: 'fw-bold',
+                        confirmButton: 'fw-semibold px-4',
+                        cancelButton: 'fw-semibold px-4'
+                    }
+                }).then(function (result) {
+                    if (result.isConfirmed) {
+                        form.dataset.confirmed = 'true';
+                        form.submit();
+                    }
+                });
+            });
+        });
 
         $(document).ready(function () {
             if (!$('#example').length) {
@@ -247,6 +285,45 @@
                 pageLength: 10
             });
         });
+    </script>
+
+    {{-- Flash feedback (success / error) --}}
+    <div id="page-flash"
+        data-success="{{ session('success') ?? '' }}"
+        data-error="{{ session('error') ?? '' }}"
+        style="display:none;"></div>
+
+    <script>
+        (function () {
+            const flashEl = document.getElementById('page-flash');
+            if (!flashEl) return;
+            const successMsg = flashEl.dataset.success || '';
+            const errorMsg = flashEl.dataset.error || '';
+
+            document.addEventListener('DOMContentLoaded', function () {
+                if (successMsg) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'bottom-end',
+                        icon: 'success',
+                        title: successMsg,
+                        showConfirmButton: false,
+                        timer: 2500,
+                        timerProgressBar: true
+                    });
+                } else if (errorMsg) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'bottom-end',
+                        icon: 'error',
+                        title: errorMsg,
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true
+                    });
+                }
+            });
+        })();
     </script>
 @endsection
 

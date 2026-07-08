@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\NotificationType;
 use App\Models\AttendanceHistory;
+use App\Models\AttendanceHistoryDaily;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 
@@ -19,12 +20,23 @@ class PermissionController extends Controller
 {
 
     protected NotificationHelperService $notificationHelper;
-    public $latOfAttendance = -7.7811912;
-    public $lonOfAttendance = 112.0315286;
+    public $latOfAttendance;
+    public $lonOfAttendance;
 
     public function __construct(NotificationHelperService $notificationHelper)
     {
         $this->notificationHelper = $notificationHelper;
+        $this->initCoordinatesFromConfig();
+    }
+
+
+    
+    private function initCoordinatesFromConfig(): void
+    {
+        $coordinate = config('coordinate.coordinate', '-7.604032330848524, 112.10176449791652');
+        [$lat, $lon] = array_map('trim', explode(',', $coordinate));
+        $this->latOfAttendance = (float) $lat;
+        $this->lonOfAttendance = (float) $lon;
     }
 
     public function index()
@@ -111,10 +123,33 @@ class PermissionController extends Controller
                             [
                                 'id_class' => $schedule->id_class,
                                 'period_number' => $schedule->period_start,
-                                'coordinate' => "$this->latOfAttendance, $this->lonOfAttendance",
+                                'coordinate' => $this->latOfAttendance . ', ' . $this->lonOfAttendance,
                                 'status' => $permissionReason,
                             ]
                         );
+                    }
+
+                    // update attendancehistorydaily to 'izin'
+                    // Cari berdasarkan id_student, id_class, dan tanggal dari created_at
+                    // Jika ada, update. Jika tidak ada, create
+                    $attendanceDaily = AttendanceHistoryDaily::whereDate('created_at', $currentDate->toDateString())
+                        ->where('id_student', $student->id)
+                        ->where('id_class', $student->id_class)
+                        ->first();
+
+                    if ($attendanceDaily) {
+                        $attendanceDaily->update([
+                            'status' => 'izin',
+                            'picture' => '',
+                        ]);
+                    } else {
+                        AttendanceHistoryDaily::create([
+                            'id_student' => $student->id,
+                            'id_class' => $student->id_class,
+                            'created_at' => $currentDate,
+                            'status' => 'izin',
+                            'picture' => '',
+                        ]);
                     }
 
                     $createdSchoolDays++;

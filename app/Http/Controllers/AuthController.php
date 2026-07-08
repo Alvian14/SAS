@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use Intervention\Image\Facades\Image;
 use Intervention\Image\Image as InterventionImage;
+use Illuminate\Support\Facades\Storage;
 
 class AuthController extends Controller
 {
@@ -234,9 +235,9 @@ class AuthController extends Controller
             return back()->with('success', 'Foto profil sudah kosong.');
         }
 
-        $photoPath = public_path('storage/profile/' . $user->profile_picture);
-        if (file_exists($photoPath)) {
-            @unlink($photoPath);
+        $rolePath = $user->role ?? 'others';
+        if (!empty($user->profile_picture) && Storage::disk('public')->exists('profile_pictures/' . $rolePath . '/' . $user->profile_picture)) {
+            Storage::disk('public')->delete('profile_pictures/' . $rolePath . '/' . $user->profile_picture);
         }
 
         $user->profile_picture = null;
@@ -255,16 +256,14 @@ class AuthController extends Controller
         $user->email = $request->email;
 
         if ($request->hasFile('profile_picture')) {
-            if (!empty($user->profile_picture)) {
-                $oldPath = public_path('storage/profile/' . $user->profile_picture);
-                if (file_exists($oldPath)) {
-                    @unlink($oldPath);
-                }
+            $rolePath = $user->role ?? 'others';
+            if (!empty($user->profile_picture) && Storage::disk('public')->exists('profile_pictures/' . $rolePath . '/' . $user->profile_picture)) {
+                Storage::disk('public')->delete('profile_pictures/' . $rolePath . '/' . $user->profile_picture);
             }
 
             $image = $request->file('profile_picture');
             $imageName = $image->hashName();
-            $image->move(public_path('storage/profile/'), $imageName);
+            Storage::disk('public')->putFileAs('profile_pictures/' . $rolePath, $image, $imageName);
             $user->profile_picture = $imageName;
         }
 
@@ -315,7 +314,7 @@ class AuthController extends Controller
             if ($request->hasFile('profile_picture')) {
                 $image = $request->file('profile_picture');
                 $imageName = $image->hashName();
-                $image->move(public_path('storage/student/'), $imageName);
+                Storage::disk('public')->putFileAs('profile_pictures/student', $image, $imageName);
             }
 
             // Proses 3 foto webcam
@@ -324,10 +323,6 @@ class AuthController extends Controller
                 $photosData = $request->pictures;
                 $photoArray = explode('|||', $photosData); // Split dengan |||
 
-                $photoPath = public_path('storage/photo-webcam');
-                if (!is_dir($photoPath)) {
-                    mkdir($photoPath, 0755, true);
-                }
 
                 foreach ($photoArray as $index => $photo) {
                     if (!empty($photo)) {
@@ -342,7 +337,7 @@ class AuthController extends Controller
 
                         if ($imageData !== false) {
                             $picturesName = 'webcam_' . time() . '_' . ($index + 1) . '_' . uniqid() . '.png';
-                            file_put_contents($photoPath . '/' . $picturesName, $imageData);
+                            Storage::disk('public')->put('photo-webcam/' . $picturesName, $imageData);
                             $picturesNames[] = $picturesName;
                         }
                     }
@@ -368,9 +363,15 @@ class AuthController extends Controller
             // Redirect kembali ke identitas siswa dengan pesan sukses
             return redirect()->route('akun.indentitas_siswa')->with('success', 'Data siswa berhasil ditambahkan.');
         } catch (ValidationException $e) {
-            return redirect()->back()->withErrors($e->errors())->withInput();
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput()
+                ->with('open_modal', 'tambah');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Registrasi siswa gagal. Silakan coba lagi.')->withInput();
+            return redirect()->back()
+                ->with('error', 'Registrasi siswa gagal. Silakan coba lagi.')
+                ->withInput()
+                ->with('open_modal', 'tambah');
         }
     }
 
@@ -392,9 +393,8 @@ class AuthController extends Controller
             $photos = explode(',', $student->pictures);
             foreach ($photos as $photo) {
                 if (!empty($photo)) {
-                    $photoPath = public_path('storage/photo-webcam/' . $photo);
-                    if (file_exists($photoPath)) {
-                        @unlink($photoPath);
+                    if (Storage::disk('public')->exists('photo-webcam/' . $photo)) {
+                        Storage::disk('public')->delete('photo-webcam/' . $photo);
                     }
                 }
             }
@@ -438,15 +438,13 @@ class AuthController extends Controller
             $user->email = $request->email;
             if ($request->hasFile('profile_picture')) {
                 // Hapus foto lama jika ada
-                if ($user->profile_picture) {
-                    $oldPath = public_path('storage/student/' . $user->profile_picture);
-                    if (file_exists($oldPath)) {
-                        @unlink($oldPath);
-                    }
+                if ($user->profile_picture && Storage::disk('public')->exists('profile_pictures/student/' . $user->profile_picture)) {
+                    Storage::disk('public')->delete('profile_pictures/student/' . $user->profile_picture);
                 }
+
                 $image = $request->file('profile_picture');
                 $imageName = $image->hashName();
-                $image->move(public_path('storage/student/'), $imageName);
+                Storage::disk('public')->putFileAs('profile_pictures/student', $image, $imageName);
                 $user->profile_picture = $imageName;
             }
             $user->save();
@@ -461,11 +459,8 @@ class AuthController extends Controller
                 if ($student->pictures) {
                     $photos = explode(',', $student->pictures);
                     foreach ($photos as $photo) {
-                        if (!empty($photo)) {
-                            $photoPath = public_path('storage/photo-webcam/' . $photo);
-                            if (file_exists($photoPath)) {
-                                @unlink($photoPath);
-                            }
+                        if (!empty($photo) && Storage::disk('public')->exists('photo-webcam/' . $photo)) {
+                            Storage::disk('public')->delete('photo-webcam/' . $photo);
                         }
                     }
                 }
@@ -481,21 +476,13 @@ class AuthController extends Controller
                 if ($student->pictures) {
                     $oldPhotos = explode(',', $student->pictures);
                     foreach ($oldPhotos as $photo) {
-                        if (!empty($photo)) {
-                            $photoPath = public_path('storage/photo-webcam/' . $photo);
-                            if (file_exists($photoPath)) {
-                                @unlink($photoPath);
-                            }
+                        if (!empty($photo) && Storage::disk('public')->exists('photo-webcam/' . $photo)) {
+                            Storage::disk('public')->delete('photo-webcam/' . $photo);
                         }
                     }
                 }
 
                 $picturesNames = [];
-                $photoPath = public_path('storage/photo-webcam');
-                if (!is_dir($photoPath)) {
-                    mkdir($photoPath, 0755, true);
-                }
-
                 foreach ($photoArray as $index => $photo) {
                     if (!empty($photo)) {
                         $imageData = $photo;
@@ -509,7 +496,7 @@ class AuthController extends Controller
 
                         if ($imageData !== false) {
                             $picturesName = 'webcam_' . time() . '_' . ($index + 1) . '_' . uniqid() . '.png';
-                            file_put_contents($photoPath . '/' . $picturesName, $imageData);
+                            Storage::disk('public')->put('photo-webcam/' . $picturesName, $imageData);
                             $picturesNames[] = $picturesName;
                         }
                     }
@@ -524,9 +511,17 @@ class AuthController extends Controller
 
             return redirect()->route('akun.indentitas_siswa')->with('success', 'Data siswa berhasil diupdate.');
         } catch (ValidationException $e) {
-            return redirect()->back()->withErrors($e->errors())->withInput();
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput()
+                ->with('open_modal', 'edit')
+                ->with('edit_id', $id);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Update siswa gagal. Silakan coba lagi.')->withInput();
+            return redirect()->back()
+                ->with('error', 'Update siswa gagal. Silakan coba lagi.')
+                ->withInput()
+                ->with('open_modal', 'edit')
+                ->with('edit_id', $id);
         }
     }
 
@@ -564,7 +559,7 @@ class AuthController extends Controller
             if ($request->hasFile('profile_picture')) {
                 $image = $request->file('profile_picture');
                 $imageName = $image->hashName();
-                $image->move(public_path('storage/teacher/'), $imageName);
+                Storage::disk('public')->putFileAs('profile_pictures/teacher', $image, $imageName);
             }
 
             // Ambil nama semua subject yang dipilih
@@ -587,9 +582,15 @@ class AuthController extends Controller
 
             return redirect()->route('akun.indentitas_guru')->with('success', 'Data guru berhasil ditambahkan.');
         } catch (ValidationException $e) {
-            return redirect()->back()->withErrors($e->errors())->withInput();
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput()
+                ->with('open_modal', 'tambah');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Registrasi guru gagal: ' . $e->getMessage())->withInput();
+            return redirect()->back()
+                ->with('error', 'Registrasi guru gagal: ' . $e->getMessage())
+                ->withInput()
+                ->with('open_modal', 'tambah');
         }
     }
 
@@ -623,15 +624,13 @@ class AuthController extends Controller
 
             $user->email = $request->email;
             if ($request->hasFile('profile_picture')) {
-                if ($user->profile_picture) {
-                    $oldPath = public_path('storage/teacher/' . $user->profile_picture);
-                    if (file_exists($oldPath)) {
-                        @unlink($oldPath);
-                    }
+                if ($user->profile_picture && Storage::disk('public')->exists('profile_pictures/teacher/' . $user->profile_picture)) {
+                    Storage::disk('public')->delete('profile_pictures/teacher/' . $user->profile_picture);
                 }
+
                 $image = $request->file('profile_picture');
                 $imageName = $image->hashName();
-                $image->move(public_path('storage/teacher/'), $imageName);
+                Storage::disk('public')->putFileAs('profile_pictures/teacher', $image, $imageName);
                 $user->profile_picture = $imageName;
             }
             $user->save();
@@ -647,9 +646,17 @@ class AuthController extends Controller
 
             return redirect()->route('akun.indentitas_guru')->with('success', 'Data guru berhasil diupdate.');
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return redirect()->back()->withErrors($e->errors())->withInput();
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput()
+                ->with('open_modal', 'edit')
+                ->with('edit_id', $id);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Update guru gagal. Silakan coba lagi.')->withInput();
+            return redirect()->back()
+                ->with('error', 'Update guru gagal. Silakan coba lagi.')
+                ->withInput()
+                ->with('open_modal', 'edit')
+                ->with('edit_id', $id);
         }
     }
 

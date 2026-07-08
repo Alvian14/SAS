@@ -163,7 +163,7 @@
                             </td>
                             <td class="text-center">
                                 @if($teacher->user && $teacher->user->profile_picture)
-                                    <img src="{{ asset('storage/teacher/' . $teacher->user->profile_picture) }}" alt="Foto" width="36" height="36" class="rounded-circle border border-2 border-primary shadow-sm">
+                                    <img src="{{ asset('storage/profile_pictures/teacher/' . $teacher->user->profile_picture) }}" alt="Foto" width="36" height="36" class="rounded-circle border border-2 border-primary shadow-sm">
                                 @else
                                     <img src="https://ui-avatars.com/api/?name={{ urlencode($teacher->name) }}" alt="Foto" width="36" height="36" class="rounded-circle border border-2 border-primary shadow-sm">
                                 @endif
@@ -211,13 +211,13 @@
                             <label class="form-label fw-semibold text-dark">
                                 Nama Lengkap
                             </label>
-                            <input type="text" name="name" class="form-control border-2" placeholder="Masukkan nama lengkap" required>
+                            <input type="text" name="name" class="form-control border-2" placeholder="Masukkan nama lengkap" value="{{ old('name') }}" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold text-dark">
                                 Email
                             </label>
-                            <input type="email" name="email" class="form-control border-2" placeholder="contoh@email.com" required>
+                            <input type="email" name="email" class="form-control border-2" placeholder="contoh@email.com" value="{{ old('email') }}" required>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -231,7 +231,7 @@
                             <label class="form-label fw-semibold text-dark">
                                 NIP
                             </label>
-                            <input type="text" name="nip" class="form-control border-2" placeholder="Nomor Induk Pengajar" required>
+                            <input type="text" name="nip" class="form-control border-2" placeholder="Nomor Induk Pengajar" value="{{ old('nip') }}" required>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -240,15 +240,22 @@
                                 Mata Pelajaran
                             </label>
                             <div id="subjects-wrapper">
+                                @php $oldSubjects = old('subjects', [null]); @endphp
+                                @foreach($oldSubjects as $idx => $oldSubject)
                                 <div class="input-group mb-2 subject-group">
                                     <select name="subjects[]" class="form-control border-2" required>
                                         <option value="">Pilih Mata Pelajaran</option>
                                         @foreach($subjects as $subject)
-                                            <option value="{{ $subject->id }}">{{ $subject->name }}</option>
+                                            <option value="{{ $subject->id }}" {{ (string)$oldSubject === (string)$subject->id ? 'selected' : '' }}>{{ $subject->name }}</option>
                                         @endforeach
                                     </select>
-                                    <button type="button" class="btn btn-success btn-add-subject ms-2"><i class="fas fa-plus"></i></button>
+                                    @if($idx === 0)
+                                        <button type="button" class="btn btn-success btn-add-subject ms-2"><i class="fas fa-plus"></i></button>
+                                    @else
+                                        <button type="button" class="btn btn-danger btn-remove-subject ms-2"><i class="fas fa-minus"></i></button>
+                                    @endif
                                 </div>
+                                @endforeach
                             </div>
                         </div>
                     </div>
@@ -318,7 +325,7 @@
                                 Mata Pelajaran
                             </label>
                             <div id="edit-subjects-wrapper"></div>
-                            <button type="button" class="btn btn-success btn-add-edit-subject mt-2"><i class="fas fa-plus"></i> Tambah Mapel</button>
+                            <button type="button" class="btn btn-success btn-add-edit-subject mt-2" id="btn-add-edit-subject"><i class="fas fa-plus"></i> Tambah Mapel</button>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -402,7 +409,7 @@
                                     <option value="{{ $subject->id }}" ${subj === '{{ $subject->name }}' ? 'selected' : ''}>{{ $subject->name }}</option>
                                 @endforeach
                             </select>
-                            ${idx == 0 ? '' : '<button type="button" class="btn btn-danger btn-remove-subject ms-2"><i class="fas fa-minus"></i></button>'}
+                            ${idx == 0 ? '' : '<button type="button" class="btn btn-danger btn-remove-edit-subject ms-2"><i class="fas fa-minus"></i></button>'}
                         </div>`;
                     });
                     if (html === '') {
@@ -413,7 +420,6 @@
                                     <option value="{{ $subject->id }}">{{ $subject->name }}</option>
                                 @endforeach
                             </select>
-                            <button type="button" class="btn btn-success btn-add-edit-subject ms-2"><i class="fas fa-plus"></i></button>
                         </div>`;
                     }
                     $('#edit-subjects-wrapper').html(html);
@@ -491,37 +497,101 @@
             $('#subjects-wrapper').on('click', '.btn-remove-subject', function () {
                 $(this).closest('.subject-group').remove();
             });
-        });
-    </script>
 
-    @if(session('success'))
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            Swal.fire({
-                toast: true,
-                position: 'bottom-end',
-                icon: 'success',
-                title: '{{ session('success') }}',
-                showConfirmButton: false,
-                timer: 2500,
-                timerProgressBar: true
+            // Template select mata pelajaran untuk modal edit
+            const editSubjectSelectHtml = `
+                <select name="subjects[]" class="form-control border-2" required>
+                    <option value="">Pilih Mata Pelajaran</option>
+                    @foreach($subjects as $subject)
+                        <option value="{{ $subject->id }}">{{ $subject->name }}</option>
+                    @endforeach
+                </select>`;
+
+            // Tambah mapel di modal edit
+            $('#btn-add-edit-subject').on('click', function () {
+                const showRemove = $('#edit-subjects-wrapper .subject-group').length >= 1;
+                const html = `<div class="input-group mb-2 subject-group">
+                    ${editSubjectSelectHtml}
+                    ${showRemove ? '<button type="button" class="btn btn-danger btn-remove-edit-subject ms-2"><i class="fas fa-minus"></i></button>' : ''}
+                </div>`;
+                $('#edit-subjects-wrapper').append(html);
+            });
+
+            // Hapus mapel di modal edit
+            $('#edit-subjects-wrapper').on('click', '.btn-remove-edit-subject', function () {
+                $(this).closest('.subject-group').remove();
             });
         });
     </script>
-    @endif
 
-    @if(session('error'))
+    @if(session('success') || session('error') || session('open_modal') || $errors->any())
+    <div id="page-flash"
+        data-success="{{ session('success') }}"
+        data-error="{{ session('error') }}"
+        data-open-modal="{{ session('open_modal') }}"
+        data-errors="{{ json_encode($errors->all()) }}"
+        hidden></div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            Swal.fire({
-                toast: true,
-                position: 'bottom-end',
-                icon: 'error',
-                title: '{{ session('error') }}',
-                showConfirmButton: false,
-                timer: 2500,
-                timerProgressBar: true
-            });
+            var flash = document.getElementById('page-flash');
+            if (!flash) return;
+
+            var successMsg   = flash.dataset.success || '';
+            var errorMsg     = flash.dataset.error || '';
+            var openModal    = flash.dataset.openModal || '';
+            var rawErrors    = flash.dataset.errors || '[]';
+            var errors       = [];
+            try { errors = JSON.parse(rawErrors); } catch (e) { errors = []; }
+
+            if (successMsg) {
+                Swal.fire({
+                    toast: true,
+                    position: 'bottom-end',
+                    icon: 'success',
+                    title: successMsg,
+                    showConfirmButton: false,
+                    timer: 2500,
+                    timerProgressBar: true
+                });
+            }
+
+            if (errorMsg) {
+                Swal.fire({
+                    toast: true,
+                    position: 'bottom-end',
+                    icon: 'error',
+                    title: errorMsg,
+                    showConfirmButton: false,
+                    timer: 2500,
+                    timerProgressBar: true
+                });
+            }
+
+            if (errors.length > 0) {
+                var listHtml = '<ul style="list-style:none; text-align:center; padding:0; margin:0; color:#374151;">'
+                    + errors.map(function(msg) {
+                        return '<li style="margin-bottom:4px;">' + msg + '</li>';
+                    }).join('')
+                    + '</ul>';
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validasi Gagal',
+                    html: listHtml,
+                    confirmButtonText: 'Mengerti',
+                    confirmButtonColor: '#365CF5',
+                    customClass: {
+                        popup: 'rounded-4 shadow-lg',
+                        title: 'fw-bold text-danger',
+                        confirmButton: 'fw-semibold px-4'
+                    }
+                }).then(function() {
+                    if (openModal === 'tambah') {
+                        var modalTambah = new bootstrap.Modal(document.getElementById('modalTambahGuru'));
+                        modalTambah.show();
+                    }
+                });
+            }
         });
     </script>
     @endif

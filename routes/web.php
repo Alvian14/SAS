@@ -147,7 +147,10 @@ Route::put('/pages/jadwal/jadwal/{id}', [JadwalController::class, 'update'])
 Route::delete('/pages/jadwal/jadwal', [JadwalController::class, 'destroy'])
     ->middleware('auth')
     ->name('jadwal.destroy');
-Route::get('/jadwal/qr/{id}', [JadwalController::class, 'showQr'])->name('jadwal.qr');
+Route::get('/jadwal/qr/{id}', [JadwalController::class, 'showQr'])->middleware('auth')->name('jadwal.qr');
+Route::get('/jadwal/qr-link/{id}', [JadwalController::class, 'generateQrLink'])
+    ->middleware('auth')
+    ->name('jadwal.qr.link');
 // ========================= end jadwal ======================
 
 
@@ -165,6 +168,11 @@ Route::get('/pages/kelas/kelas_mapel', [ClassController::class, 'mapel'])
 Route::post('/pages/kelas/kelas', [ClassController::class, 'store'])
     ->middleware('auth')
     ->name('kelas.store');
+
+// Route untuk update kelas
+Route::put('/pages/kelas/kelas/{id}', [ClassController::class, 'update'])
+    ->middleware('auth')
+    ->name('kelas.update');
 
 // Route untuk hapus kelas
 Route::delete('/pages/kelas/kelas/{id}', [ClassController::class, 'destroy'])
@@ -192,10 +200,11 @@ Route::get('/pages/absensi/absensi_harian/{classId}', [HistoryDailyController::c
     ->middleware('auth')
     ->name('absensi.absensi_harian');
 
-Route::post('/absensi-harian/edit-status/{id}', [HistoryDailyController::class, 'editStatus'])
-->name('absensi_harian.edit_status');
+Route::post('/pages/absensi/absensi_harian/edit-status/{id}', [HistoryDailyController::class, 'editStatus'])
+    ->middleware('auth')
+    ->name('absensi_harian.edit_status');
 
-Route::get('/absensi-harian/export-excel/{classId}', [HistoryDailyController::class, 'exportExcel'])
+Route::get('/pages/absensi/absensi_harian/export-excel/{classId}', [HistoryDailyController::class, 'exportExcel'])
     ->middleware('auth')
     ->name('absensi_harian.export_excel');
 
@@ -207,15 +216,28 @@ Route::get('/absensi-mapel/get-by-mapel/{classId}/{subjectId}', [AttendanceHisto
     ->middleware('auth')
     ->name('absensi_mapel.get_by_mapel');
 
-Route::post('/absensi-mapel/edit-status/{id}', [AttendanceHistoryController::class, 'editStatus'])
+Route::get('/absensi-mapel/get-by-mapel-date/{classId}/{subjectId}/{tanggal}', [AttendanceHistoryController::class, 'getAbsensiByMapelAndDate'])
+    ->middleware('auth')
+    ->name('absensi_mapel.get_by_mapel_date');
+
+Route::get('/absensi-mapel/get-schedules/{classId}/{subjectId}', [AttendanceHistoryController::class, 'getSchedules'])
+    ->middleware('auth')
+    ->name('absensi_mapel.get_schedules');
+Route::post('/pages/absensi-mapel/edit-status/{id}', [AttendanceHistoryController::class, 'editStatus'])
+    ->middleware('auth')
     ->name('absensi_mapel.edit_status');
+
+// Route::get('/absensi-mapel/export-excel/{classId}', [AttendanceHistoryController::class, 'exportExcel'])
+//     ->middleware('auth')
+//     ->name('absensi_mapel.export_excel');
+
+Route::get('/absensi-mapel/get-schedules/{classId}/{subjectId}', [AttendanceHistoryController::class, 'getSchedules']);
+
+Route::post('/absensi-mapel/export-excel/{classId}', [AttendanceHistoryController::class, 'exportExcel']);
 
 Route::get('/absensi-mapel/export-excel/{classId}', [AttendanceHistoryController::class, 'exportExcel'])
     ->middleware('auth')
     ->name('absensi_mapel.export_excel');
-
-
-
 // ============================ end absensi ====================
 
 Route::get('/pages/notifikasi/notifikasi', [NotificationController::class, 'index'])
@@ -263,6 +285,8 @@ Route::post('/permissions/{id}/reject', [PermissionController::class, 'permissio
 Route::get('/send-wa', [NotificationController::class, 'sendWa'])
     ->name('send.wa');
 
+Route::get('/public/attendance/qr/{token}', [JadwalController::class, 'showPublicQr'])
+    ->name('jadwal.qr.public');
 
 // Route::get('send-wa', function () {
 //     $response = Http::withHeaders([

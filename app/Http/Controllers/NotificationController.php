@@ -67,7 +67,9 @@ class NotificationController extends Controller
 
    public function index()
     {
-        $notifications = Notification::all();
+        $notifications = Notification::with(['sender.teacher', 'sender.student', 'class'])
+            ->latest()
+            ->get();
         return view('pages.notifikasi.notifikasi', compact('notifications'));
     }
 
