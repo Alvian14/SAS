@@ -1189,6 +1189,12 @@
                     const formData = new FormData();
                     formData.append('image', blob, 'capture.jpg');
 
+                    console.log('[Absensi] Mengirim gambar ke server...', {
+                        url: 'http://202.10.47.101:5000/attendance/recognize',
+                        blobSize: blob.size,
+                        blobType: blob.type
+                    });
+
                     $.ajax({
                         url: 'http://202.10.47.101:5000/attendance/recognize',
                         type: 'POST',
@@ -1196,6 +1202,7 @@
                         processData: false,
                         contentType: false,
                         success: function(response) {
+                            console.log('[Absensi] ✅ Response sukses:', response);
                             document.getElementById('absensi-sending').style.display = 'none';
                             document.getElementById('btn-absensi-retake').style.display = 'inline-block';
 
@@ -1226,6 +1233,15 @@
                             document.getElementById('absensi-result').style.display = 'block';
                         },
                         error: function(xhr, textStatus, errorThrown) {
+                            console.error('[Absensi] AJAX Error:', {
+                                status      : xhr.status,
+                                statusText  : xhr.statusText,
+                                textStatus  : textStatus,
+                                errorThrown : errorThrown,
+                                responseText: xhr.responseText,
+                                responseJSON: xhr.responseJSON
+                            });
+
                             document.getElementById('absensi-sending').style.display = 'none';
                             document.getElementById('btn-absensi-capture').disabled = false;
                             document.getElementById('btn-absensi-retake').style.display = 'inline-block';
