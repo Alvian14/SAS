@@ -428,6 +428,63 @@
     </div>
 </div>
 
+<!-- Modal Kamera Absensi -->
+<div class="modal fade" id="modalKameraAbsensi" tabindex="-1" aria-labelledby="modalKameraAbsensiLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:520px;">
+        <div class="modal-content shadow-lg border-0 rounded-4">
+            <div class="modal-header border-0 rounded-top-4" style="background:linear-gradient(135deg,#17a2b8,#0e7d91);">
+                <h5 class="modal-title fw-bold text-white" id="modalKameraAbsensiLabel">
+                    <i class="fas fa-camera me-2"></i>Kamera Absensi
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-light text-center">
+                <!-- Live Camera Feed -->
+                <div id="absensi-camera-container">
+                    <div style="position:relative;display:inline-block;width:100%;">
+                        <video id="absensi-video"
+                               autoplay playsinline
+                               style="width:100%;max-width:460px;border-radius:12px;border:3px solid #17a2b8;background:#000;"></video>
+                        <!-- Overlay loading -->
+                        <div id="absensi-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);border-radius:12px;">
+                            <div class="spinner-border text-info" role="status"></div>
+                        </div>
+                    </div>
+                    <canvas id="absensi-canvas" style="display:none;"></canvas>
+
+                    <div class="mt-3 d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn btn-info fw-semibold px-4" id="btn-absensi-capture" disabled>
+                            <i class="fas fa-camera me-2"></i>Capture & Absen
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Result Area -->
+                <div id="absensi-result" class="mt-3" style="display:none;">
+                    <div id="absensi-result-content"></div>
+                </div>
+
+                <!-- Sending Spinner -->
+                <div id="absensi-sending" class="mt-3" style="display:none;">
+                    <div class="d-flex align-items-center justify-content-center gap-2 text-info">
+                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                        <span class="fw-semibold">Memproses pengenalan wajah...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-white border-0 px-4 pb-4 pt-0 gap-2 justify-content-center">
+                <button type="button" class="btn btn-secondary px-4 fw-semibold" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Tutup
+                </button>
+                <button type="button" class="btn btn-outline-info px-4 fw-semibold" id="btn-absensi-retake" style="display:none;">
+                    <i class="fas fa-redo me-2"></i>Ambil Ulang
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- End Modal Kamera Absensi -->
+
 <!-- Modal Edit Siswa -->
 <div class="modal fade" id="modalEditSiswa" tabindex="-1" aria-labelledby="modalEditSiswaLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -1064,46 +1121,147 @@
                 });
             });
 
+            // ===== Kamera Absensi Modal =====
+            let absensiStream = null;
+
+            function startAbsensiCamera() {
+                const video = document.getElementById('absensi-video');
+                const loading = document.getElementById('absensi-loading');
+                const captureBtn = document.getElementById('btn-absensi-capture');
+
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+                    .then(function(stream) {
+                        absensiStream = stream;
+                        video.srcObject = stream;
+                        video.onloadedmetadata = function() {
+                            video.play();
+                            loading.style.display = 'none';
+                            captureBtn.disabled = false;
+                        };
+                    })
+                    .catch(function(err) {
+                        loading.style.display = 'none';
+                        document.getElementById('absensi-result').style.display = 'block';
+                        document.getElementById('absensi-result-content').innerHTML =
+                            '<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Tidak dapat mengakses kamera: ' + err.message + '</div>';
+                    });
+            }
+
+            function stopAbsensiCamera() {
+                if (absensiStream) {
+                    absensiStream.getTracks().forEach(function(track) { track.stop(); });
+                    absensiStream = null;
+                }
+                const video = document.getElementById('absensi-video');
+                if (video) video.srcObject = null;
+            }
+
             $('#btn-camera-siswa').on('click', function () {
-                Swal.fire({
-                    title: 'Jalankan Camera Absensi?',
-                    text: 'Apakah Anda yakin ingin menjalankan camera absensi?',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Ya, Jalankan',
-                    cancelButtonText: 'Batal',
-                    confirmButtonColor: '#17a2b8',
-                    reverseButtons: true
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        $.ajax({
-                            url: 'http://presensiku.site/flaskpresensiku/attendance/camera/start',
-                            type: 'POST',
-                            contentType: 'application/json',
-                            success: function(response) {
-                                Swal.fire({
-                                    toast: true,
-                                    position: 'bottom-end',
-                                    icon: 'success',
-                                    title: 'Camera absensi berhasil dijalankan',
-                                    showConfirmButton: false,
-                                    timer: 2000
-                                });
-                            },
-                            error: function(error) {
-                                Swal.fire({
-                                    toast: true,
-                                    position: 'bottom-end',
-                                    icon: 'error',
-                                    title: 'Gagal menjalankan camera absensi',
-                                    showConfirmButton: false,
-                                    timer: 2000
-                                });
-                            }
-                        });
-                    }
-                });
+                // Reset state
+                document.getElementById('absensi-result').style.display = 'none';
+                document.getElementById('absensi-result-content').innerHTML = '';
+                document.getElementById('absensi-sending').style.display = 'none';
+                document.getElementById('btn-absensi-retake').style.display = 'none';
+                document.getElementById('absensi-loading').style.display = 'flex';
+                document.getElementById('btn-absensi-capture').disabled = true;
+                $('#modalKameraAbsensi').modal('show');
             });
+
+            document.getElementById('modalKameraAbsensi').addEventListener('shown.bs.modal', function () {
+                startAbsensiCamera();
+            });
+
+            document.getElementById('btn-absensi-capture').addEventListener('click', function () {
+                const video = document.getElementById('absensi-video');
+                const canvas = document.getElementById('absensi-canvas');
+                const ctx = canvas.getContext('2d');
+
+                canvas.width  = video.videoWidth  || 640;
+                canvas.height = video.videoHeight || 480;
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                // Tampilkan spinner kirim
+                document.getElementById('absensi-sending').style.display = 'block';
+                document.getElementById('absensi-result').style.display = 'none';
+                document.getElementById('btn-absensi-capture').disabled = true;
+
+                canvas.toBlob(function(blob) {
+                    const formData = new FormData();
+                    formData.append('image', blob, 'capture.jpg');
+
+                    $.ajax({
+                        url: 'http://202.10.47.101:5000/attendance/recognize',
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(response) {
+                            document.getElementById('absensi-sending').style.display = 'none';
+                            document.getElementById('btn-absensi-retake').style.display = 'inline-block';
+
+                            let html = '';
+                            const isSuccess = response && response.status === 'success';
+                            const alertClass = isSuccess ? 'alert-success' : 'alert-warning';
+                            const iconClass  = isSuccess ? 'fa-check-circle' : 'fa-exclamation-triangle';
+
+                            const nama       = response.student_name || response.name || '-';
+                            const statusDisp = response.attendance_status_display || '-';
+                            const confidence = response.confidence != null
+                                             ? (parseFloat(response.confidence) * 100).toFixed(1) + '%'
+                                             : '-';
+                            const message    = response.message || '-';
+
+                            html = '<div class="alert ' + alertClass + ' text-start mb-0">'
+                                 + '<div class="fw-bold mb-2"><i class="fas ' + iconClass + ' me-2"></i>' + message + '</div>'
+                                 + '<table class="table table-sm table-borderless mb-0" style="font-size:0.9rem;">'
+                                 + '<tr><td class="text-muted pe-2" style="width:130px;">Nama Siswa</td>'
+                                 +     '<td><strong>' + nama + '</strong></td></tr>'
+                                 + '<tr><td class="text-muted pe-2">Status Kehadiran</td>'
+                                 +     '<td><strong>' + statusDisp + '</strong></td></tr>'
+                                 + '<tr><td class="text-muted pe-2">Confidence</td>'
+                                 +     '<td><strong>' + confidence + '</strong></td></tr>'
+                                 + '</table>'
+                                 + '</div>';
+                            document.getElementById('absensi-result-content').innerHTML = html;
+                            document.getElementById('absensi-result').style.display = 'block';
+                        },
+                        error: function(xhr, textStatus, errorThrown) {
+                            document.getElementById('absensi-sending').style.display = 'none';
+                            document.getElementById('btn-absensi-capture').disabled = false;
+                            document.getElementById('btn-absensi-retake').style.display = 'inline-block';
+
+                            let detail = '';
+                            if (xhr.status === 0) {
+                                detail = '<strong>Status 0</strong> — Kemungkinan penyebab:<br>'
+                                       + '&bull; <b>CORS</b>: Server Flask belum mengizinkan request dari origin ini.<br>'
+                                       + '&bull; <b>Mixed Content</b>: Halaman HTTPS tidak boleh request ke HTTP.<br>'
+                                       + '&bull; Server tidak dapat dijangkau / firewall.';
+                            } else {
+                                let body = '';
+                                if (xhr.responseJSON && xhr.responseJSON.message) body = xhr.responseJSON.message;
+                                else if (xhr.responseText) body = xhr.responseText.substring(0, 300);
+                                detail = '<strong>HTTP ' + xhr.status + ' ' + (xhr.statusText || '') + '</strong>'
+                                       + (body ? '<br><code style="font-size:0.78rem;word-break:break-all;">' + body + '</code>' : '');
+                            }
+
+                            document.getElementById('absensi-result-content').innerHTML =
+                                '<div class="alert alert-danger text-start mb-0">'
+                                + '<div class="fw-bold mb-1"><i class="fas fa-exclamation-circle me-2"></i>Gagal menghubungi server absensi</div>'
+                                + '<div style="font-size:0.85rem;">' + detail + '</div>'
+                                + '</div>';
+                            document.getElementById('absensi-result').style.display = 'block';
+                        }
+                    });
+                }, 'image/jpeg', 0.92);
+            });
+
+            document.getElementById('btn-absensi-retake').addEventListener('click', function () {
+                document.getElementById('absensi-result').style.display = 'none';
+                document.getElementById('absensi-result-content').innerHTML = '';
+                document.getElementById('btn-absensi-retake').style.display = 'none';
+                document.getElementById('btn-absensi-capture').disabled = false;
+            });
+            // ===== End Kamera Absensi Modal =====
 
             $('#btn-dataset-siswa').on('click', function () {
                 Swal.fire({
@@ -1118,7 +1276,7 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         $.ajax({
-                            url: 'http://presensiku.site/flaskpresensiku/pipeline/run',
+                            url: 'http://202.10.47.101:5000/pipeline/run',
                             type: 'POST',
                             contentType: 'application/json',
                             success: function(response) {
@@ -1278,6 +1436,17 @@
             document.getElementById('no-photo-1').style.display = 'block';
             document.getElementById('no-photo-2').style.display = 'block';
             document.getElementById('no-photo-3').style.display = 'block';
+        });
+
+        // Cleanup modal kamera absensi saat ditutup
+        document.getElementById('modalKameraAbsensi').addEventListener('hidden.bs.modal', function() {
+            stopAbsensiCamera();
+            document.getElementById('absensi-result').style.display = 'none';
+            document.getElementById('absensi-result-content').innerHTML = '';
+            document.getElementById('absensi-sending').style.display = 'none';
+            document.getElementById('btn-absensi-retake').style.display = 'none';
+            document.getElementById('absensi-loading').style.display = 'flex';
+            document.getElementById('btn-absensi-capture').disabled = true;
         });
     </script>
 
