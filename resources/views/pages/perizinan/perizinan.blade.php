@@ -121,12 +121,15 @@
                             <td class="text-capitalize">{{ $item->reason }}</td>
                             <td>{{ $item->information ?? '-' }}</td>
                             <td>
-                                @if($item->evidence)
-                                    <a href="{{ asset($item->evidence) }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-paperclip me-1"></i>Lihat
+                               @if($item->evidence)
+                                    <a href="{{ asset('storage/permission/evidence/' . $item->evidence) }}"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-paperclip me-1"></i> Lihat
                                     </a>
                                 @else
-                                    -
+                                    <span class="text-muted">Tidak ada bukti</span>
                                 @endif
                             </td>
                             <td>
