@@ -574,23 +574,14 @@
                         case 'The password field must be at least 6 characters.':
                             return 'Password minimal 6 karakter.';
 
-                        case 'The password field is required.':
-                            return 'Password wajib diisi.';
-
-                        case 'The email field is required.':
-                            return 'Email wajib diisi.';
+                        case 'The nip field must be at least 18 characters.':
+                            return 'NIP minimal 18 digit.';
 
                         case 'The email has already been taken.':
                             return 'Email sudah digunakan.';
 
-                        case 'The name field is required.':
-                            return 'Nama wajib diisi.';
-
                         case 'The nip has already been taken.':
                             return 'NIP sudah terdaftar.';
-
-                        case 'The subjects field is required.':
-                            return 'Mata pelajaran wajib dipilih.';
 
                         case 'The profile picture field must be an image.':
                             return 'File yang dipilih harus berupa gambar.';

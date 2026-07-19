@@ -183,13 +183,17 @@ class HistoryDailyController extends Controller
         $kelas = Classes::findOrFail($classId);
         $kelasName = $kelas->name ?? 'Kelas';
 
-        // Get data absensi harian
-        $rows = $this->getAbsensiHarianRowsForExport($classId, $request);
-
-        // Generate filename dan tanggal suffix berdasarkan filter
         $tanggal = $request->get('tanggal');
         $bulan = $request->get('bulan');
         $tahun = $request->get('tahun');
+
+        // Jika bulan kosong tapi tahun ada, lakukan export tahunan
+        if (empty($tanggal) && empty($bulan) && $tahun) {
+            return $this->exportExcelYearly($classId, $tahun);
+        }
+
+        // Get data absensi harian
+        $rows = $this->getAbsensiHarianRowsForExport($classId, $request);
 
         // Build filename suffix
         if ($tanggal) {
@@ -334,6 +338,207 @@ class HistoryDailyController extends Controller
         // Save and download
         $writer = new Xlsx($spreadsheet);
         $tempPath = storage_path('app/temp/' . $filename . '.xlsx');
+        @mkdir(dirname($tempPath), 0755, true);
+        $writer->save($tempPath);
+
+        return response()->download($tempPath)->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Export absensi harian ke Excel - Format Tahunan (12 Bulan)
+     */
+    private function exportExcelYearly($classId, $tahun)
+    {
+        // Get kelas info
+        $kelas = Classes::findOrFail($classId);
+        $kelasName = $kelas->name ?? 'Kelas';
+
+        // Get all students
+        $students = Student::where('id_class', $classId)->orderBy('name', 'ASC')->get();
+        if ($students->isEmpty()) {
+            return response()->json(['error' => 'Tidak ada siswa di kelas'], 400);
+        }
+
+        // Generate filename
+        $filename = 'Laporan_Tahunan_Absensi_Harian_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $kelasName) . '_' . $tahun . '.xlsx';
+
+        // Create spreadsheet
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Laporan Tahunan');
+
+        // Row 1: Title (Yellow background)
+        $title = 'LAPORAN TAHUNAN ABSENSI HARIAN ' . strtoupper($kelasName);
+        $sheet->setCellValue('A1', $title);
+        $sheet->mergeCells('A1:Q1');
+        $sheet->getRowDimension(1)->setRowHeight(25);
+        $sheet->getStyle('A1')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 14, 'color' => ['rgb' => '000000']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFCC00']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+
+        // Row 2: Period info
+        $periodText = 'TAHUN ' . $tahun;
+        $sheet->setCellValue('A2', $periodText);
+        $sheet->mergeCells('A2:Q2');
+        $sheet->getRowDimension(2)->setRowHeight(20);
+        $sheet->getStyle('A2')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 12, 'color' => ['rgb' => '000000']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFCC00']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+
+        // Row 3: Empty
+        $sheet->getRowDimension(3)->setRowHeight(10);
+
+        // Row 4: Headers
+        $sheet->setCellValue('A4', 'Nama');
+        $sheet->setCellValue('B4', 'Jabatan/Kelas');
+
+        // Month Names
+        $months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+        foreach ($months as $idx => $monthName) {
+            $colLetter = $this->getColumnLetter($idx + 3); // C = 3
+            $sheet->setCellValue($colLetter . '4', $monthName);
+        }
+
+        // Totals Headers
+        $sheet->setCellValue('O4', "Total\nTepat Waktu");
+        $sheet->setCellValue('P4', "Total\nTerlambat");
+        $sheet->setCellValue('Q4', "Total\nIzin");
+
+        // Style headers (Row 4) - Yellow background
+        $headerRange = 'A4:Q4';
+        $sheet->getStyle($headerRange)->applyFromArray([
+            'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => '000000']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFCC00']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+        ]);
+        $sheet->getRowDimension(4)->setRowHeight(30);
+
+        // Fetch attendance data for the whole year
+        $attendanceData = [];
+        $attendance = AttendanceHistoryDaily::where('id_class', $classId)
+            ->whereYear('created_at', $tahun)
+            ->get();
+
+        foreach ($attendance as $att) {
+            $date = \Carbon\Carbon::parse($att->created_at);
+            $month = $date->month;
+            $studentId = $att->id_student;
+            $status = $att->status;
+
+            if (!isset($attendanceData[$studentId])) {
+                $attendanceData[$studentId] = [];
+            }
+            if (!isset($attendanceData[$studentId][$month])) {
+                $attendanceData[$studentId][$month] = [
+                    'tepat_waktu' => 0,
+                    'terlambat' => 0,
+                    'izin' => 0
+                ];
+            }
+            if (in_array($status, ['tepat_waktu', 'terlambat', 'izin'])) {
+                $attendanceData[$studentId][$month][$status]++;
+            }
+        }
+
+        // Add student rows
+        $dataRow = 5;
+        foreach ($students as $student) {
+            $sheet->setCellValue('A' . $dataRow, $student->name);
+            $sheet->setCellValue('B' . $dataRow, $kelasName);
+
+            $totalTepatWaktu = 0;
+            $totalTerlambat = 0;
+            $totalIzin = 0;
+
+            // Populate months (C to N)
+            for ($month = 1; $month <= 12; $month++) {
+                $colLetter = $this->getColumnLetter($month + 2); // C = 3
+                
+                $tw = 0; $tl = 0; $i = 0;
+                if (isset($attendanceData[$student->id][$month])) {
+                    $tw = $attendanceData[$student->id][$month]['tepat_waktu'] ?? 0;
+                    $tl = $attendanceData[$student->id][$month]['terlambat'] ?? 0;
+                    $i = $attendanceData[$student->id][$month]['izin'] ?? 0;
+                }
+
+                $totalTepatWaktu += $tw;
+                $totalTerlambat += $tl;
+                $totalIzin += $i;
+
+                if ($tw > 0 || $tl > 0 || $i > 0) {
+                    $displayText = "TW:{$tw}\nTL:{$tl}\nI:{$i}";
+                    $sheet->setCellValue($colLetter . $dataRow, $displayText);
+                    $sheet->getStyle($colLetter . $dataRow)->getAlignment()->setWrapText(true);
+                } else {
+                    $sheet->setCellValue($colLetter . $dataRow, '-');
+                }
+                $sheet->getStyle($colLetter . $dataRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            }
+
+            // Populate totals
+            $sheet->setCellValue('O' . $dataRow, $totalTepatWaktu);
+            $sheet->setCellValue('P' . $dataRow, $totalTerlambat);
+            $sheet->setCellValue('Q' . $dataRow, $totalIzin);
+
+            for ($c = 15; $c <= 17; $c++) {
+                $colLetter = $this->getColumnLetter($c);
+                $sheet->getStyle($colLetter . $dataRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            }
+
+            // Border styling
+            $dataRange = 'A' . $dataRow . ':Q' . $dataRow;
+            $sheet->getStyle($dataRange)->applyFromArray([
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+                'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+            ]);
+
+            // Set height for dynamic wrapped text
+            $sheet->getRowDimension($dataRow)->setRowHeight(45);
+
+            $dataRow++;
+        }
+
+        // Add legend
+        $legendRow = $dataRow + 2;
+        $sheet->setCellValue('A' . $legendRow, 'Keterangan format bulanan:');
+        $sheet->getStyle('A' . $legendRow)->applyFromArray(['font' => ['bold' => true, 'size' => 11]]);
+
+        $legendRow++;
+        $legends = [
+            'TW' => 'Tepat Waktu',
+            'TL' => 'Terlambat',
+            'I' => 'Izin'
+        ];
+
+        foreach ($legends as $code => $meaning) {
+            $sheet->setCellValue('A' . $legendRow, $code);
+            $sheet->setCellValue('B' . $legendRow, $meaning);
+            $sheet->getStyle('A' . $legendRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $legendRow++;
+        }
+
+        // Set column widths
+        $sheet->getColumnDimension('A')->setWidth(25);
+        $sheet->getColumnDimension('B')->setWidth(15);
+        
+        // Month columns width
+        for ($month = 1; $month <= 12; $month++) {
+            $colLetter = $this->getColumnLetter($month + 2);
+            $sheet->getColumnDimension($colLetter)->setWidth(10);
+        }
+        
+        $sheet->getColumnDimension('O')->setWidth(15);
+        $sheet->getColumnDimension('P')->setWidth(12);
+        $sheet->getColumnDimension('Q')->setWidth(12);
+
+        // Save and download
+        $writer = new Xlsx($spreadsheet);
+        $tempPath = storage_path('app/temp/' . $filename);
         @mkdir(dirname($tempPath), 0755, true);
         $writer->save($tempPath);
 

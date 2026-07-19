@@ -1225,30 +1225,17 @@
                             document.getElementById('absensi-result-content').innerHTML = html;
                             document.getElementById('absensi-result').style.display = 'block';
                         },
-                        error: function(xhr, textStatus, errorThrown) {
+                        error: function(xhr) {
                             document.getElementById('absensi-sending').style.display = 'none';
                             document.getElementById('btn-absensi-capture').disabled = false;
                             document.getElementById('btn-absensi-retake').style.display = 'inline-block';
 
-                            let detail = '';
-                            if (xhr.status === 0) {
-                                detail = '<strong>Status 0</strong> — Kemungkinan penyebab:<br>'
-                                       + '&bull; <b>CORS</b>: Server Flask belum mengizinkan request dari origin ini.<br>'
-                                       + '&bull; <b>Mixed Content</b>: Halaman HTTPS tidak boleh request ke HTTP.<br>'
-                                       + '&bull; Server tidak dapat dijangkau / firewall.';
-                            } else {
-                                let body = '';
-                                if (xhr.responseJSON && xhr.responseJSON.message) body = xhr.responseJSON.message;
-                                else if (xhr.responseText) body = xhr.responseText.substring(0, 300);
-                                detail = '<strong>HTTP ' + xhr.status + ' ' + (xhr.statusText || '') + '</strong>'
-                                       + (body ? '<br><code style="font-size:0.78rem;word-break:break-all;">' + body + '</code>' : '');
-                            }
+                            let errMsg = 'Gagal menghubungi server absensi.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) errMsg = xhr.responseJSON.message;
+                            else if (xhr.responseText) errMsg = xhr.responseText.substring(0, 200);
 
                             document.getElementById('absensi-result-content').innerHTML =
-                                '<div class="alert alert-danger text-start mb-0">'
-                                + '<div class="fw-bold mb-1"><i class="fas fa-exclamation-circle me-2"></i>Gagal menghubungi server absensi</div>'
-                                + '<div style="font-size:0.85rem;">' + detail + '</div>'
-                                + '</div>';
+                                '<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>' + errMsg + '</div>';
                             document.getElementById('absensi-result').style.display = 'block';
                         }
                     });
@@ -1276,7 +1263,7 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         $.ajax({
-                            url: 'http://202.10.47.101:5000/pipeline/run',
+                            url: 'http://presensiku.site/flaskpresensiku/pipeline/run',
                             type: 'POST',
                             contentType: 'application/json',
                             success: function(response) {
@@ -1490,6 +1477,31 @@
 
                 // Dialog validasi (centered) — prioritaskan ini dulu
                 if (validationErrors.length > 0) {
+                    validationErrors = validationErrors.map(function(msg) {
+                        switch (msg) {
+                            case 'The password field must be at least 6 characters.':
+                                return 'Password minimal 6 karakter.';
+
+                            case 'The nisn field must be at least 10 characters.':
+                            case 'The nisn field must be 10 digits.':
+                            case 'The nisn must be at least 10 characters.':
+                            case 'The nisn must be 10 digits.':
+                                return 'NISN minimal 10 digit.';
+
+                            case 'The email has already been taken.':
+                                return 'Email sudah digunakan.';
+
+                            case 'The nisn has already been taken.':
+                                return 'NISN sudah terdaftar.';
+
+                            case 'The profile picture field must be an image.':
+                                return 'File yang dipilih harus berupa gambar.';
+
+                            default:
+                                return msg;
+                        }
+                    });
+
                     const listHtml = '<ul class="list-unstyled text-center mb-0 p-0">' +
                         validationErrors.map(function (msg) {
                             return '<li class="mb-1">' + msg + '</li>';

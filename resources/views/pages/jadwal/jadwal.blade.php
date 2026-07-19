@@ -325,7 +325,7 @@
                                 <label class="form-label fw-semibold text-dark">
                                     Periode
                                 </label>
-                                <input type="hidden" name="id_academic_periods" value="{{ $periode_aktif->id ?? '' }}">
+                                <input type="hidden" name="id_academic_periods" id="tambah_id_academic_periods" value="{{ $periode_aktif->id ?? '' }}">
                                 <div class="form-control border-2 bg-light" style="display: flex; align-items: center;">
                                     <span class="fw-semibold text-dark">{{ $periode_aktif->name ?? '-' }}</span>
                                 </div>
@@ -334,7 +334,7 @@
                                 <label class="form-label fw-semibold text-dark">
                                     Hari
                                 </label>
-                                <select name="day_of_week" class="form-control border-2" required>
+                                <select name="day_of_week" id="tambah_day_of_week" class="form-control border-2" required>
                                     <option value="">Pilih Hari</option>
                                     <option value="senin">Senin</option>
                                     <option value="selasa">Selasa</option>
@@ -376,14 +376,14 @@
                                 <label class="form-label fw-semibold text-dark">
                                     Kode Jadwal
                                 </label>
-                                <input type="text" name="code" class="form-control border-2" placeholder="Kosongkan Kode !!" value="{{ old('code') ? md5(old('code')) : '' }}" readonly>
-                                <small class="text-muted">Biarkan kosong untuk kode otomatis</small>
+                                <input type="text" name="code" id="tambah_code" class="form-control border-2" value="{{ old('code') ? md5(old('code')) : '' }}" readonly>
+                                <small class="text-muted">Kode akan otomatis terisi dan dibuat oleh sistem.</small>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label fw-semibold text-dark">
                                     Kelas
                                 </label>
-                                <select name="id_class" class="form-control border-2" required>
+                                <select name="id_class" id="tambah_id_class" class="form-control border-2" required>
                                     <option value="">Pilih Kelas</option>
                                     @foreach($kelas as $kls)
                                         <option value="{{ $kls->id }}">{{ $kls->name }}</option>
@@ -394,10 +394,10 @@
                                 <label class="form-label fw-semibold text-dark">
                                     Mata Pelajaran
                                 </label>
-                                <select name="id_subject" class="form-control border-2" required>
+                                <select name="id_subject" id="tambah_id_subject" class="form-control border-2" required>
                                     <option value="">Pilih Mapel</option>
                                     @foreach($mapel as $mpl)
-                                        <option value="{{ $mpl->id }}">{{ $mpl->name }}</option>
+                                        <option value="{{ $mpl->id }}" data-code="{{ $mpl->code }}">{{ $mpl->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -600,36 +600,73 @@
         }
 
         // standalone functions for Tambah (add) modal
+        let addModalToken = Math.floor(1000 + Math.random() * 9000);
+
+        function updateTambahCode() {
+            const className = $('#tambah_id_class option:selected').text().trim();
+            const classVal = $('#tambah_id_class').val();
+            const dayVal = $('#tambah_day_of_week').val();
+            const periodStart = $('#tambah_period_start').val();
+            const periodEnd = $('#tambah_period_end').val();
+            const subjectCode = $('#tambah_id_subject option:selected').data('code') || '';
+            const subjectVal = $('#tambah_id_subject').val();
+            const periodVal = $('#tambah_id_academic_periods').val() || '0';
+
+            if (!classVal || !dayVal || !periodStart || !periodEnd || !subjectVal) {
+                $('#tambah_code').val('');
+                return;
+            }
+
+            const dayAbbrev = dayVal.substring(0, 3).toUpperCase();
+            const generatedCode = `${className}-${dayAbbrev}-${periodStart}-${periodEnd}-${subjectCode}-${periodVal}-${addModalToken}`;
+            $('#tambah_code').val(generatedCode);
+        }
+
         function updateAddStartTime() {
             const start = parseInt($('#tambah_period_start').val());
             if (!start) {
                 $('#tambah_start_time').val('');
+                updateTambahCode();
                 return;
             }
             if (!PERIODS[start]) {
                 $('#tambah_start_time').val('');
+                updateTambahCode();
                 return;
             }
             $('#tambah_start_time').val(PERIODS[start].start);
+            updateTambahCode();
         }
 
         function updateAddEndTime() {
             const end = parseInt($('#tambah_period_end').val());
             if (!end) {
                 $('#tambah_end_time').val('');
+                updateTambahCode();
                 return;
             }
             if (!PERIODS[end]) {
                 $('#tambah_end_time').val('');
+                updateTambahCode();
                 return;
             }
             $('#tambah_end_time').val(PERIODS[end].end);
+            updateTambahCode();
         }
 
         // bind events after DOM ready (only for add functions - edit handlers already exist above)
         $(function(){
             $('#tambah_period_start').on('input change', updateAddStartTime);
             $('#tambah_period_end').on('input change', updateAddEndTime);
+
+            // Regenerate token on modal open
+            $('#modalTambahJadwal').on('show.bs.modal', function () {
+                addModalToken = Math.floor(1000 + Math.random() * 9000);
+                updateTambahCode();
+            });
+
+            // Bind change and input events to update code dynamically
+            $('#tambah_id_class, #tambah_day_of_week, #tambah_id_subject').on('change input', updateTambahCode);
 
             // Inisialisasi: sembunyikan guru sampai mapel dipilih
             filterGuru('', 'tambah_id_teacher');
@@ -646,5 +683,70 @@
         });
     </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@if(session('success') || session('error') || $errors->any())
+<div id="page-flash"
+    data-success="{{ session('success') }}"
+    data-error="{{ session('error') }}"
+    data-errors="{{ json_encode($errors->all()) }}"
+    hidden></div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var flash = document.getElementById('page-flash');
+        if (!flash) return;
+
+        var successMsg   = flash.dataset.success || '';
+        var errorMsg     = flash.dataset.error || '';
+        var rawErrors    = flash.dataset.errors || '[]';
+        var errors       = [];
+        try { errors = JSON.parse(rawErrors); } catch (e) { errors = []; }
+
+        if (successMsg) {
+            Swal.fire({
+                toast: true,
+                position: 'bottom-end',
+                icon: 'success',
+                title: successMsg,
+                showConfirmButton: false,
+                timer: 2500,
+                timerProgressBar: true
+            });
+        }
+
+        if (errorMsg) {
+            Swal.fire({
+                toast: true,
+                position: 'bottom-end',
+                icon: 'error',
+                title: errorMsg,
+                showConfirmButton: false,
+                timer: 2500,
+                timerProgressBar: true
+            });
+        }
+
+        if (errors.length > 0) {
+            var listHtml = '<ul style="list-style:none; text-align:center; padding:0; margin:0; color:#374151;">'
+                + errors.map(function(msg) {
+                    return '<li style="margin-bottom:4px;">' + msg + '</li>';
+                }).join('')
+                + '</ul>';
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Validasi Gagal',
+                html: listHtml,
+                confirmButtonText: 'Mengerti',
+                confirmButtonColor: '#365CF5',
+                customClass: {
+                    popup: 'rounded-4 shadow-lg',
+                    title: 'fw-bold text-danger',
+                    confirmButton: 'fw-semibold px-4'
+                }
+            });
+        }
+    });
+</script>
+@endif
 @endsection
 

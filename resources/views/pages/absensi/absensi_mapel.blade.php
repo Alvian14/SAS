@@ -695,16 +695,17 @@
                 const classId = "{{ $kelas->id ?? 0 }}";
                 const mapelId = $('#filter-mapel').val();
 
-                // Get current bulan dan tahun (atau use today)
-                let bulan = $('#filter-bulan').val();
-                let tahun = $('#filter-tahun').val();
+                // Get current bulan dan tahun dari filter
+                let bulan = $('#filter-bulan').val() || '';
+                let tahun = $('#filter-tahun').val() || '';
 
-                // Default ke bulan/tahun sekarang jika kosong
-                if (!bulan) {
+                // Jika kedua-duanya kosong, default ke bulan & tahun sekarang
+                if (!bulan && !tahun) {
                     bulan = new Date().getMonth() + 1;
                     bulan = String(bulan).padStart(2, '0');
-                }
-                if (!tahun) {
+                    tahun = new Date().getFullYear();
+                } else if (bulan && !tahun) {
+                    // Jika hanya bulan yang diisi, default tahun ke tahun sekarang
                     tahun = new Date().getFullYear();
                 }
 

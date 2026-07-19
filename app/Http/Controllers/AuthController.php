@@ -300,9 +300,8 @@ class AuthController extends Controller
             $request->validate([
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
-                // password wajib diisi dari form, tidak perlu default 'starbaks' dibackend
                 'password' => 'required|string|min:6',
-                'nisn' => 'required|string|max:50|unique:students,nisn',
+                'nisn' => 'required|digits:10|unique:students,nisn',
                 'id_class' => 'required|integer',
                 'entry_year' => 'required|integer',
                 'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
@@ -427,7 +426,7 @@ class AuthController extends Controller
             $request->validate([
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-                'nisn' => 'required|string|max:50|unique:students,nisn,' . $student->id,
+                'nisn' => 'required|digits:10|unique:students,nisn,' . $student->id,
                 'id_class' => 'required|integer',
                 'entry_year' => 'required|integer',
                 'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
@@ -549,7 +548,7 @@ class AuthController extends Controller
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
                 'password' => 'required|string|min:6',
-                'nip' => 'required|string|max:50|unique:teachers,nip',
+                'nip' => 'required|digits:18|unique:teachers,nip',
                 'subjects' => 'required|array|min:1',
                 'subjects.*' => 'integer|exists:subjects,id',
                 'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',

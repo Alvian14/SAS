@@ -174,8 +174,12 @@
                                       <div class="d-flex gap-1 justify-content-center">
                                           <form action="{{ route('periode.activate', $p->id) }}" method="POST" style="display:inline;">
                                               @csrf
-                                              <button type="submit" class="btn btn-sm rounded-pill px-2" style="background:#dcfce7;color:#16a34a;" {{ $p->is_active ? 'disabled' : '' }} title="Aktifkan">
-                                                  <i class="fas fa-toggle-on"></i>
+                                              <button type="submit"
+                                                  class="btn btn-sm rounded-pill px-2"
+                                                  style="background-color: {{ $p->is_active ? '#16a34a' : '#dc3545' }}; color:#fff;"
+                                                  {{ $p->is_active ? 'disabled' : '' }}
+                                                  title="{{ $p->is_active ? 'Aktif' : 'Tidak Aktif' }}">
+                                                  <i class="fas {{ $p->is_active ? 'fa-toggle-on' : 'fa-toggle-off' }}"></i>
                                               </button>
                                           </form>
                                           <button class="btn btn-sm rounded-pill px-2" style="background:#fef9c3;color:#b45309;" title="Edit"
