@@ -43,13 +43,11 @@
       </div>
     </div>
   </div>
-
   @php
       $totalPeriode  = $periods->count();
       $periodeAktif  = $periods->where('is_active', true)->count();
       $periodeNonAktif = $periods->where('is_active', false)->count();
   @endphp
-
   <!-- Summary Cards -->
   <div class="row g-3 mb-4 mt-3">
       <div class="col-6 col-md-4">
